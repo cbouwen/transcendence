@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Tetris Game</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="200" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const context = canvas.getContext('2d');
+
+        const grid = 20; // Size of each grid square
+        const tetrominoes = [
+            // I
+            [
+                [1],
+                [1],
+                [1],
+                [1]
+            ],
+            // O
+            [
+                [2, 2],
+                [2, 2]
+            ],
+            // T
+            [
+                [0, 3, 0],
+                [3, 3, 3]
+            ],
+            // S
+            [
+                [0, 4, 4],
+                [4, 4, 0]
+            ],
+            // Z
+            [
+                [5, 5, 0],
+                [0, 5, 5]
+            ],
+            // J
+            [
+                [6, 0, 0],
+                [6, 6, 6]
+            ],
+            // L
+            [
+                [0, 0, 7],
+                [7, 7, 7]
+            ]
+        ];
+
+        const colors = [
+            null,
+            'cyan',    // 1
+            'yellow',  // 2
+            'purple',  // 3
+            'green',   // 4
+            'red',     // 5
+            'blue',    // 6
+            'orange'   // 7
+        ];
+
+        let playfield = [];
+
+        // Initialize the playfield with zeros
+        for (let row = -2; row < 20; row++) {
+            playfield[row] = [];
+            for (let col = 0; col < 10; col++) {
+                playfield[row][col] = 0;
+            }
+        }
+
+        let tetrominoSequence = [];
+
+        // Generate sequence of tetrominoes
+        function generateSequence() {
+            const sequence = [0, 1, 2, 3, 4, 5, 6];
+            while (sequence.length) {
+                const rand = Math.floor(Math.random() * sequence.length);
+                const piece = sequence.splice(rand, 1)[0];
+                tetrominoSequence.push(piece);
+            }
+        }
+
+        // Get the next tetromino
+        function getNextTetromino() {
+            if (tetrominoSequence.length === 0) {
+                generateSequence();
+            }
+            const tetrominoType = tetrominoSequence.pop();
+            const matrix = tetrominoes[tetrominoType];
+            // Start position
+            const col = playfield[0].length / 2 - Math.floor(matrix[0].length / 2);
+            const row = matrix.length === 4 ? -1 : -2;
+            return {
+                matrix: matrix,
+                row: row,
+                col: col,
+                type: tetrominoType + 1
+            };
+        }
+
+        let currentTetromino = getNextTetromino();
+        let gameOver = false;
+
+        // Rotate the matrix (tetromino)
+        function rotate(matrix) {
+            const N = matrix.length - 1;
+            const result = matrix.map((row, i) =>
+                row.map((val, j) => matrix[N - j][i])
+            );
+            return result;
+        }
+
+        // Check if the move is valid
+        function isValidMove(matrix, row, col) {
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix[y].length; x++) {
+                    if (matrix[y][x]) {
+                        const newX = col + x;
+                        const newY = row + y;
+                        if (newX < 0 || newX >= playfield[0].length || newY >= playfield.length || (playfield[newY] && playfield[newY][newX])) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Place the tetromino on the playfield
+        function placeTetromino() {
+            for (let y = 0; y < currentTetromino.matrix.length; y++) {
+                for (let x = 0; x < currentTetromino.matrix[y].length; x++) {
+                    if (currentTetromino.matrix[y][x]) {
+                        const newY = currentTetromino.row + y;
+                        if (newY < 0) {
+                            // Game over
+                            gameOver = true;
+                            break;
+                        }
+                        playfield[newY][currentTetromino.col + x] = currentTetromino.type;
+                    }
+                }
+            }
+
+            // Check for full rows
+            for (let y = playfield.length - 1; y >= 0; ) {
+                if (playfield[y].every(value => value > 0)) {
+                    // Remove the row
+                    playfield.splice(y, 1);
+                    // Add empty row at the top
+                    playfield.unshift(new Array(10).fill(0));
+                } else {
+                    y--;
+                }
+            }
+            currentTetromino = getNextTetromino();
+        }
+
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        let lastTime = 0;
+
+        function update(time = 0) {
+            if (gameOver) {
+                alert("Game Over!");
+                return;
+            }
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                dropCounter = 0;
+                if (isValidMove(currentTetromino.matrix, currentTetromino.row + 1, currentTetromino.col)) {
+                    currentTetromino.row++;
+                } else {
+                    placeTetromino();
+                }
+            }
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        function draw() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            // Draw playfield
+            for (let y = 0; y < playfield.length; y++) {
+                for (let x = 0; x < playfield[y].length; x++) {
+                    if (playfield[y][x]) {
+                        context.fillStyle = colors[playfield[y][x]];
+                        context.fillRect(x * grid, y * grid, grid - 1, grid - 1);
+                    }
+                }
+            }
+
+            // Draw current tetromino
+            for (let y = 0; y < currentTetromino.matrix.length; y++) {
+                for (let x = 0; x < currentTetromino.matrix[y].length; x++) {
+                    if (currentTetromino.matrix[y][x]) {
+                        context.fillStyle = colors[currentTetromino.type];
+                        context.fillRect((currentTetromino.col + x) * grid, (currentTetromino.row + y) * grid, grid - 1, grid - 1);
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (gameOver) return;
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
+                const col = currentTetromino.col - 1;
+                if (isValidMove(currentTetromino.matrix, currentTetromino.row, col)) {
+                    currentTetromino.col = col;
+                }
+            } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                const col = currentTetromino.col + 1;
+                if (isValidMove(currentTetromino.matrix, currentTetromino.row, col)) {
+                    currentTetromino.col = col;
+                }
+            } else if (e.key === 'ArrowDown' || e.key === 's') {
+                const row = currentTetromino.row + 1;
+                if (isValidMove(currentTetromino.matrix, row, currentTetromino.col)) {
+                    currentTetromino.row = row;
+                }
+            } else if (e.key === 'ArrowUp' || e.key === 'w') {
+                const matrix = rotate(currentTetromino.matrix);
+                if (isValidMove(matrix, currentTetromino.row, currentTetromino.col)) {
+                    currentTetromino.matrix = matrix;
+                }
+            }
+        });
+
+        update();
+    </script>
+</body>
+</html>
