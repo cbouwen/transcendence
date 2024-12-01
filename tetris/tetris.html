@@ -79,7 +79,7 @@
         let tetrominoSequence = [];
 
         function generateSequence() {
-            const sequence = [0, 1, 2, 3, 4, 5, 6];
+            const sequence = [0, 1, 2, 3, 4, 5, 6]; //still need to generate semi random sequence
             while (sequence.length) {
                 const rand = Math.floor(Math.random() * sequence.length);
                 const piece = sequence.splice(rand, 1)[0];
