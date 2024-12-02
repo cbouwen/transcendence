@@ -206,7 +206,8 @@ function update(time = 0)
     requestAnimationFrame(update);
 }
 
-function draw() {
+function draw()
+{
     context.clearRect(0, 0, canvas.width, canvas.height);
     for (let y = 2; y < playfield.length; y++) {
         for (let x = 0; x < playfield[y].length; x++) {
