@@ -1,7 +1,12 @@
 function launchTetrisGame(playerConfigs) {
     console.log("launchTetrisGame called with:", playerConfigs);
-    
-    // Create and inject styles
+
+    // Global variables to track game status
+    const totalPlayers = playerConfigs.length;
+    let playersDeadCount = 0;
+    let games = [];
+
+    // Existing CSS injection in launchTetrisGame function
     const style = document.createElement('style');
     style.textContent = `
         .game-container {
@@ -13,9 +18,10 @@ function launchTetrisGame(playerConfigs) {
         .score, .level {
             font-size: 20px;
             margin-top: 10px;
+            color: white;
         }
         body {
-            background-color: #f0f0f0;
+            background-color: black; /* Changed from #f0f0f0 to black */
             text-align: center;
             padding-top: 20px;
         }
@@ -23,20 +29,47 @@ function launchTetrisGame(playerConfigs) {
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
+            color: white; /* Optional: make player names visible on black background */
+        }   
+        .scoreboard-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); /* Dark semi-transparent background */
+            border: 2px solid white; /* White border for visibility */
+            padding: 20px;
+            z-index: 9999;
+            text-align: center;
+            min-width: 300px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            color: white; /* Ensure text is visible on dark background */
+        }
+        .scoreboard-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: white; /* Ensure title is visible */
+        }
+        .scoreboard-entry {
+            font-size: 20px;
+            margin: 5px 0;
+            color: white; /* Ensure entries are visible */
         }
     `;
     document.head.appendChild(style);
 
     class TetrisGame {
-        constructor(containerId, controls) {
+        constructor(containerId, controls, name) {
             console.log(`Initializing TetrisGame for container: ${containerId}`);
             this.container = document.getElementById(containerId);
+            this.name = name;
 
             this.canvas = document.createElement('canvas');
             this.canvas.width = 200;
             this.canvas.height = 440;
-            this.canvas.style.border = '1px solid black';
-            this.canvas.style.backgroundColor = '#eee';
+            this.canvas.style.border = '2px solid white'; // Changed border to white
+            this.canvas.style.backgroundColor = 'black'; // Changed background to black
             this.context = this.canvas.getContext('2d');
             this.container.appendChild(this.canvas);
 
@@ -48,8 +81,11 @@ function launchTetrisGame(playerConfigs) {
             this.rows = 22;
             this.cols = 10;
             this.dropCounter = 0;
-            this.dropInterval = 1000;
             this.lastTime = 0;
+
+            // Initial drop interval (speed). Will update as level changes.
+            this.dropInterval = 1000; 
+
             this.tetrominoSequence = [];
             this.controls = controls;
 
@@ -130,8 +166,8 @@ function launchTetrisGame(playerConfigs) {
             console.log("Next Tetromino:", tetromino);
             if (!this.isValidMove(tetromino.matrix, tetromino.row, tetromino.col)) {
                 this.gameOver = true;
-                this.draw();
-                alert("Game Over!");
+                // Notify global that this player lost
+                playerLost(this);
                 return null;
             }
             return tetromino;
@@ -143,8 +179,20 @@ function launchTetrisGame(playerConfigs) {
         }
 
         updateLevelDisplay() {
-            const level = Math.floor(this.linesCleared / 10) + 1;
+            const level = this.getLevel();
             this.levelDisplay.textContent = `Level: ${level}`;
+        }
+
+        getLevel() {
+            return Math.floor(this.linesCleared / 10) + 1;
+        }
+
+        updateDropInterval() {
+            // For each level increase, we decrease the dropInterval.
+            // Level 1 = 1000 ms, Level 2 = 900 ms, Level 3 = 800 ms, ...
+            const level = this.getLevel();
+            this.dropInterval = Math.max(1000 - (level - 1) * 100, 100); 
+            // This ensures it doesn't go below 100 ms for extreme levels
         }
 
         isValidMove(matrix, row, col) {
@@ -202,17 +250,16 @@ function launchTetrisGame(playerConfigs) {
                 let points = this.calculateScore(lines);
 
                 // Apply level-based multiplier
-                const level = Math.floor(this.linesCleared / 10) + 1;
+                const level = this.getLevel();
                 const multiplier = 1 + (level - 1) * 0.1; // starts at 1 for level 1, 1.1 for level 2, etc.
                 points = points * multiplier;
 
                 this.score += points;
                 this.scoreElement.textContent = 'Score: ' + this.score;
 
-                if (this.linesCleared % 10 === 0 && this.dropInterval > 200) {
-                    this.dropInterval -= 100;
-                }
+                // Update drop interval based on level
                 this.updateLevelDisplay();
+                this.updateDropInterval();
             }
 
             this.currentTetromino = this.getNextTetromino();
@@ -243,6 +290,7 @@ function launchTetrisGame(playerConfigs) {
         draw() {
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+            // Draw existing placed pieces
             for (let y = 0; y < this.rows; y++) {
                 for (let x = 0; x < this.cols; x++) {
                     if (this.playfield[y][x]) {
@@ -257,6 +305,7 @@ function launchTetrisGame(playerConfigs) {
                 }
             }
 
+            // Draw the current falling tetromino
             if (this.currentTetromino) {
                 for (let y = 0; y < this.currentTetromino.matrix.length; y++) {
                     for (let x = 0; x < this.currentTetromino.matrix[y].length; x++) {
@@ -276,9 +325,26 @@ function launchTetrisGame(playerConfigs) {
                     }
                 }
             }
+
+            // Draw grid lines (overlay)
+            this.context.strokeStyle = 'rgba(255, 255, 255, 0.2)'; 
+            this.context.lineWidth = 1;
+            // Vertical lines
+            for (let x = 1; x < this.cols; x++) {
+                this.context.beginPath();
+                this.context.moveTo(x * this.grid, 0);
+                this.context.lineTo(x * this.grid, this.canvas.height);
+                this.context.stroke();
+            }
+            // Horizontal lines
+            for (let y = 1; y < this.rows; y++) {
+                this.context.beginPath();
+                this.context.moveTo(0, y * this.grid);
+                this.context.lineTo(this.canvas.width, y * this.grid);
+                this.context.stroke();
+            }
         }
 
-        // Immediate movement action
         moveLeft() {
             if (this.currentTetromino && this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row, this.currentTetromino.col - 1)) {
                 this.currentTetromino.col--;
@@ -311,15 +377,11 @@ function launchTetrisGame(playerConfigs) {
             }
         }
 
-        // Start auto-repeat after initial delay
         startKeyRepeat(direction) {
             if (!this.keysState[direction].pressed) return;
-
-            // Clear any existing intervals (shouldn't be any if managed well)
             this.stopKeyRepeat(direction);
 
             this.keysState[direction].timeout = setTimeout(() => {
-                // Start repeating movement
                 this.keysState[direction].interval = setInterval(() => {
                     if (!this.keysState[direction].pressed) {
                         this.stopKeyRepeat(direction);
@@ -350,30 +412,28 @@ function launchTetrisGame(playerConfigs) {
         handleKeyDown(e) {
             if (this.gameOver || !this.currentTetromino) return;
 
-            // Check which direction this key corresponds to
             if (e.key === this.controls.left) {
                 if (!this.keysState.left.pressed) {
                     this.keysState.left.pressed = true;
-                    this.moveLeft(); // immediate move
+                    this.moveLeft();
                     this.startKeyRepeat('left');
                 }
                 e.preventDefault();
             } else if (e.key === this.controls.right) {
                 if (!this.keysState.right.pressed) {
                     this.keysState.right.pressed = true;
-                    this.moveRight(); // immediate move
+                    this.moveRight();
                     this.startKeyRepeat('right');
                 }
                 e.preventDefault();
             } else if (e.key === this.controls.down) {
                 if (!this.keysState.down.pressed) {
                     this.keysState.down.pressed = true;
-                    this.moveDown(); // immediate move
+                    this.moveDown();
                     this.startKeyRepeat('down');
                 }
                 e.preventDefault();
             } else if (e.key === this.controls.rotate) {
-                // Rotate does not auto-repeat (typical Tetris behavior)
                 this.rotatePiece();
                 e.preventDefault();
             }
@@ -390,7 +450,6 @@ function launchTetrisGame(playerConfigs) {
                 this.keysState.down.pressed = false;
                 this.stopKeyRepeat('down');
             }
-            // Rotate key up does nothing special
         }
     }
 
@@ -398,8 +457,6 @@ function launchTetrisGame(playerConfigs) {
     const mainContainer = document.createElement('div');
     mainContainer.id = 'tetris-main-container';
     document.body.appendChild(mainContainer);
-
-    const games = [];
 
     // Initialize each player
     playerConfigs.forEach((config, index) => {
@@ -414,14 +471,51 @@ function launchTetrisGame(playerConfigs) {
 
         mainContainer.appendChild(container);
 
-        games[index] = new TetrisGame(`player${index + 1}`, config.controls);
+        const gameInstance = new TetrisGame(`player${index + 1}`, config.controls, config.name);
+        games[index] = gameInstance;
         console.log(`Initialized game for ${config.name}`);
     });
+
+    // When a player loses
+    function playerLost(gameInstance) {
+        playersDeadCount++;
+        if (totalPlayers === 1) {
+            // Single-player game: show immediate game over
+            showFinalScoreboard();
+        } else {
+            // Multi-player: wait until all players are dead
+            if (playersDeadCount === totalPlayers) {
+                showFinalScoreboard();
+            }
+        }
+    }
+
+    function showFinalScoreboard() {
+        // Sort players by their scores
+        const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+
+        const scoreboardContainer = document.createElement('div');
+        scoreboardContainer.classList.add('scoreboard-overlay');
+
+        const title = document.createElement('div');
+        title.classList.add('scoreboard-title');
+        title.textContent = 'Game Over! Final Scores';
+        scoreboardContainer.appendChild(title);
+
+        sortedPlayers.forEach((player, rank) => {
+            const entry = document.createElement('div');
+            entry.classList.add('scoreboard-entry');
+            entry.textContent = `${rank + 1}. ${player.name}: ${player.score}`;
+            scoreboardContainer.appendChild(entry);
+        });
+
+        // Append the scoreboard overlay to the body
+        document.body.appendChild(scoreboardContainer);
+    }
 
     // Global event listeners
     document.addEventListener('keydown', function(e) {
         games.forEach(game => {
-            // Check if this key is relevant to the game
             if (
                 e.key === game.controls.left ||
                 e.key === game.controls.right ||
