@@ -191,7 +191,7 @@ function launchTetrisGame(playerConfigs) {
             // For each level increase, we decrease the dropInterval.
             // Level 1 = 1000 ms, Level 2 = 900 ms, Level 3 = 800 ms, ...
             const level = this.getLevel();
-            this.dropInterval = Math.max(1000 - (level - 1) * 100, 100); 
+            this.dropInterval = Math.max(1000 - (level - 1) * 100, 50); 
             // This ensures it doesn't go below 100 ms for extreme levels
         }
 
