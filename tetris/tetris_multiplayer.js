@@ -77,13 +77,15 @@ function launchTetrisGame(playerConfigs) {
             this.score = 0;
             this.linesCleared = 0;
             this.gameOver = false;
+            this.losingTetromino = null;
+            this.lastPlacedPositions = []; // Store last placed piece positions and type
             this.grid = 20;
             this.rows = 22;
             this.cols = 10;
             this.dropCounter = 0;
             this.lastTime = 0;
 
-            // Initial drop interval (speed). Will update as level changes.
+            // Initial drop interval (speed)
             this.dropInterval = 1000; 
 
             this.tetrominoSequence = [];
@@ -96,7 +98,7 @@ function launchTetrisGame(playerConfigs) {
                 down: { pressed: false, timeout: null, interval: null },
                 rotate: { pressed: false, timeout: null, interval: null }
             };
-            this.initialDelay = 750;
+            this.initialDelay = 300;
             this.repeatInterval = 50;
 
             // Display elements
@@ -130,9 +132,11 @@ function launchTetrisGame(playerConfigs) {
                 [[0,0,7],[7,7,7]]      // L
             ];
 
+            // Extra colors: grey (8), white (9)
             this.colors = [
                 null,
-                'cyan', 'yellow', 'purple', 'green', 'red', 'blue', 'orange'
+                'cyan', 'yellow', 'purple', 'green', 'red', 'blue', 'orange',
+                'grey', 'white'
             ];
 
             this.currentTetromino = this.getNextTetromino();
@@ -166,7 +170,7 @@ function launchTetrisGame(playerConfigs) {
             console.log("Next Tetromino:", tetromino);
             if (!this.isValidMove(tetromino.matrix, tetromino.row, tetromino.col)) {
                 this.gameOver = true;
-                // Notify global that this player lost
+                this.losingTetromino = tetromino;
                 playerLost(this);
                 return null;
             }
@@ -188,11 +192,8 @@ function launchTetrisGame(playerConfigs) {
         }
 
         updateDropInterval() {
-            // For each level increase, we decrease the dropInterval.
-            // Level 1 = 1000 ms, Level 2 = 900 ms, Level 3 = 800 ms, ...
             const level = this.getLevel();
             this.dropInterval = Math.max(1000 - (level - 1) * 100, 50); 
-            // This ensures it doesn't go below 100 ms for extreme levels
         }
 
         isValidMove(matrix, row, col) {
@@ -222,6 +223,7 @@ function launchTetrisGame(playerConfigs) {
         }
 
         placeTetromino() {
+            const placedPositions = [];
             for (let y = 0; y < this.currentTetromino.matrix.length; y++) {
                 for (let x = 0; x < this.currentTetromino.matrix[y].length; x++) {
                     if (this.currentTetromino.matrix[y][x]) {
@@ -229,10 +231,15 @@ function launchTetrisGame(playerConfigs) {
                         const newX = this.currentTetromino.col + x;
                         if (newY >= 0 && newY < this.rows && newX >= 0 && newX < this.cols) {
                             this.playfield[newY][newX] = this.currentTetromino.type;
+                            placedPositions.push({x:newX,y:newY,type:this.currentTetromino.type});
                         }
                     }
                 }
             }
+
+            // Store the last placed piece positions
+            this.lastPlacedPositions = placedPositions;
+
             let lines = 0;
             for (let y = this.rows - 1; y >= 0; ) {
                 if (this.playfield[y].every(value => value > 0)) {
@@ -246,18 +253,14 @@ function launchTetrisGame(playerConfigs) {
 
             if (lines > 0) {
                 this.linesCleared += lines;
-                // Calculate base points
                 let points = this.calculateScore(lines);
-
-                // Apply level-based multiplier
                 const level = this.getLevel();
-                const multiplier = 1 + (level - 1) * 0.1; // starts at 1 for level 1, 1.1 for level 2, etc.
+                const multiplier = 1 + (level - 1) * 0.1; 
                 points = points * multiplier;
 
                 this.score += points;
                 this.scoreElement.textContent = 'Score: ' + this.score;
 
-                // Update drop interval based on level
                 this.updateLevelDisplay();
                 this.updateDropInterval();
             }
@@ -451,6 +454,49 @@ function launchTetrisGame(playerConfigs) {
                 this.stopKeyRepeat('down');
             }
         }
+
+        finalizeLosingBoard() {
+            // Turn all existing placed blocks to grey first
+            for (let y = 0; y < this.rows; y++) {
+                for (let x = 0; x < this.cols; x++) {
+                    if (this.playfield[y][x] > 0) {
+                        this.playfield[y][x] = 8; // grey
+                    }
+                }
+            }
+
+            // Restore the last placed tetromino to its original color
+            for (const pos of this.lastPlacedPositions) {
+                this.playfield[pos.y][pos.x] = pos.type; // restore original type color
+            }
+
+            // Place the losing tetromino on top
+            if (this.losingTetromino) {
+                const tet = this.losingTetromino;
+                for (let y = 0; y < tet.matrix.length; y++) {
+                    for (let x = 0; x < tet.matrix[y].length; x++) {
+                        if (tet.matrix[y][x]) {
+                            const newY = tet.row + y;
+                            const newX = tet.col + x;
+                            if (
+                                newY >= 0 && newY < this.rows &&
+                                newX >= 0 && newX < this.cols
+                            ) {
+                                // If there's an overlap (already colored?), turn it white
+                                if (this.playfield[newY][newX] !== 0) {
+                                    this.playfield[newY][newX] = 9; // white
+                                } else {
+                                    // Empty space, now filled by final block as grey
+                                    this.playfield[newY][newX] = 8; // grey
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            this.draw();
+        }
     }
 
     // Create a main container for all games
@@ -479,6 +525,10 @@ function launchTetrisGame(playerConfigs) {
     // When a player loses
     function playerLost(gameInstance) {
         playersDeadCount++;
+
+        // Finalize losing board appearance
+        gameInstance.finalizeLosingBoard();
+
         if (totalPlayers === 1) {
             // Single-player game: show immediate game over
             showFinalScoreboard();
