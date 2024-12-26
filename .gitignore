@@ -1,2 +1,5 @@
+.idea/
 .env
 .env.*
+.DS_Store
+data/db
