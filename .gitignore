@@ -1,6 +1,8 @@
 data
 .Idea
 .DS_Store
+__pycache__/
+.idea/
 .env
 .env.*
 */*/__pycache__/*
