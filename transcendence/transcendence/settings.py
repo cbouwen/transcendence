@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_bootstrap5',
     'pong',
+    'tetris',
 ]
 
 MIDDLEWARE = [
@@ -129,6 +130,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'pong/static'),
+    os.path.join(BASE_DIR, 'tetris/static'),
 ]
 
 # Default primary key field type
