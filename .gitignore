@@ -1,5 +1,7 @@
-data/db/
+data
 .Idea
 .DS_Store
 .env
 .env.*
+*/*/__pycache__/*
+*/*/__pycache__/*/*
