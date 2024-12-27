@@ -22,4 +22,6 @@ from django.conf.urls.static import static  # Import static§
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('pong/', include('pong.urls')),
+    path('tetris/', include('tetris.urls')),
+
 ]
