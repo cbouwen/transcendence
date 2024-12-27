@@ -1,5 +1,9 @@
 data/db/
 .Idea
 .DS_Store
+__pycache__/
+.idea/
 .env
 .env.*
+.DS_Store
+data/db
