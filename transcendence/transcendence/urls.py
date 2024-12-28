@@ -23,5 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('pong/', include('pong.urls')),
     path('tetris/', include('tetris.urls')),
+    path('index/', include('index.urls')),
 
 ]

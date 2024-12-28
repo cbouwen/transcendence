@@ -1,0 +1,48 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Index</title>
+    <style>
+        canvas {
+            display: block;
+            margin: auto;
+            background: black;
+        }
+    </style>
+</head>
+<body>
+	<!--<div>banaan</div>
+    
+    <script src="{% static 'Pong.js' %}"></script>-->
+
+	<h1>Choose your game...</h1>
+    <button id="button1">Pong</button>
+    <button id="button2">Tetris</button>
+
+	<canvas></canvas>
+
+    <script>
+        // Attach event listeners
+        document.getElementById('button1').addEventListener('click', function() {
+            loadScript("{% static 'Pong.js' %}"); // Load and execute file1.js
+        });
+
+        document.getElementById('button2').addEventListener('click', function() {
+            loadScript("{% static 'tetris.js' %}"); // Load and execute file2.js
+        });
+
+        // Function to dynamically load a JavaScript file
+        function loadScript(fileName) {
+            const script = document.createElement('script');
+            script.src = fileName;
+            script.type = 'text/javascript';
+            document.body.appendChild(script);
+        }
+    </script>
+
+</body>
+</html>
