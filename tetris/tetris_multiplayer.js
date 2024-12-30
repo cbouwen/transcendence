@@ -5,14 +5,14 @@ function launchTetrisGame(playerConfigs) {
     const totalPlayers = playerConfigs.length;
     let playersDeadCount = 0;
     let games = [];
-	let game_id = 0;
+    let game_id = 0;
 
-	function generateGameId() {
-	    const timestamp = Date.now(); // Current time in milliseconds
-	    return `${timestamp}-${counter}`; // Combine timestamp and counter
-	}
+    function generateGameId() {
+        const timestamp = Date.now();
+        return `${timestamp}`
+    }
 
-    // Inject CSS (optional, but included here for completeness)
+    // Inject CSS
     const style = document.createElement('style');
     style.textContent = `
         .game-container {
@@ -21,7 +21,7 @@ function launchTetrisGame(playerConfigs) {
             vertical-align: top;
             font-family: Arial, sans-serif;
         }
-        .score, .level {
+        .score, .level, .lines {
             font-size: 20px;
             margin-top: 10px;
             color: white;
@@ -113,6 +113,12 @@ function launchTetrisGame(playerConfigs) {
             this.scoreElement.textContent = 'Score: ' + this.score;
             this.container.appendChild(this.scoreElement);
 
+            // New: lines cleared display
+            this.linesElement = document.createElement('div');
+            this.linesElement.classList.add('lines');
+            this.linesElement.textContent = 'Lines: ' + this.linesCleared;
+            this.container.appendChild(this.linesElement);
+
             this.levelDisplay = document.createElement('div');
             this.levelDisplay.classList.add('level');
             this.updateLevelDisplay();
@@ -177,7 +183,7 @@ function launchTetrisGame(playerConfigs) {
                 for (let y = 0; y < matrix.length; y++) {
                     for (let x = 0; x < matrix[y].length; x++) {
                         if (matrix[y][x]) {
-							this.currentTetromino = null;
+                            this.currentTetromino = null;
                             const newY = row + y;
                             const newX = col + x;
                             if (newY >= 0 && newY < this.rows && newX >= 0 && newX < this.cols) {
@@ -188,7 +194,7 @@ function launchTetrisGame(playerConfigs) {
                                     // Empty => grey
                                     this.playfield[newY][newX] = 8;
                                 }
-								this.draw();
+                                this.draw();
                             }
                         }
                     }
@@ -257,8 +263,7 @@ function launchTetrisGame(playerConfigs) {
                         const newX = this.currentTetromino.col + x;
                         if (newY >= 0 && newY < this.rows && newX >= 0 && newX < this.cols) {
                             this.playfield[newY][newX] = this.currentTetromino.type;
-                            placedPositions.push({x: newX, y: newY, type:
-								this.currentTetromino.type});
+                            placedPositions.push({x: newX, y: newY, type: this.currentTetromino.type});
                         }
                     }
                 }
@@ -286,11 +291,20 @@ function launchTetrisGame(playerConfigs) {
                 points = points * multiplier;
 
                 this.score += points;
+
+                // Update the displays
                 this.scoreElement.textContent = 'Score: ' + this.score;
+                this.linesElement.textContent = 'Lines: ' + this.linesCleared;
 
                 this.updateLevelDisplay();
                 this.updateDropInterval();
             }
+
+			if (this.getLevel() >= 15) {
+            	this.gameOver = true;
+            	playerLost(this);
+            	return;  // Stop here, no next tetromino
+        	}
 
             // Next tetromino
             this.currentTetromino = this.getNextTetromino();
@@ -306,8 +320,7 @@ function launchTetrisGame(playerConfigs) {
             if (this.dropCounter > this.dropInterval) {
                 this.dropCounter = 0;
                 if (this.currentTetromino && 
-                    this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row + 1,
-						this.currentTetromino.col)) {
+                    this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row + 1, this.currentTetromino.col)) {
                     this.currentTetromino.row++;
                 } else {
                     this.placeTetromino();
@@ -321,8 +334,9 @@ function launchTetrisGame(playerConfigs) {
         }
 
         draw() {
-			if (game_id == 0)
-				game_id = generateGameId();
+            if (game_id == 0) {
+                game_id = generateGameId();
+            }
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
             // Draw placed blocks
@@ -382,8 +396,7 @@ function launchTetrisGame(playerConfigs) {
 
         moveLeft() {
             if (this.currentTetromino && 
-                this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row,
-					this.currentTetromino.col - 1)) {
+                this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row, this.currentTetromino.col - 1)) {
                 this.currentTetromino.col--;
                 this.draw();
             }
@@ -391,8 +404,7 @@ function launchTetrisGame(playerConfigs) {
 
         moveRight() {
             if (this.currentTetromino && 
-                this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row,
-					this.currentTetromino.col + 1)) {
+                this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row, this.currentTetromino.col + 1)) {
                 this.currentTetromino.col++;
                 this.draw();
             }
@@ -400,8 +412,7 @@ function launchTetrisGame(playerConfigs) {
 
         moveDown() {
             if (this.currentTetromino && 
-                this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row + 1,
-					this.currentTetromino.col)) {
+                this.isValidMove(this.currentTetromino.matrix, this.currentTetromino.row + 1, this.currentTetromino.col)) {
                 this.currentTetromino.row++;
                 this.dropCounter = 0;
                 this.draw();
@@ -411,8 +422,7 @@ function launchTetrisGame(playerConfigs) {
         rotatePiece() {
             if (!this.currentTetromino) return;
             const rotatedMatrix = this.rotate(this.currentTetromino.matrix);
-            if (this.isValidMove(rotatedMatrix, this.currentTetromino.row,
-				this.currentTetromino.col)) {
+            if (this.isValidMove(rotatedMatrix, this.currentTetromino.row, this.currentTetromino.col)) {
                 this.currentTetromino.matrix = rotatedMatrix;
                 this.draw();
             }
@@ -568,7 +578,7 @@ function launchTetrisGame(playerConfigs) {
         sortedPlayers.forEach((player, rank) => {
             const entry = document.createElement('div');
             entry.classList.add('scoreboard-entry');
-            entry.textContent = `${rank + 1}. ${player.name}: ${player.score}`;
+            entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
             scoreboardContainer.appendChild(entry);
         });
 
