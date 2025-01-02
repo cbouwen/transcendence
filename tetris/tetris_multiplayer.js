@@ -1,11 +1,14 @@
 function launchTetrisGame(playerConfigs) {
+	let game_id = 0;
+	if (game_id == 0) {
+                game_id = generateGameId();
+    }
     console.log("launchTetrisGame called with:", playerConfigs);
 
     // Global variables to track game status
     const totalPlayers = playerConfigs.length;
     let playersDeadCount = 0;
     let games = [];
-    let game_id = 0;
 
     function generateGameId() {
         const timestamp = Date.now();
@@ -335,9 +338,6 @@ function launchTetrisGame(playerConfigs) {
         }
 
         draw() {
-            if (game_id == 0) {
-                game_id = generateGameId();
-            }
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
             // Draw placed blocks
@@ -564,28 +564,80 @@ function launchTetrisGame(playerConfigs) {
         }
     }
 
-    function showFinalScoreboard() {
-        // Sort players by score
-        const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+	function showFinalScoreboard() {
+	    // Sort players by score
+	    const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
 
-        const scoreboardContainer = document.createElement('div');
-        scoreboardContainer.classList.add('scoreboard-overlay');
+	    const scoreboardContainer = document.createElement('div');
+	    scoreboardContainer.classList.add('scoreboard-overlay');
 
-        const title = document.createElement('div');
-        title.classList.add('scoreboard-title');
-        title.textContent = 'Game Over! Final Scores';
-        scoreboardContainer.appendChild(title);
+	    const title = document.createElement('div');
+	    title.classList.add('scoreboard-title');
+	    title.textContent = 'Game Over! Final Scores';
+	    scoreboardContainer.appendChild(title);
 
-        sortedPlayers.forEach((player, rank) => {
-            const entry = document.createElement('div');
-            entry.classList.add('scoreboard-entry');
-            entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
-            scoreboardContainer.appendChild(entry);
-        });
+	    sortedPlayers.forEach((player, rank) => {
+	        const entry = document.createElement('div');
+	        entry.classList.add('scoreboard-entry');
+	        entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
+	        scoreboardContainer.appendChild(entry);
+	    });
 
-        // Append the scoreboard overlay to body
-        document.body.appendChild(scoreboardContainer);
-    }
+	    // Append the scoreboard overlay to body
+	    document.body.appendChild(scoreboardContainer);
+
+	    // Prepare data to send to backend
+	    const gameData = sortedPlayers.map(player => ({
+			gameid: game_id,
+	        name: player.name,
+	        score: player.score,
+	        lines_cleared: player.linesCleared,
+	        level: player.getLevel(), // Ensure getLevel is accessible or pass level separately
+	    }));
+
+	    // Send data to backend
+	    sendGameDataToBackend(gameData);
+	}
+
+	function sendGameDataToBackend(gameData) {
+    	fetch('/api/save-tetris-scores/', { // Ensure this URL matches your Django endpoint
+    	    method: 'POST',
+    	    headers: {
+    	        'Content-Type': 'application/json',
+    	        'X-CSRFToken': getCookie('csrftoken'), // Handle CSRF token
+    	    },
+    	    body: JSON.stringify({ players: gameData }),
+    	})
+    	.then(response => {
+    	    if (!response.ok) {
+    	        throw new Error('Network response was not ok');
+    	    }
+    	    return response.json();
+    	})
+    	.then(data => {
+    	    console.log('Game data successfully sent to backend:', data);
+    	})
+    	.catch((error) => {
+    	    console.error('Error sending game data:', error);
+    	});
+	}
+
+	// Helper function to get CSRF token from cookies
+	function getCookie(name) {
+    	let cookieValue = null;
+	    if (document.cookie && document.cookie !== '') {
+	        const cookies = document.cookie.split(';');
+	        for (let cookie of cookies) {
+	            cookie = cookie.trim();
+	            // Does this cookie string begin with the name we want?
+	            if (cookie.startsWith(name + '=')) {
+	                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+	                break;
+	            }
+	        }
+	    }
+	    return cookieValue;
+	}
 
     // Global key events for all Tetris games
     document.addEventListener('keydown', function(e) {
