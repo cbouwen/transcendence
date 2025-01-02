@@ -21,7 +21,6 @@ WORKDIR /app
 
 COPY requirements.txt /app/
 RUN pip3 install --no-cache-dir --default-timeout=100 --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
-RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org  psycopg2
 
 EXPOSE 8000
 
