@@ -301,6 +301,7 @@ function launchTetrisGame(playerConfigs) {
             }
 
 			if (this.getLevel() >= 15) {
+				this.currentTetromino = null;
             	this.gameOver = true;
             	playerLost(this);
             	return;  // Stop here, no next tetromino
