@@ -21,7 +21,7 @@ from django.conf.urls.static import static  # Import static§
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('django.contrib.auth.urls')), # more info: https://docs.djangoproject.com/en/5.0/topics/auth/default/#module-django.contrib.auth.views
     path('pong/', include('pong.urls')),
     path('tetris/', include('tetris.urls')),
-
 ]
