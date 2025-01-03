@@ -1,2 +1,9 @@
+data
+.Idea
+.DS_Store
+__pycache__/
+.idea/
 .env
 .env.*
+*/*/__pycache__/*
+*/*/__pycache__/*/*
