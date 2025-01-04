@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'pong',
     'tetris',
+    'accounts'
 ]
 
 MIDDLEWARE = [
@@ -55,7 +56,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'transcendence.urls'
 
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
 
 TEMPLATES = [
     {
