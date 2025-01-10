@@ -30,15 +30,3 @@ def calculate_new_ratings(player1_rating, player2_rating, result):
     new_player2_rating = round(player2_rating + K * (actual2 - expected2))
 
     return new_player1_rating, new_player2_rating
-
-# Example Usage
-player1_rating = 1500
-player2_rating = 1600
-
-# If Player 1 wins:
-new_ratings = calculate_new_ratings(player1_rating, player2_rating, result=1)
-print(f"New Ratings after Player 1 wins: {new_ratings}")
-
-# If Player 2 wins:
-new_ratings = calculate_new_ratings(player1_rating, player2_rating, result=2)
-print(f"New Ratings after Player 2 wins: {new_ratings}")
