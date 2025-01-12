@@ -142,3 +142,6 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "accounts.CustomUser" #as implemented per https://learndjango.com/tutorials/django-custom-user-model
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
