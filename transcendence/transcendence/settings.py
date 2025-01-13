@@ -41,7 +41,17 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'pong',
     'tetris',
+    'chat',
+    'channels',
 ]
+
+# channel layers is for telling django which backend to use
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -73,6 +83,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'transcendence.wsgi.application'
 
+ASGI_APPLICATION = 'transcendence.routing.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

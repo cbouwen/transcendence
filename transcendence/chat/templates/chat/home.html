@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatroom</title>
+    <style>
+        #chat-log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 100%;
+            height: 300px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatroom</h1>
+    <div id="chat-log"></div>
+    <input id="chat-message-input" type="text" size="100">
+    <input id="chat-message-submit" type="button" value="Send">
+
+    <script>
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/chat/');
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const chatLog = document.getElementById('chat-log');
+            chatLog.innerHTML += '<div>' + data.message + '</div>';
+        };
+
+        document.getElementById('chat-message-input').focus();
+        document.getElementById('chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // Enter key
+                document.getElementById('chat-message-submit').click();
+            }
+        };
+
+        document.getElementById('chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.getElementById('chat-message-input');
+            const message = messageInputDom.value;
+            socket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+</body>
+</html>
