@@ -27,4 +27,4 @@ EXPOSE 8000
 
 ENV DJANGO_SETTINGS_MODULE=transcendence.settings
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "transcendence.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "transcendence.wsgi:application"] # what is the point of this statement when it will be overridden by docker-compose.yml ?
