@@ -25,6 +25,6 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')), # more info: https://docs.djangoproject.com/en/5.0/topics/auth/default/#module-django.contrib.auth.views
     path('accounts/', include('django.contrib.auth.urls')), # more info: https://docs.djangoproject.com/en/5.0/topics/auth/default/#module-django.contrib.auth.views
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('pong/', include('pong.urls')),
-    path('tetris/', include('tetris.urls')),
+    path('pong/', include('pong.urls'), name='pong'),
+    path('tetris/', include('tetris.urls'), name='tetris'),
 ]
