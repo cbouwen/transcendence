@@ -19,4 +19,6 @@ urlpatterns = [
     path('1_player_original/', views.one_player_original, name='1_player_original'),
     path('2_player_original/', views.two_player_original, name='2_player_original'),
     path('3_player_original/', views.three_player_original, name='3_player_original'),
+
+    path('api/save-tetris-scores/', views.save_tetris_scores, name='save_tetris_scores'),
 ]
