@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from models import TetrisPlayer
 
 def update_player_ratings(player1_name, player2_name, player1_score, player2_score):
     """

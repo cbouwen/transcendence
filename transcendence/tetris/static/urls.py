@@ -3,14 +3,6 @@ from . import views
 
 app_name = 'tetris'
 
-# views.py
-from django.http import HttpResponse
-
-from django.urls import path
-from . import views
-
-app_name = 'tetris'
-
 urlpatterns = [
     path('1_player/', views.one_player, name='1_player_test'),  # Changed to test version
     path('2_player/', views.two_player, name='2_player_test'),  # Changed to test version
