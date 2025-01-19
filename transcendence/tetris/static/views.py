@@ -7,27 +7,6 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import TetrisScore, TetrisPlayer
 from .calculate_mmr import update_player_ratings
 
-def one_player(request):
-    return render(request, 'tetris/html_1_player_test.html')
-
-def two_player(request):
-    return render(request, 'tetris/html_2_player_test.html')
-
-def three_player(request):
-    return render(request, 'tetris/html_3_player_test.html')
-
-def one_player_original(request):
-    return render(request, 'tetris/1_player.html')
-
-def two_player_original(request):
-    return render(request, 'tetris/2_player.html')
-
-def three_player_original(request):
-    return render(request, 'tetris/3_player.html')
-
-
-# views.py
-
 @csrf_exempt
 def save_tetris_scores(request):
     """
