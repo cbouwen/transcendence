@@ -3,6 +3,9 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import TetrisPlayer, TetrisScore
 from django.contrib.auth import authenticate
+from active_player_manager.py import ActivePlayerManager
+
+active_player_manager = ActivePlayerManager()
 
 def temporary_login(request):
     # Extract username and password from the request
@@ -29,6 +32,9 @@ def temporary_login(request):
                 }
                 for score in scores
             ]
+
+            # Add this player to the "active" players manager
+            active_player_manager.add_player(player)
 
             return JsonResponse({
                 "status": "success",
@@ -67,3 +73,7 @@ def view_player_name(request):
         return HttpResponse(request.user.username)
     else:
         return HttpResponse(status=401)
+
+    import random
+from typing import Optional, Tuple
+from .models import TetrisPlayer
