@@ -1,4 +1,6 @@
 <!-- templates/base.html -->
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 
@@ -8,10 +10,17 @@
 </head>
 
 <body>
+  <nav>
+      <a href="/" onclick="route()">Home</a>
+      <a href="/pong" onclick="route()">Pong</a>
+      <a href="/tetris" onclick="route()">Tetris</a>
+      <a href="/account" onclick="route()">Account</a>
+  </nav>
   <main>
     {% block content %}
     {% endblock %}
   </main>
+    <script src="{% static 'js/router.js' %}"></script>
 </body>
 
 </html>
