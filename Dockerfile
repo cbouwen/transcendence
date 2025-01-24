@@ -21,10 +21,9 @@ WORKDIR /app
 
 COPY requirements.txt /app/
 RUN pip3 install --no-cache-dir --default-timeout=100 --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
-RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org  psycopg2
 
 EXPOSE 8000
 
 ENV DJANGO_SETTINGS_MODULE=transcendence.settings
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "transcendence.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "transcendence.wsgi:application"] # what is the point of this statement when it will be overridden by docker-compose.yml ?
