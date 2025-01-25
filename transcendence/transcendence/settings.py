@@ -84,14 +84,13 @@ WSGI_APPLICATION = 'transcendence.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
+        'NAME': os.getenv("POSTGRES_DB"),
+        'USER': os.getenv("POSTGRES_USER"),
+        'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
         'HOST': 'db',
-        'PORT': '5432',
+        'PORT': os.getenv("POSTGRES_PORT"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -140,3 +139,15 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTHENTICATION_BACKENDS = [
+        'accounts.auth_backend.CustomAuthBAckend',
+]
+
+# 42 API
+FT_OAUTH_CLIENT_ID = os.getenv("FT_OAUTH_CLIENT_ID")
+FT_OAUTH_CLIENT_SECRET = os.getenv("FT_OAUTH_CLIENT_SECRET")
+FT_OAUTH_AUTHORIZE_URL = os.getenv("FT_OAUTH_AUTHORIZE_URL")
+FT_OAUTH_TOKEN_URL = os.getenv("FT_OAUTH_TOKEN_URL")
+FT_OAUTH_USERINFO_URL = os.getenv("FT_OAUTH_USERINFO_URL")
+FT_OAUTH_REDIRECT_URI = os.getenv("FT_OAUTH_REDIRECT_URI")
