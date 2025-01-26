@@ -12,24 +12,12 @@ from django.shortcuts import redirect
 import requests
 import urllib.parse
 
-def LoginView(request):
-    params = {
-        'client_id': settings.FT_OAUTH_CLIENT_ID,
-        'redirect_uri': settings.FT_OAUTH_REDIRECT_URI,
-        'response_type': 'code',
-    }
-    url = f"{settings.FT_OAUTH_AUTHORIZE_URL}?{urllib.parse.urlencode(params)}"
-    return redirect(url)
-
-
-def LoginCallbackView(request):
-    code = request.GET.get('code')
-    return (HttpResponse(code))
-
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request):
         # Get OAuth token from the request data
         ft_api_user_login_code = request.data.get("ft_api_user_login_code")
+        if not ft_api_user_login_code:
+            raise AuthenticationFailed('Please provide ft_api_user_login_code')
 
         request_data = {
             'client_id': settings.FT_OAUTH_CLIENT_ID,
