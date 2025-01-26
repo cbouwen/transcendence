@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
+import requests
 import urllib.parse
 
 def oauth_login(request):
