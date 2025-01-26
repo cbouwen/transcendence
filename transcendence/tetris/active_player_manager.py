@@ -7,6 +7,20 @@ class ActivePlayerManager:
     def __init__(self):
         self.active_players = {}
 
+    @receiver(user_logged_in)
+    def on_player_login(sender, request, user, **kwargs):
+        # Add player to the active pool on login
+        try:
+            player = Player.objects.get(user=user)  # Assuming Player is linked to User
+            player_manager.add_player(player)
+        except Player.DoesNotExist:
+            pass
+
+    @receiver(user_logged_out)
+    def on_player_logout(sender, request, user, **kwargs):
+        # Remove player from the active pool on logout
+        player_manager.remove_player(user.username)
+
     def add_player(self, player):
         """
         Add a player to the active pool,
