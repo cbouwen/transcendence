@@ -19,6 +19,8 @@ from django.urls import include, path
 from django.conf import settings  # Import settings
 from django.conf.urls.static import static  # Import static§
 from django.views.generic.base import TemplateView
+from api.views import LoginCallbackView
+from api.views import LoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +29,7 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('pong/', include('pong.urls'), name='pong'),
     path('tetris/', include('tetris.urls'), name='tetris'),
+    path('api/', include('api.urls')),
+    path('login', LoginView, name='login'),
+    path('login_callback', LoginCallbackView, name='login_callback'),
 ]
