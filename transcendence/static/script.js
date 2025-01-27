@@ -69,7 +69,7 @@ function getLoginCode() {
 	console.log(response.message);
 	response = await apiRequest("/me", 'GET', jwtTokens.access, undefined);
 	console.log(response);
-	const playerName = response.username;
+	const playerName = response.first_name;
 	const playerSpans = document.querySelectorAll('span.player');
 	playerSpans.forEach(span => {
 		span.textContent = playerName;
