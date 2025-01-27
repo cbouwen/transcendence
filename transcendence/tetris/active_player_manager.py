@@ -1,7 +1,7 @@
 import random
 from typing import Optional, Tuple
 from collections import defaultdict
-from .models import TetrisScore, TetrisPlayer
+from .models import TetrisScore
 
 class ActivePlayerManager:
     def __init__(self):
