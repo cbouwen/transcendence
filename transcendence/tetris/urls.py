@@ -6,6 +6,8 @@ app_name = 'tetris'
 urlpatterns = [
     path('', views.tetris_main, name='main'),
 
+    path('tetris/', views.tetris_view, name='tetris'),
+
     path('1_player/', views.one_player, name='1_player_test'),
     path('2_player/', views.two_player, name='2_player_test'),
     path('3_player/', views.three_player, name='3_player_test'),

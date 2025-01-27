@@ -30,6 +30,9 @@ def two_player_original(request):
 def three_player_original(request):
     return render(request, 'three_player_original.html')
 
+def tetris_view(request):
+    return render(request, 'tetris/tetris.html')
+
 @csrf_exempt
 def save_tetris_scores(request):
     """

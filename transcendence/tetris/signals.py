@@ -4,7 +4,7 @@ from collections import defaultdict
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 from .models import TetrisScore, TetrisPlayer
-from .managers import active_player_manager  # Ensure correct import path
+from .active_player_manager import active_player_manager  # Ensure correct import path
 
 @receiver(user_logged_in)
 def on_player_login(sender, request, user, **kwargs):

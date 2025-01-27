@@ -1,6 +1,5 @@
-# models.py
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings  # Import settings for AUTH_USER_MODEL
 
 class TetrisScore(models.Model):
     """
@@ -21,7 +20,7 @@ class TetrisPlayer(models.Model):
     """
     Model to store Tetris player data.
     """
-    user = models.OneToOneField(User, on_delete=models.CASCADE)  # Link to User
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
     name = models.CharField(max_length=100)
     matchmaking_rating = models.IntegerField()
 
