@@ -7,10 +7,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 from django.conf import settings
-from django.http import HttpResponse
 from django.shortcuts import redirect
 import requests
 import urllib.parse
+from .serializers import UserSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request):
@@ -59,3 +59,12 @@ class Test(APIView):
     def get(self, request):
         content = {'message': 'Test completed! You have successfully authenticated yourself and received access this super secret message'}
         return Response(content)
+
+class Me(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data)

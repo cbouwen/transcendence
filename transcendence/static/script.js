@@ -62,6 +62,16 @@ function getLoginCode() {
 	if (!jwtTokens || !jwtTokens.access) {
 		return;
 	}
-	const response = await apiRequest("/test", 'GET', jwtTokens.access, undefined);
+	console.log(jwtTokens.access);
+
+	let response;
+	response = await apiRequest("/test", 'GET', jwtTokens.access, undefined);
 	console.log(response.message);
+	response = await apiRequest("/me", 'GET', jwtTokens.access, undefined);
+	console.log(response);
+	const playerName = response.username;
+	const playerSpans = document.querySelectorAll('span.player');
+	playerSpans.forEach(span => {
+		span.textContent = playerName;
+	});
 })();
