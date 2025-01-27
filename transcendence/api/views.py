@@ -52,10 +52,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         })
 
 
-class Home(APIView):
+class Test(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        content = {'message': 'Hello, World!'}
+        content = {'message': 'Test completed! You have successfully authenticated yourself and received access this super secret message'}
         return Response(content)
