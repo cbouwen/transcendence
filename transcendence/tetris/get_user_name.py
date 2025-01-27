@@ -5,8 +5,6 @@ from .models import TetrisPlayer, TetrisScore
 from django.contrib.auth import authenticate
 from active_player_manager.py import ActivePlayerManager
 
-active_player_manager = ActivePlayerManager()
-
 def temporary_login(request):
     # Extract username and password from the request
     username = request.POST.get('username')

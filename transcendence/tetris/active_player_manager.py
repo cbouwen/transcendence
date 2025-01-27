@@ -1,31 +1,13 @@
 import random
 from typing import Optional, Tuple
 from collections import defaultdict
-from .models import TetrisScore
+from .models import TetrisScore, TetrisPlayer
 
 class ActivePlayerManager:
     def __init__(self):
         self.active_players = {}
 
-    @receiver(user_logged_in)
-    def on_player_login(sender, request, user, **kwargs):
-        # Add player to the active pool on login
-        try:
-            player = Player.objects.get(user=user)  # Assuming Player is linked to User
-            player_manager.add_player(player)
-        except Player.DoesNotExist:
-            pass
-
-    @receiver(user_logged_out)
-    def on_player_logout(sender, request, user, **kwargs):
-        # Remove player from the active pool on logout
-        player_manager.remove_player(user.username)
-
     def add_player(self, player):
-        """
-        Add a player to the active pool,
-        automatically fetching their past match history from the database.
-        """
         match_history = self.fetch_match_history_from_db(player.name)
         self.active_players[player.name] = {
             "player": player,
@@ -40,9 +22,6 @@ class ActivePlayerManager:
         self.active_players.clear()
 
     def fetch_match_history_from_db(self, player_name: str) -> dict:
-        """
-        Queries TetrisScore to find how many times 'player_name' has faced each other player.
-        """
         player_gameids = TetrisScore.objects.filter(name=player_name).values_list('gameid', flat=True)
         times_matched_with = defaultdict(int)
 
@@ -55,10 +34,6 @@ class ActivePlayerManager:
         return dict(times_matched_with)
 
     def update_match_history(self, p1_name: str, p2_name: str):
-        """
-        Increment the 'times_matched_with' counters for the two players that just got matched.
-        (Optionally, also save the match to the DB.)
-        """
         if p1_name in self.active_players:
             p1_data = self.active_players[p1_name]
             p1_data["times_matched_with"][p2_name] = (
@@ -75,12 +50,7 @@ class ActivePlayerManager:
         # self.save_new_match_to_db(p1_name, p2_name)
 
     def refresh_all_players_match_histories(self):
-        """
-        After one or more matches have been added to the database,
-        refresh EVERY active player's match history so it matches the latest DB state.
-        """
         for player_name in self.active_players:
-            # Re-fetch from the DB and update our in-memory dictionary
             new_history = self.fetch_match_history_from_db(player_name)
             self.active_players[player_name]["times_matched_with"] = new_history
 
@@ -112,3 +82,6 @@ class ActivePlayerManager:
 
         best_pair = max(possible_pairs, key=lambda x: x[2])
         return best_pair[0], best_pair[1]
+
+# Instantiate the global active player manager
+active_player_manager = ActivePlayerManager()
