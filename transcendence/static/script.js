@@ -52,12 +52,16 @@ function getLoginCode() {
 	}
 };
 
+// all of our code is wrapped in async because we want to be able to use `await`
 (async () => {
+	// read the URL parameter called `code` that intra gave to us, or redirect to intra if we don't have one yet
 	const code = getLoginCode();
+	// stop execution to wait for the redirect to intra
 	if (!code) {
 		return;
 	}
 
+	// obtain a refresh and an access JWT token using the `code` value we just obtained
 	const jwtTokens = await login(code);
 	if (!jwtTokens || !jwtTokens.access) {
 		return;

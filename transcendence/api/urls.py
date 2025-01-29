@@ -9,6 +9,6 @@ from .views import Me
 urlpatterns = [
     path('token', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
-    path('test', Test.as_view()),
-    path('me', Me.as_view()),
+    path('test', Test.as_view(), name='test'),
+    path('me', Me.as_view(), name='me'),
 ]
