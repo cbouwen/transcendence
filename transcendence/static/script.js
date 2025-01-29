@@ -52,6 +52,13 @@ function getLoginCode() {
 	}
 };
 
+function replace(query, newContent) {
+	const nodes = document.querySelectorAll(query);
+	nodes.forEach(node => {
+		node.textContent = newContent;
+	});
+};
+
 // all of our code is wrapped in async because we want to be able to use `await`
 (async () => {
 	// read the URL parameter called `code` that intra gave to us, or redirect to intra if we don't have one yet
@@ -68,14 +75,10 @@ function getLoginCode() {
 	}
 	console.log(jwtTokens.access);
 
-	let response;
-	response = await apiRequest("/test", 'GET', jwtTokens.access, undefined);
-	console.log(response.message);
-	response = await apiRequest("/me", 'GET', jwtTokens.access, undefined);
+	// get information about currently logged in user
+	const response = await apiRequest("/me", 'GET', jwtTokens.access, undefined);
 	console.log(response);
-	const playerName = response.first_name;
-	const playerSpans = document.querySelectorAll('span.player');
-	playerSpans.forEach(span => {
-		span.textContent = playerName;
-	});
+
+	// replace placeholder values with the first name of the user
+	replace('span.player', response.first_name);
 })();
