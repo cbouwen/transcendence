@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-Player Tetris SPA</title>
+  <!-- Make sure your tetris_multiplayer.js is loaded -->
+  <script src="tetris_multiplayer.js" defer></script>
+  <style>
+    /* Simple styling so we can hide/show sections */
+    #gameContainer { display: none; }
+  </style>
+</head>
+<body>
+  <!-- Setup Form for entering player names -->
+  <div id="gameSetup">
+    <h2>Enter Player Names</h2>
+    <p>(You must enter at least one name; the other two are optional)</p>
+    <input type="text" id="player1" placeholder="Player 1 Name">
+    <br>
+    <input type="text" id="player2" placeholder="Player 2 Name (optional)">
+    <br>
+    <input type="text" id="player3" placeholder="Player 3 Name (optional)">
+    <br>
+    <button id="startGame">Start Game</button>
+  </div>
+
+  <!-- The game area (could be a canvas or div where your game renders) -->
+  <div id="gameContainer">
+    <!-- Game content rendered by tetris_multiplayer.js -->
+  </div>
+
+  <script>
+    // A simple function to detect keyboard layout.
+    // For example, if the browser language starts with 'fr', we assume an AZERTY layout.
+    function detectKeyboardLayout() {
+      if (navigator.language && navigator.language.startsWith('fr')) {
+        return 'azerty';
+      }
+      return 'qwerty';
+    }
+
+    // Define the default key mappings for each layout.
+    // You can adjust these based on what makes sense for your game.
+    const controlsMapping = {
+      qwerty: {
+        player1: { left: 'a', right: 'd', down: 's', rotate: 'w' },
+        player2: { left: 'j', right: 'l', down: 'k', rotate: 'i' },
+        player3: { left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', rotate: 'ArrowUp' }
+      },
+      azerty: {
+        player1: { left: 'q', right: 'd', down: 's', rotate: 'z' },
+        player2: { left: 'j', right: 'l', down: 'k', rotate: 'i' },
+        player3: { left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', rotate: 'ArrowUp' }
+      }
+    };
+
+    // When the "Start Game" button is clicked:
+    document.getElementById('startGame').addEventListener('click', function() {
+      // Collect entered names, trimming extra whitespace.
+      const names = [];
+      const p1 = document.getElementById('player1').value.trim();
+      const p2 = document.getElementById('player2').value.trim();
+      const p3 = document.getElementById('player3').value.trim();
+
+      if (p1) names.push(p1);
+      if (p2) names.push(p2);
+      if (p3) names.push(p3);
+
+      if (names.length === 0) {
+        alert('Please enter at least one player name.');
+        return;
+      }
+
+      // Detect the keyboard layout.
+      const layout = detectKeyboardLayout();
+
+      // Build the player configuration array.
+      // Here we assign key mappings by order: first entered uses player1 mapping, etc.
+      const playerConfigs = names.map((name, index) => {
+        let key;
+        if (index === 0) key = 'player1';
+        else if (index === 1) key = 'player2';
+        else key = 'player3';
+        return {
+          name: name,
+          controls: controlsMapping[layout][key]
+        };
+      });
+
+      // Optionally, hide the setup form and show the game container.
+      document.getElementById('gameSetup').style.display = 'none';
+      document.getElementById('gameContainer').style.display = 'block';
+
+      // Now launch your Tetris game with the player configurations.
+      launchTetrisGame(playerConfigs);
+    });
+  </script>
+</body>
+</html>
