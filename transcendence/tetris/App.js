@@ -82,4 +82,140 @@ function App() {
   );
 }
 
+// This file is the SPA entry point. It provides:
+// 1. A simple player configuration form.
+// 2. Detection of keyboard layout (azerty vs. qwerty).
+// 3. Initialization of the tetris_multiplayer game.
+
+document.addEventListener("DOMContentLoaded", () => {
+  const playersDiv = document.getElementById("players");
+  const addPlayerButton = document.getElementById("addPlayer");
+  const playerForm = document.getElementById("playerForm");
+
+  // A simple default control mapping for qwerty.
+  const defaultControls = {
+    left: 'ArrowLeft',
+    right: 'ArrowRight',
+    down: 'ArrowDown',
+    rotate: 'ArrowUp'
+  };
+
+  // Alternative control mapping for AZERTY.
+  const azertyControls = {
+    left: 'q',       // On AZERTY, Q is in the position of A on QWERTY keyboards.
+    right: 'd',
+    down: 's',
+    rotate: 'z'      // Z is often used for rotate on an AZERTY layout.
+  };
+
+  // Detect keyboard layout based on navigator.language.
+  // (This is just a heuristic; in a robust solution, you might detect differently or let the user choose.)
+  function detectKeyboardLayout() {
+    // If the browser language is French then assume AZERTY.
+    if (navigator.language && navigator.language.startsWith("fr")) {
+      return "azerty";
+    }
+    return "qwerty";
+  }
+
+  const currentLayout = detectKeyboardLayout();
+  console.log("Detected keyboard layout:", currentLayout);
+
+  // Return the default controls based on the detected layout.
+  function getDefaultControls() {
+    return currentLayout === "azerty" ? azertyControls : defaultControls;
+  }
+
+  // Function to add a new player config input block.
+  let playerCount = 0;
+  function addPlayerInput(name = "", controls = getDefaultControls()) {
+    playerCount++;
+    const playerDiv = document.createElement("div");
+    playerDiv.className = "player-config";
+    playerDiv.dataset.playerId = playerCount;
+    playerDiv.innerHTML = `
+      <h3>Player ${playerCount}</h3>
+      <label>
+        Name:
+        <input type="text" name="playerName" value="${name || `Player ${playerCount}`}" required>
+      </label>
+      <fieldset>
+        <legend>Controls</legend>
+        <label>
+          Left:
+          <input type="text" name="leftKey" value="${controls.left}" required>
+        </label>
+        <label>
+          Right:
+          <input type="text" name="rightKey" value="${controls.right}" required>
+        </label>
+        <label>
+          Down:
+          <input type="text" name="downKey" value="${controls.down}" required>
+        </label>
+        <label>
+          Rotate:
+          <input type="text" name="rotateKey" value="${controls.rotate}" required>
+        </label>
+      </fieldset>
+      <hr>
+    `;
+    playersDiv.appendChild(playerDiv);
+  }
+
+  // Initially add one player configuration.
+  addPlayerInput();
+
+  addPlayerButton.addEventListener("click", () => {
+    addPlayerInput();
+  });
+
+  // On form submit, build the configuration and launch the game.
+  playerForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    // Gather configurations from all player-config divs.
+    const playerConfigs = [];
+    document.querySelectorAll(".player-config").forEach(div => {
+      const name = div.querySelector("input[name='playerName']").value;
+      const controls = {
+        left: div.querySelector("input[name='leftKey']").value,
+        right: div.querySelector("input[name='rightKey']").value,
+        down: div.querySelector("input[name='downKey']").value,
+        rotate: div.querySelector("input[name='rotateKey']").value
+      };
+
+      playerConfigs.push({ name, controls });
+    });
+
+    // Hide the config form and show the game container.
+    document.getElementById("configForm").style.display = "none";
+    document.getElementById("gameContainer").style.display = "block";
+
+    // Pass the player configurations to the multiplayer Tetris game.
+    launchTetrisGame(playerConfigs);
+  });
+});
+
+/**
+ * A stub function representing the multiplayer Tetris game initialization.
+ * In your actual application, this function should be defined in your tetris_multiplayer.js.
+ */
+function launchTetrisGame(playerConfigs) {
+  console.log("Launching Tetris Game with configuration:");
+  console.log(playerConfigs);
+
+  // Here you would initialize your game. For example:
+  // const canvas = document.getElementById('tetrisCanvas');
+  // const game = new TetrisGame(canvas, playerConfigs);
+  // game.start();
+
+  // For demo purposes, we simply display a message.
+  const canvas = document.getElementById('tetrisCanvas');
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.font = "16px sans-serif";
+  context.fillText("Game started with " + playerConfigs.length + " player(s).", 10, 30);
+}
+
 export default App;
