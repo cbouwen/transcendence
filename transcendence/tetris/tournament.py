@@ -124,21 +124,6 @@ class Tournament:
                 print(winners)
                 self.generate_round(winners)
 
-    def print_current_round(self):
-        """
-        Print the bracket for the current round.
-        """
-        print(f"Round {self.current_round_index + 1} Bracket:")
-        for match in self.rounds[self.current_round_index]:
-            if match["player2"] is None:
-                # Bye match – only one player.
-                print(f"  {match['player1']} gets a bye (auto-advances).")
-            else:
-                result = f"  {match['player1']} vs {match['player2']}"
-                if match["winner"]:
-                    result += f"  -> Winner: {match['winner']}"
-                print(result)
-
     def get_current_round_matches(self):
         """
         Returns the current round bracket as a list of strings, where each string represents
@@ -158,3 +143,40 @@ class Tournament:
                     match_str += f" -> Winner: {match['winner']}"
             round_bracket.append(match_str)
         return round_bracket
+
+    def get_current_match(self):
+        """
+        Returns the next (unplayed) match in the current round as a tuple of two strings:
+        (player1, player2). This does not include bye matches (which are auto-advanced).
+        If all matches have been played or if no regular match exists, returns None.
+        """
+        if self.current_round_index < 0 or self.current_round_index >= len(self.rounds):
+            return None
+
+        for match in self.rounds[self.current_round_index]:
+            if match["player2"] is not None and match["winner"] is None:
+                return (match["player1"], match["player2"])
+        return None
+
+    def get_current_round_matches_info(self):
+        """
+        Returns detailed match information for the current round as a list of dictionaries.
+        Each dictionary contains:
+           - "player1": str
+           - "player2": str or None
+           - "winner": str or None
+           - "played": bool (True if the match has been played or is a bye, else False)
+        """
+        if self.current_round_index < 0 or self.current_round_index >= len(self.rounds):
+            return []
+
+        matches_info = []
+        for match in self.rounds[self.current_round_index]:
+            info = {
+                "player1": match["player1"],
+                "player2": match["player2"],
+                "winner": match["winner"],
+                "played": (match["winner"] is not None)
+            }
+            matches_info.append(info)
+        return matches_info
