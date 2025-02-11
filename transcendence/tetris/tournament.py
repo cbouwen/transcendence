@@ -12,43 +12,61 @@ class Tournament:
         self.rounds = []          # List of rounds. Each round is a list of matches.
         self.current_round_index = -1  # Index for current round (starts at 0 once started)
 
-    def add_player(self, player_name: str):
+    def add_player(self, player_name: str) -> dict:
         """
-        Add a player by name to the tournament. 
+        Add a player by name to the tournament.
         Only allowed before the tournament starts.
+        Returns a dict with success status and message.
         """
         if self.started:
-            print("Tournament already started – cannot add new players.")
-            return
+            return {
+                "success": False,
+                "message": "Tournament already started – cannot add new players."
+            }
         if player_name in self.players:
-            print(f"Player '{player_name}' is already registered.")
-            return
+            return {
+                "success": False,
+                "message": f"Player '{player_name}' is already registered."
+            }
         self.players.append(player_name)
-        print(f"Player '{player_name}' added.")
+        return {
+            "success": True,
+            "message": f"Player '{player_name}' added."
+        }
 
-    def start_tournament(self):
+    def start_tournament(self) -> dict:
         """
         Starts the tournament by shuffling players and creating the first round bracket.
+        Returns a dict with success status, a message, and (if successful) data about the tournament.
         """
         if self.started:
-            print("Tournament already started.")
-            return
+            return {
+                "success": False,
+                "message": "Tournament already started."
+            }
         if len(self.players) < 2:
-            print("Not enough players to start a tournament (need at least 2).")
-            return
+            return {
+                "success": False,
+                "message": "Not enough players to start a tournament (need at least 2)."
+            }
 
         self.started = True
-        # Optionally shuffle the players for bracket randomness
         random.shuffle(self.players)
-        print("Tournament started!")
-        print("Players (shuffled):", self.players)
-
         # Create the first round with all the registered players.
-        self.generate_round(self.players)
+        gen_round_result = self.generate_round(self.players)
+        return {
+            "success": True,
+            "message": "Tournament started!",
+            "data": {
+                "players": self.players,
+                "round": gen_round_result.get("data", None)
+            }
+        }
 
-    def generate_round(self, players_list):
+    def generate_round(self, players_list: list) -> dict:
         """
         Given a list of players, create match pairings for the round.
+        Returns a dict with success status, a message, and the match data.
         If the number of players is odd, the last player gets a bye (auto-advances).
         Each match is represented as a dictionary:
           {"player1": <name>, "player2": <name or None>, "winner": <None or name>}
@@ -69,32 +87,40 @@ class Tournament:
 
         self.rounds.append(round_matches)
         self.current_round_index = len(self.rounds) - 1
-        print("\n--- New Round Generated ---")
-        self.print_current_round()
 
-        # If only one player remains after byes, the tournament is over.
+        # If only one player remains, the tournament is over.
         if len(players_list) == 1:
-            print("\nTournament Champion:", players_list[0])
-            self.started = False  # Optionally mark tournament as ended.
+            self.started = False
+            return {
+                "success": True,
+                "message": "Tournament Champion determined.",
+                "data": players_list[0]
+            }
+        else:
+            return {
+                "success": True,
+                "message": "New round generated.",
+                "data": self.get_current_round_matches_info()
+            }
 
-    def update_match(self, winner: str, loser: str):
+    def update_match(self, winner: str, loser: str) -> dict:
         """
         Update the current round by marking a match result.
-        The first parameter (winner) should be the winning player's name,
-        and the second (loser) should be the losing player's name.
-        After each update, the code checks if the round is complete
-        and, if so, generates the next round.
+        After each update, if the round is complete, generates the next round.
+        Returns a dict with success status, message, and (if applicable) match data.
         """
         if not self.started:
-            print("Tournament hasn't started yet.")
-            return
+            return {
+                "success": False,
+                "message": "Tournament hasn't started yet."
+            }
 
         current_round = self.rounds[self.current_round_index]
         match_found = False
 
         # Search for the match in the current round where both players are present.
         for match in current_round:
-            # Skip if this match already has a recorded winner.
+            # Skip if this match already has a recorded winner (for regular matches).
             if match["winner"] is not None and match["player2"] is not None:
                 continue
 
@@ -103,13 +129,14 @@ class Tournament:
                 players_in_match = {match["player1"], match["player2"]}
                 if {winner, loser} == players_in_match:
                     match["winner"] = winner
-                    print(f"Match result updated: '{winner}' defeated '{loser}'.")
                     match_found = True
                     break
 
         if not match_found:
-            print("Match not found or already updated in the current round.")
-            return
+            return {
+                "success": False,
+                "message": "Match not found or already updated in the current round."
+            }
 
         # Check if the current round is complete.
         if all(match["winner"] is not None for match in current_round):
@@ -117,19 +144,31 @@ class Tournament:
             winners = [match["winner"] for match in current_round]
             # If only one winner remains, we have a champion.
             if len(winners) == 1:
-                print("\nTournament Champion:", winners[0])
-                self.started = False  # Tournament ends.
+                self.started = False
+                return {
+                    "success": True,
+                    "message": "Tournament Champion determined.",
+                    "data": winners[0]
+                }
             else:
-                print("\nRound complete. Advancing the following winners to the next round:")
-                print(winners)
-                self.generate_round(winners)
+                gen_round_result = self.generate_round(winners)
+                return {
+                    "success": True,
+                    "message": "Round complete. Advancing winners to the next round.",
+                    "data": gen_round_result.get("data", None)
+                }
 
-    def get_current_round_matches(self):
+        return {
+            "success": True,
+            "message": f"Match result updated: '{winner}' defeated '{loser}'.",
+            "data": self.get_current_round_matches_info()
+        }
+
+    def get_current_round_matches(self) -> list:
         """
         Returns the current round bracket as a list of strings, where each string represents
         the two players in a match. For a bye match, it indicates that the player auto-advances.
         """
-        # Ensure we have a valid current round
         if self.current_round_index < 0 or self.current_round_index >= len(self.rounds):
             return []
         round_bracket = []
@@ -147,7 +186,7 @@ class Tournament:
     def get_current_match(self):
         """
         Returns the next (unplayed) match in the current round as a tuple of two strings:
-        (player1, player2). This does not include bye matches (which are auto-advanced).
+        (player1, player2). This does not include bye matches.
         If all matches have been played or if no regular match exists, returns None.
         """
         if self.current_round_index < 0 or self.current_round_index >= len(self.rounds):
@@ -158,7 +197,7 @@ class Tournament:
                 return (match["player1"], match["player2"])
         return None
 
-    def get_current_round_matches_info(self):
+    def get_current_round_matches_info(self) -> list:
         """
         Returns detailed match information for the current round as a list of dictionaries.
         Each dictionary contains:
