@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multi-Player Tetris</title>
+    <script src="tetris_multiplayer.js" defer></script>
+</head>
+<body>
+    <script>
+        const playerConfigs = [
+			 {
+                name: "Bob",
+                controls: {
+                    left: 'a',
+                    right: 'd',
+                    down: 's',
+                    rotate: 'w'
+                }
+            },
+            {
+                name: "Alice",
+                controls: {
+                    left: 'ArrowLeft',
+                    right: 'ArrowRight',
+                    down: 'ArrowDown',
+                    rotate: 'ArrowUp'
+                }
+            }
+
+        ];
+
+        window.onload = function() {
+            launchTetrisGame(playerConfigs);
+        };
+    </script>
+</body>
+</html>
