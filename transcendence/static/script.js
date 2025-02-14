@@ -12,8 +12,12 @@ async function apiRequest(endpoint, method, jwtToken, body) {
 		},
 		body: JSON.stringify(body)
 	};
+	console.log("Sending request...");
+	console.log(request);
 	const response = await fetch(url, request);
 	if (!response.ok) {
+		console.error("Unexpected response");
+		console.error(response);
 		return undefined;
 	}
 	const responseData = response.json();
@@ -22,9 +26,9 @@ async function apiRequest(endpoint, method, jwtToken, body) {
 
 async function login(code) {
 	try {
-		const response = await apiRequest("/token", 'POST', 'kak', {ft_api_user_login_code: code});
+		const response = await apiRequest("/token", 'POST', undefined, {ft_api_user_login_code: code});
 		if (!response) {
-			redirectToIntra();
+			console.error("Couldn't login using code");
 			return;
 		}
 
@@ -36,7 +40,7 @@ async function login(code) {
 };
 
 function redirectToIntra() {
-	console.log("Authentication failed, redirecting to intra login page to try again");
+	console.log("Redirecting to intra login page to retreive code...");
 	window.location.replace(intraLoginUrl);
 };
 
@@ -47,7 +51,7 @@ function getLoginCode() {
 	if (code) {
 		return code;
 	} else {
-		redirectToIntra();
+		console.log("Couldn't read the the `code` URL parameter attribute...");
 		return undefined;
 	}
 };
@@ -64,7 +68,8 @@ function replace(query, newContent) {
 	// read the URL parameter called `code` that intra gave to us, or redirect to intra if we don't have one yet
 	const code = getLoginCode();
 	// stop execution to wait for the redirect to intra
-	if (!code) {
+	if (code == undefined) {
+		redirectToIntra();
 		return;
 	}
 
