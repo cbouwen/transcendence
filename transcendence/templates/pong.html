@@ -1,0 +1,21 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pong Game (yay!)</title>
+    <style>
+        canvas {
+            display: block;
+            margin: auto;
+            background: black;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script src="{% static 'Pong.js' %}"></script>
+</body>
+</html>

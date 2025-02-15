@@ -24,9 +24,7 @@ from accounts.views import LoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('pong/', include('pong.urls'), name='pong'),
-    path('tetris/', include('tetris.urls'), name='tetris'),
     path('api/', include('api.urls')),
-    path('login', LoginView, name='login'),
+    path('', TemplateView.as_view(template_name='index.html'), name='index'),
+    path('<path>', TemplateView.as_view(template_name='index.html'), name='index'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

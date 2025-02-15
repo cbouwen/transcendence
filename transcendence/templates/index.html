@@ -1,0 +1,36 @@
+<!-- templates/base.html -->
+
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Together Transcendence <3{% endblock %}</title>
+</head>
+
+<body>
+  <nav>
+    <h1> Navigation </h1>
+    <ul>
+        <li><a href="/pong" data-link>Pong</a></li>
+      <li><a href="/tetris" data-link>Tetris</a></li>
+      <li><a href="/chat" data-link>Chat</a></li>
+      <li><a href="/account" data-link>Account</a></li>
+    </ul>
+  </nav>
+  <main>
+    <div class="view" id="pong">
+      {% include 'pong.html' %}
+    </div>
+    <div class="view" id="tetris">
+      {% include 'tetris.html' %}
+    </div>
+
+  </main>
+  <script src="{% static 'script.js' %}"></script>
+</body>
+
+</html>
+

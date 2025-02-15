@@ -2,17 +2,34 @@ const urlRoot = "http://localhost:8000";
 const apiPath = "/api";
 const intraLoginUrl = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-c7b90fdbd60eb0dd8a054b64228d8bc2fe132bbf8e1acffb34dff74a314d8f74&redirect_uri=http%3A%2F%2Flocalhost%3A8000&response_type=code";
 
-async function apiRequest(endpoint, method, jwtToken, body) {
+function hideAllViews() {
+	let views = document.getElementByClassName("view");
+	views.forEach(view => view.style.display = 'none');
+};
+
+function changeView(id) {
+	hideAllViews();
+	let view = document.getElementById(id);
+	view.style.display = 'block';
+};
+
+async function apiRequest(endpoint, method, jwtTokens, body) {
 	const url = urlRoot + apiPath + endpoint;
+
+	let headers = {
+		'Content-Type': 'application/json',
+	};
+	if (jwtTokens && jwtTokens.access) {
+		headers['Authorization'] = 'Bearer ' + jwtTokens.access
+	}
+
 	const request = {
 		method: method,
-		headers: {
-			'Authorization': 'Bearer ' + jwtToken,
-			'Content-Type': 'application/json',
-		},
+		headers: headers,
 		body: JSON.stringify(body)
 	};
-	console.log("Sending request...");
+
+	console.log("Sending the following request:");
 	console.log(request);
 	const response = await fetch(url, request);
 	if (!response.ok) {
@@ -44,15 +61,17 @@ function redirectToIntra() {
 	window.location.replace(intraLoginUrl);
 };
 
-function getLoginCode() {
+function extractLoginCodeFromURL() {
 	const urlParams = new URLSearchParams(window.location.search);
 	const code = urlParams.get('code');
 
 	if (code) {
+		urlParams.delete('code');
+		const newUrl = window.location.pathname + '?' + urlParams.toString();
+		window.history.replaceState({}, document.title, newUrl.endsWith('?') ? newUrl.slice(0, -1) : newUrl);
 		return code;
 	} else {
-		console.log("Couldn't read the the `code` URL parameter attribute...");
-		return undefined;
+		throw "Couldn't read the the `code` URL parameter attribute...";
 	}
 };
 
@@ -65,25 +84,15 @@ function replace(query, newContent) {
 
 // all of our code is wrapped in async because we want to be able to use `await`
 (async () => {
-	// read the URL parameter called `code` that intra gave to us, or redirect to intra if we don't have one yet
-	const code = getLoginCode();
-	// stop execution to wait for the redirect to intra
-	if (code == undefined) {
+	let code;
+
+	try {
+		code = extractLoginCodeFromURL();
+	} catch (exception) {
+		console.log(exception);
 		redirectToIntra();
-		return;
+		return ;
 	}
-
-	// obtain a refresh and an access JWT token using the `code` value we just obtained
-	const jwtTokens = await login(code);
-	if (!jwtTokens || !jwtTokens.access) {
-		return;
-	}
-	console.log(jwtTokens.access);
-
-	// get information about currently logged in user
-	const response = await apiRequest("/me", 'GET', jwtTokens.access, undefined);
-	console.log(response);
-
-	// replace placeholder values with the first name of the user
-	replace('span.player', response.first_name);
+	const JWTs = await login(code);
+	console.log(JWTs.access);
 })();
