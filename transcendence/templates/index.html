@@ -1,13 +1,9 @@
-<!-- templates/base.html -->
-
-{% load static %}
-
 <!DOCTYPE html>
 <html>
 
 <head>
   <meta charset="utf-8">
-  <title>{% block title %}Together Transcendence <3{% endblock %}</title>
+  <title>Together Transcendence <3</title>
 </head>
 
 <body>
@@ -20,17 +16,9 @@
       <li><a href="/account" data-link>Account</a></li>
     </ul>
   </nav>
-  <main>
-    <div class="view" id="pong">
-      {% include 'pong.html' %}
-    </div>
-    <div class="view" id="tetris">
-      {% include 'tetris.html' %}
-    </div>
-
+  <script src="/static/script.js"></script>
+  <main id="content">
   </main>
-  <script src="{% static 'script.js' %}"></script>
 </body>
 
 </html>
-

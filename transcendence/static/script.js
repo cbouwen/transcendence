@@ -1,17 +1,7 @@
 const urlRoot = "http://localhost:8000";
 const apiPath = "/api";
+const staticDir = "/static";
 const intraLoginUrl = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-c7b90fdbd60eb0dd8a054b64228d8bc2fe132bbf8e1acffb34dff74a314d8f74&redirect_uri=http%3A%2F%2Flocalhost%3A8000&response_type=code";
-
-function hideAllViews() {
-	let views = document.getElementByClassName("view");
-	views.forEach(view => view.style.display = 'none');
-};
-
-function changeView(id) {
-	hideAllViews();
-	let view = document.getElementById(id);
-	view.style.display = 'block';
-};
 
 async function apiRequest(endpoint, method, jwtTokens, body) {
 	const url = urlRoot + apiPath + endpoint;
@@ -75,11 +65,48 @@ function extractLoginCodeFromURL() {
 	}
 };
 
-function replace(query, newContent) {
+function queryAndReplace(query, newContent) {
 	const nodes = document.querySelectorAll(query);
 	nodes.forEach(node => {
 		node.textContent = newContent;
 	});
+};
+
+async function viewStaticHTML(filePath) {
+	const response = await fetch(urlRoot + staticDir + filePath);
+	const content = await response.text();
+	document.getElementById("content").innerHTML = content;
+};
+
+function navigateTo(url) {
+	history.pushState(null, null, url);
+	router();
+};
+
+async function router() {
+	const routes = [
+		{ path: "/", view: () => viewStaticHTML("/home.html") },
+		{ path: "/pong", view: () => viewStaticHTML("/pong/site.html") },
+		{ path: "/tetris", view: () => viewStaticHTML("/tetris/1_player.html") },
+	];
+
+	const potentialMatches = routes.map(route => {
+		return {
+			route: route,
+			isMatch: location.pathname === route.path
+		};
+	});
+
+	let match = potentialMatches.find(potentialMatch => potentialMatch.isMatch);
+
+	if (!match) {
+		match = {
+			route: routes[0],
+			isMatch: true
+		}
+	}
+
+	match.route.view();
 };
 
 // all of our code is wrapped in async because we want to be able to use `await`
@@ -96,3 +123,15 @@ function replace(query, newContent) {
 	const JWTs = await login(code);
 	console.log(JWTs.access);
 })();
+
+window.addEventListener("popstate", router);
+
+document.addEventListener("DOMContentLoaded", () => {
+	document.body.addEventListener("click", e => {
+		if (e.target.matches("[data-link]")) {
+			e.preventDefault();
+			navigateTo(e.target.href);
+		}
+	});
+	router();
+});
