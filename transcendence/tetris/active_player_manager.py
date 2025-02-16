@@ -54,21 +54,37 @@ class ActivePlayerManager:
             new_history = self.fetch_match_history_from_db(player_name)
             self.active_players[player_name]["times_matched_with"] = new_history
 
-    def find_next_match(self) -> Optional[Tuple[str, str]]:
+    def find_next_match(self, player_name: Optional[str] = None) -> Optional[Tuple[str, str]]:
         players_list = list(self.active_players.values())
         n = len(players_list)
+        
+        # If there are fewer than 2 players overall, return None immediately.
         if n < 2:
             return None
 
-        possible_pairs = []
-        for i in range(n):
-            for j in range(i + 1, n):
-                p1_data = players_list[i]
-                p2_data = players_list[j]
-                p1 = p1_data["player"]
-                p2 = p2_data["player"]
+        # If a specific player name is provided, try to locate that player in active_players.
+        if player_name:
+            specific_player_data = None
+            for pdata in players_list:
+                if pdata["player"].name == player_name:
+                    specific_player_data = pdata
+                    break
+            
+            # If the player isn't active, raise an error.
+            if specific_player_data is None:
+                raise ValueError(f"Player '{player_name}' is not an active player.")
 
-                times_faced = p1_data["times_matched_with"].get(p2.name, 0)
+            possible_pairs = []
+            # Compare the specific player with every other player.
+            for pdata in players_list:
+                if pdata["player"].name == player_name:
+                    continue  # Skip pairing the player with themselves.
+
+                p1 = specific_player_data["player"]
+                p2 = pdata["player"]
+
+                # Calculate how many times these players have been matched.
+                times_faced = specific_player_data["times_matched_with"].get(p2.name, 0)
                 mmr_diff = abs(p1.matchmaking_rating - p2.matchmaking_rating)
                 base_score = 1.0 / (1.0 + mmr_diff)
                 face_penalty = times_faced * 0.2
@@ -77,11 +93,37 @@ class ActivePlayerManager:
 
                 possible_pairs.append((p1.name, p2.name, score))
 
-        if not possible_pairs:
-            return None
+            if not possible_pairs:
+                return None
 
-        best_pair = max(possible_pairs, key=lambda x: x[2])
-        return best_pair[0], best_pair[1]
+            best_pair = max(possible_pairs, key=lambda x: x[2])
+            return best_pair[0], best_pair[1]
+
+        else:
+            # If no specific player is provided, evaluate all possible pairs.
+            possible_pairs = []
+            for i in range(n):
+                for j in range(i + 1, n):
+                    p1_data = players_list[i]
+                    p2_data = players_list[j]
+                    p1 = p1_data["player"]
+                    p2 = p2_data["player"]
+
+                    times_faced = p1_data["times_matched_with"].get(p2.name, 0)
+                    mmr_diff = abs(p1.matchmaking_rating - p2.matchmaking_rating)
+                    base_score = 1.0 / (1.0 + mmr_diff)
+                    face_penalty = times_faced * 0.2
+                    random_factor = random.uniform(0.0, 0.2)
+                    score = base_score - face_penalty + random_factor
+
+                    possible_pairs.append((p1.name, p2.name, score))
+
+            if not possible_pairs:
+                return None
+
+            best_pair = max(possible_pairs, key=lambda x: x[2])
+            return best_pair[0], best_pair[1]
+
 
 # Instantiate the global active player manager
 active_player_manager = ActivePlayerManager()
