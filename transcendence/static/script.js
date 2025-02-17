@@ -85,9 +85,24 @@ function navigateTo(url) {
 
 async function router() {
 	const routes = [
-		{ path: "/", view: () => viewStaticHTML("/home.html") },
-		{ path: "/pong", view: () => viewStaticHTML("/pong/site.html") },
-		{ path: "/tetris", view: () => viewStaticHTML("/tetris/1_player.html") },
+		{
+			path: "/",
+			view: () => {
+				viewStaticHTML("/home.html");
+			}
+		},
+		{
+			path: "/pong",
+			view: () => {
+				viewStaticHTML("/pong/site.html");
+			}
+		},
+		{
+			path: "/tetris",
+			view: () => {
+				viewStaticHTML("/tetris/1_player.html");
+			}
+		},
 	];
 
 	const potentialMatches = routes.map(route => {
