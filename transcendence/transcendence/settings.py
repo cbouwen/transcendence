@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,7 +42,10 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'pong',
     'tetris',
-    'accounts'
+    'accounts',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'api'
 ]
 
 MIDDLEWARE = [
@@ -126,14 +130,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'pong/static'),
     os.path.join(BASE_DIR, 'tetris/static'),
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -151,3 +157,16 @@ FT_OAUTH_AUTHORIZE_URL = os.getenv("FT_OAUTH_AUTHORIZE_URL")
 FT_OAUTH_TOKEN_URL = os.getenv("FT_OAUTH_TOKEN_URL")
 FT_OAUTH_USERINFO_URL = os.getenv("FT_OAUTH_USERINFO_URL")
 FT_OAUTH_REDIRECT_URI = os.getenv("FT_OAUTH_REDIRECT_URI")
+
+# Our own API
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+}

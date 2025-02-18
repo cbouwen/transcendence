@@ -21,7 +21,13 @@ class CustomAuthBackend(BaseBackend):
             user_data = response.json()
             username = user_data['login']
 
-            user, created = User.objects.get_or_create(username=username)
+            user = User.objects.filter(username=username).first()
+
+            if user is None:
+                first_name = user_data['first_name']
+                last_name = user_data['first_name']
+                email = user_data['email']
+                user = User.objects.create(username=username, first_name=first_name, last_name=last_name, email=email)
             return user
         return None
 
