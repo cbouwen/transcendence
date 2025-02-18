@@ -1,10 +1,19 @@
 function launchTetrisGame(playerConfigs) {
+	let game_id = 0;
+	if (game_id == 0) {
+                game_id = generateGameId();
+    }
     console.log("launchTetrisGame called with:", playerConfigs);
 
     // Global variables to track game status
     const totalPlayers = playerConfigs.length;
     let playersDeadCount = 0;
     let games = [];
+
+    function generateGameId() {
+        const timestamp = Date.now();
+        return `${timestamp}`
+    }
 
     // Inject CSS (optional, but included here for completeness)
     const style = document.createElement('style');
@@ -15,7 +24,7 @@ function launchTetrisGame(playerConfigs) {
             vertical-align: top;
             font-family: Arial, sans-serif;
         }
-        .score, .level {
+        .score, .level, .lines {
             font-size: 20px;
             margin-top: 10px;
             color: white;
@@ -107,6 +116,12 @@ function launchTetrisGame(playerConfigs) {
             this.scoreElement.textContent = 'Score: ' + this.score;
             this.container.appendChild(this.scoreElement);
 
+            // New: lines cleared display
+            this.linesElement = document.createElement('div');
+            this.linesElement.classList.add('lines');
+            this.linesElement.textContent = 'Lines: ' + this.linesCleared;
+            this.container.appendChild(this.linesElement);
+
             this.levelDisplay = document.createElement('div');
             this.levelDisplay.classList.add('level');
             this.updateLevelDisplay();
@@ -171,7 +186,7 @@ function launchTetrisGame(playerConfigs) {
                 for (let y = 0; y < matrix.length; y++) {
                     for (let x = 0; x < matrix[y].length; x++) {
                         if (matrix[y][x]) {
-							this.currentTetromino = null;
+                            this.currentTetromino = null;
                             const newY = row + y;
                             const newX = col + x;
                             if (newY >= 0 && newY < this.rows && newX >= 0 && newX < this.cols) {
@@ -182,7 +197,7 @@ function launchTetrisGame(playerConfigs) {
                                     // Empty => grey
                                     this.playfield[newY][newX] = 8;
                                 }
-								this.draw();
+                                this.draw();
                             }
                         }
                     }
@@ -279,11 +294,20 @@ function launchTetrisGame(playerConfigs) {
                 points = points * multiplier;
 
                 this.score += points;
-                this.scoreElement.textContent = 'Score: ' + this.score;
 
+                // Update the displays
+                this.scoreElement.textContent = 'Score: ' + this.score;
+                this.linesElement.textContent = 'Lines: ' + this.linesCleared;
                 this.updateLevelDisplay();
                 this.updateDropInterval();
             }
+
+			if (this.getLevel() >= 15) {
+				this.currentTetromino = null;
+            	this.gameOver = true;
+            	playerLost(this);
+            	return;  // Stop here, no next tetromino
+        	}
 
             // Next tetromino
             this.currentTetromino = this.getNextTetromino();
@@ -539,28 +563,80 @@ function launchTetrisGame(playerConfigs) {
         }
     }
 
-    function showFinalScoreboard() {
-        // Sort players by score
-        const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+	function showFinalScoreboard() {
+	    // Sort players by score
+	    const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
 
-        const scoreboardContainer = document.createElement('div');
-        scoreboardContainer.classList.add('scoreboard-overlay');
+	    const scoreboardContainer = document.createElement('div');
+	    scoreboardContainer.classList.add('scoreboard-overlay');
 
-        const title = document.createElement('div');
-        title.classList.add('scoreboard-title');
-        title.textContent = 'Game Over! Final Scores';
-        scoreboardContainer.appendChild(title);
+	    const title = document.createElement('div');
+	    title.classList.add('scoreboard-title');
+	    title.textContent = 'Game Over! Final Scores';
+	    scoreboardContainer.appendChild(title);
 
-        sortedPlayers.forEach((player, rank) => {
-            const entry = document.createElement('div');
-            entry.classList.add('scoreboard-entry');
-            entry.textContent = `${rank + 1}. ${player.name}: ${player.score}`;
-            scoreboardContainer.appendChild(entry);
-        });
+	    sortedPlayers.forEach((player, rank) => {
+	        const entry = document.createElement('div');
+	        entry.classList.add('scoreboard-entry');
+	        entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
+	        scoreboardContainer.appendChild(entry);
+	    });
 
-        // Append the scoreboard overlay to body
-        document.body.appendChild(scoreboardContainer);
-    }
+	    // Append the scoreboard overlay to body
+	    document.body.appendChild(scoreboardContainer);
+
+	    // Prepare data to send to backend
+	    const gameData = sortedPlayers.map(player => ({
+			gameid: game_id,
+	        name: player.name,
+	        score: player.score,
+	        lines_cleared: player.linesCleared,
+	        level: player.getLevel(), // Ensure getLevel is accessible or pass level separately
+	    }));
+
+	    // Send data to backend
+	    sendGameDataToBackend(gameData);
+	}
+
+	function sendGameDataToBackend(gameData) {
+    	fetch('/api/save-tetris-scores/', { // Ensure this URL matches your Django endpoint
+    	    method: 'POST',
+    	    headers: {
+    	        'Content-Type': 'application/json',
+    	        'X-CSRFToken': getCookie('csrftoken'), // Handle CSRF token
+    	    },
+    	    body: JSON.stringify({ players: gameData }),
+    	})
+    	.then(response => {
+    	    if (!response.ok) {
+    	        throw new Error('Network response was not ok');
+    	    }
+    	    return response.json();
+    	})
+    	.then(data => {
+    	    console.log('Game data successfully sent to backend:', data);
+    	})
+    	.catch((error) => {
+    	    console.error('Error sending game data:', error);
+    	});
+	}
+
+	// Helper function to get CSRF token from cookies
+	function getCookie(name) {
+    	let cookieValue = null;
+	    if (document.cookie && document.cookie !== '') {
+	        const cookies = document.cookie.split(';');
+	        for (let cookie of cookies) {
+	            cookie = cookie.trim();
+	            // Does this cookie string begin with the name we want?
+	            if (cookie.startsWith(name + '=')) {
+	                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+	                break;
+	            }
+	        }
+	    }
+	    return cookieValue;
+	}
 
     // Global key events for all Tetris games
     document.addEventListener('keydown', function(e) {
