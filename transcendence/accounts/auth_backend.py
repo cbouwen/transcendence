@@ -5,7 +5,7 @@ from django.conf import settings
 import sys
 
 class CustomAuthBackend(BaseBackend):
-    def authenticate(self, request, token=None):
+    def authenticate(self, request, otp_secret, token=None):
         userinfo_url = settings.FT_OAUTH_USERINFO_URL
         try:
             response = requests.get(
@@ -25,7 +25,7 @@ class CustomAuthBackend(BaseBackend):
 
             if user is None:
                 first_name = user_data['first_name']
-                last_name = user_data['first_name']
+                last_name = user_data['last_name']
                 email = user_data['email']
                 user = User.objects.create(username=username, first_name=first_name, last_name=last_name, email=email)
             return user

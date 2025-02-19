@@ -16,6 +16,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request):
         # Get OAuth token from the request data
         ft_api_user_login_code = request.data.get("ft_api_user_login_code")
+        otp_secret = request.data.get("otp_secret")
         if not ft_api_user_login_code:
             raise AuthenticationFailed('Please provide ft_api_user_login_code')
 
@@ -40,7 +41,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             raise AuthenticationFailed("42 OAuth access token is required.")
 
         # Authenticate user using the custom backend
-        user = authenticate(request, token=access_token)
+        user = authenticate(request=request, otp_secret=otp_secret, token=access_token)
         if not user:
             raise AuthenticationFailed("Invalid 42 OAuth access token.")
 
