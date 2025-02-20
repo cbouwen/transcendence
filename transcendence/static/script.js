@@ -232,7 +232,7 @@ function launchTetrisGame(playerConfigs) {
             this.canvas.style.border = '2px solid white';
             this.canvas.style.backgroundColor = 'black';
             this.context = this.canvas.getContext('2d');
-            this.container.appendChild(this.canvas);
+            document.body.appendChild(this.canvas);
 
             // Initialize game state
             this.score = 0;
@@ -691,7 +691,7 @@ function launchTetrisGame(playerConfigs) {
 
     // Create a main container for all games
     const mainContainer = document.createElement('div');
-    mainContainer.id = 'tetris-main-container';
+    mainContainer.id = 'content';
     document.body.appendChild(mainContainer);
 
     // Initialize each player

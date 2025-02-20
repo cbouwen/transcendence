@@ -526,7 +526,7 @@ function launchTetrisGame(playerConfigs) {
     // Create a main container for all games
     const mainContainer = document.createElement('div');
     mainContainer.id = 'tetris-main-container';
-    document.body.appendChild(mainContainer);
+    document.getElementById('content').appendChild(mainContainer);
 
     // Initialize each player
     playerConfigs.forEach((config, index) => {
