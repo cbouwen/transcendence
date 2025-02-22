@@ -150,6 +150,10 @@ AUTHENTICATION_BACKENDS = [
         'accounts.auth_backend.CustomAuthBackend',
 ]
 
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
+
+
 # 42 API
 FT_OAUTH_CLIENT_ID = os.getenv("FT_OAUTH_CLIENT_ID")
 FT_OAUTH_CLIENT_SECRET = os.getenv("FT_OAUTH_CLIENT_SECRET")
