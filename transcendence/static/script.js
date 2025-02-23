@@ -87,6 +87,10 @@ async function router() {
 	if (location.pathname !== "/tetris") {
         cleanupTetris();
     }
+	if (location.pathname !== "/pong")
+	{
+		// cleanupPong();
+	}
 	const routes = [
 		{
 			path: "/",
