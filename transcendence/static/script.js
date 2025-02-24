@@ -72,8 +72,16 @@ function queryAndReplace(query, newContent) {
 	});
 };
 
-async function viewStaticHTML(filePath) {
-	const response = await fetch(urlRoot + staticDir + filePath);
+async function viewHTML(filePath, jwtTokens) {
+	let headers = {};
+	if (jwtTokens && jwtTokens.access) {
+		headers['Authorization'] = 'Bearer ' + jwtTokens.access
+	}
+	const request = {
+		method: 'GET',
+		headers: headers,
+	};
+	const response = await fetch(urlRoot + filePath, request);
 	const content = await response.text();
 	document.getElementById("content").innerHTML = content;
 };
@@ -85,25 +93,25 @@ function navigateTo(url) {
 
 async function router() {
 	if (location.pathname !== "/tetris") {
-        cleanupTetris();
+		cleanupTetris();
     }
 	const routes = [
 		{
 			path: "/",
 			view: () => {
-				viewStaticHTML("/home.html");
+				viewHTML("/static/home.html", null);
 			}
 		},
 		{
 			path: "/pong",
 			view: () => {
-				viewStaticHTML("/pong/site.html");
+				viewHTML("/static/pong/site.html", null);
 			}
 		},
 		{
 			path: "/tetris",
 			view: () => {
-				viewStaticHTML("/tetris/1_player.html");
+				viewHTML("/static/tetris/1_player.html", null);
 				const playerConfigs = [
 					{
 						name: "Alice",
