@@ -4,10 +4,58 @@ import json
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from .models import TetrisScore, TetrisPlayer
 from .calculate_mmr import update_player_ratings
+from .active_player_manager import active_player_manager
 
-from django.shortcuts import render
+@require_http_methods(["GET"])
+def get_next_match(request):
+    try:
+        player_name = request.GET.get('player')
+        match = active_player_manager.find_next_match(player_name)
+        if match:
+            return JsonResponse({'player1': match[0], 'player2': match[1]})
+        else:
+            return JsonResponse({'error': 'No match found'}, status=404)
+    except ValueError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@require_http_methods(["POST"])
+def add_player(request):
+    try:
+        data = json.loads(request.body)
+        # Assume you have a way to create or retrieve a player instance.
+        # This is just a stub; you might integrate with your authentication system.
+        player_name = data.get("name")
+        matchmaking_rating = data.get("matchmaking_rating")
+        if not player_name or matchmaking_rating is None:
+            return JsonResponse({"error": "Missing required fields."}, status=400)
+        
+        # Create a simple player object. In a real app, this would likely be a model instance.
+        class Player:
+            def __init__(self, name, matchmaking_rating):
+                self.name = name
+                self.matchmaking_rating = matchmaking_rating
+
+        player = Player(player_name, matchmaking_rating)
+        active_player_manager.add_player(player)
+        return JsonResponse({"message": f"Player {player_name} added."})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+@require_http_methods(["POST"])
+def remove_player(request):
+    try:
+        data = json.loads(request.body)
+        player_name = data.get("name")
+        if not player_name:
+            return JsonResponse({"error": "Player name is required."}, status=400)
+        active_player_manager.remove_player(player_name)
+        return JsonResponse({"message": f"Player {player_name} removed."})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
 
 def tetris_main(request):
     return render(request, 'tetris/main.html')
