@@ -1,44 +1,47 @@
-// Global Variables
-var DIRECTION = {
-	IDLE: 0,
-	UP: 1,
-	DOWN: 2,
-	LEFT: 3,
-	RIGHT: 4
-};
+class PongGame {
+	constructor(canvasId) {
+		 this.DIRECTION = {
+			IDLE: 0,
+			UP: 1,
+			DOWN: 2,
+			LEFT: 3,
+			RIGHT: 4
+		};
 
-var rounds = [5, 5, 3, 3, 2];
-var colors = ['#1abc9c', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6'];
+		this.rounds = [5, 5, 3, 3, 2];
+		this.colors = ['#1abc9c', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6'];
+		
+		this.Ball = {
+			new: function (incrementedSpeed) {
+				return {
+					width: 18,
+					height: 18,
+					x: (this.canvas.width / 2) - 9,
+					y: (this.canvas.height / 2) - 9,
+					moveX: DIRECTION.IDLE,
+					moveY: DIRECTION.IDLE,
+					speed: incrementedSpeed || 9
+				};
+			}
+		};
 
-// The ball object (The cube that bounces back and forth)
-var Ball = {
-	new: function (incrementedSpeed) {
-		return {
-			width: 18,
-			height: 18,
-			x: (this.canvas.width / 2) - 9,
-			y: (this.canvas.height / 2) - 9,
-			moveX: DIRECTION.IDLE,
-			moveY: DIRECTION.IDLE,
-			speed: incrementedSpeed || 9
+		this.Paddle = {
+			new: function (side) {
+				return {
+					width: 18,
+					height: 70,
+					x: side === 'left' ? 150 : this.canvas.width - 150,
+					y: (this.canvas.height / 2) - 35,
+					score: 0,
+					move: DIRECTION.IDLE,
+					speed: 10
+				};
+			}
 		};
 	}
-};
+}
 
-// The paddle object (The two lines that move up and down)
-var Paddle = {
-	new: function (side) {
-		return {
-			width: 18,
-			height: 70,
-			x: side === 'left' ? 150 : this.canvas.width - 150,
-			y: (this.canvas.height / 2) - 35,
-			score: 0,
-			move: DIRECTION.IDLE,
-			speed: 10
-		};
-	}
-};
+
 
 var Game = {
 	initialize: function () {
@@ -339,7 +342,7 @@ var Game = {
 	},
 
 	// Reset the ball location, the player turns and set a delay before the next round begins.
-	_resetTurn: function(victor, loser) {
+	_resetTurn: function (victor, loser) {
 		this.ball = Ball.new.call(this, this.ball.speed);
 		this.turn = loser;
 		this.timer = (new Date()).getTime();
@@ -349,7 +352,7 @@ var Game = {
 	},
 
 	// Wait for a delay to have passed after each turn.
-	_turnDelayIsOver: function() {
+	_turnDelayIsOver: function () {
 		return ((new Date()).getTime() - this.timer >= 1000);
 	},
 
@@ -363,3 +366,45 @@ var Game = {
 
 var Pong = Object.assign({}, Game);
 Pong.initialize();
+
+// // Global Variables
+// var DIRECTION = {
+// 	IDLE: 0,
+// 	UP: 1,
+// 	DOWN: 2,
+// 	LEFT: 3,
+// 	RIGHT: 4
+// };
+
+// var rounds = [5, 5, 3, 3, 2];
+// var colors = ['#1abc9c', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6'];
+
+// // The ball object (The cube that bounces back and forth)
+// var Ball = {
+// 	new: function (incrementedSpeed) {
+// 		return {
+// 			width: 18,
+// 			height: 18,
+// 			x: (this.canvas.width / 2) - 9,
+// 			y: (this.canvas.height / 2) - 9,
+// 			moveX: DIRECTION.IDLE,
+// 			moveY: DIRECTION.IDLE,
+// 			speed: incrementedSpeed || 9
+// 		};
+// 	}
+// };
+
+// // The paddle object (The two lines that move up and down)
+// var Paddle = {
+// 	new: function (side) {
+// 		return {
+// 			width: 18,
+// 			height: 70,
+// 			x: side === 'left' ? 150 : this.canvas.width - 150,
+// 			y: (this.canvas.height / 2) - 35,
+// 			score: 0,
+// 			move: DIRECTION.IDLE,
+// 			speed: 10
+// 		};
+// 	}
+// };

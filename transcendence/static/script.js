@@ -89,7 +89,7 @@ async function router() {
 	}
 	if (location.pathname !== "/pong") {
 		cleanupPong();
-		//document.body.innerHTML = ''; // Clears the body
+		//document.body.innerHTML = ==> // Clears the body
 	}
 	const routes = [
 		{
@@ -102,6 +102,12 @@ async function router() {
 			path: "/pong",
 			view: () => {
 				viewStaticHTML("/pong/site.html");
+
+				const pongCanvas = document.createElement('canvas');
+				pongCanvas.id = `pongContainer`;
+				document.body.appendChild(pongCanvas);
+				pongCanvas.style.cssText = "display: block;margin: auto;background: black;"
+
 				var Pong = Object.assign({}, Game);
 				Pong.initialize();
 			}
@@ -882,11 +888,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // PONG JAVASCRIPT START
 
-const pongCanvas = document.createElement('canvas');
-pongCanvas.classList.add('gameContainer');
-pongCanvas.id = `pongContainer`;
-document.body.appendChild(pongCanvas);
-pongCanvas.style.cssText = "display: block;margin: auto;background: black;"
+// const pongCanvas = document.createElement('canvas');
+// pongCanvas.classList.add('gameContainer');
+// pongCanvas.id = `pongContainer`;
+// document.body.appendChild(pongCanvas);
+// pongCanvas.style.cssText = "display: block;margin: auto;background: black;"
 
 function cleanupPong() {
 	const container = document.getElementById('pongContainer');
