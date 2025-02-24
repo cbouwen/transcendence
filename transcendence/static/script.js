@@ -860,6 +860,7 @@ function cleanupTetris() {
 	}
 	const JWTs = await login(code);
 	console.log(JWTs.access);
+    
 })();
 
 window.addEventListener("popstate", router);
