@@ -231,7 +231,7 @@ function launchTetrisGame(playerConfigs) {
             this.canvas.style.border = '2px solid white';
             this.canvas.style.backgroundColor = 'black';
             this.context = this.canvas.getContext('2d');
-            document.body.appendChild(this.canvas);
+            this.container.appendChild(this.canvas);
 
             // Initialize game state
             this.score = 0;
