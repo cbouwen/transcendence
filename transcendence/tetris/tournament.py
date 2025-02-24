@@ -219,3 +219,17 @@ class Tournament:
             }
             matches_info.append(info)
         return matches_info
+
+    def cancel_tournament(self) -> dict:
+        """
+        Cancels the tournament by resetting all internal state.
+        This removes all registered players, clears rounds, and resets the current round index.
+        """
+        self.players.clear()
+        self.rounds.clear()
+        self.current_round_index = -1
+        self.started = False
+        return {
+            "success": True,
+            "message": "Tournament has been cancelled and cleaned up."
+        }
