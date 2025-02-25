@@ -103,6 +103,9 @@ async function router() {
 			path: "/tetris",
 			view: () => {
 				viewStaticHTML("/tetris/1_player.html").then(() => {
+					const matchConfig = {
+						ranked : true,
+					};
 					const playerConfigs = [
 						{
 							name: "Alice",
@@ -754,6 +757,7 @@ function launchTetrisGame(playerConfigs) {
 	    // Prepare data to send to backend
 	    const gameData = sortedPlayers.map(player => ({
 			gameid: game_id,
+			ranked: matchConfigs.ranked,
 	        name: player.name,
 	        score: player.score,
 	        lines_cleared: player.linesCleared,
@@ -765,11 +769,11 @@ function launchTetrisGame(playerConfigs) {
 	}
 
 	function sendGameDataToBackend(gameData) {
-    	fetch('/api/save-tetris-scores/', { // Ensure this URL matches your Django endpoint
+    	fetch('/tetris/save-tetris-scores'', { // Ensure this URL matches your Django endpoint
     	    method: 'POST',
     	    headers: {
     	        'Content-Type': 'application/json',
-    	        'X-CSRFToken': getCookie('csrftoken'), // Handle CSRF token
+    	        'X-CSRFToken': getCookie('csrftoken'),
     	    },
     	    body: JSON.stringify({ players: gameData }),
     	})

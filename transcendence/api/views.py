@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -7,9 +8,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 from django.conf import settings
-from django.shortcuts import redirect
 import requests
-import urllib.parse
+import json
+import tetris.calculate_mmr
+from ..tetris.models import TetrisScore
+from tetris.active_player_manager import active_player_manager
 from .serializers import UserSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -78,3 +81,89 @@ class Me(APIView):
             return Response({"message": "User updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class tetris_add_player(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+            try:
+                data = json.loads(request.body)
+                player_name = data.get("name")
+                matchmaking_rating = data.get("matchmaking_rating")
+                if not player_name or matchmaking_rating is None:
+                    return JsonResponse({"error": "Missing required fields."}, status=400)
+                
+                class Player:
+                    def __init__(self, name, matchmaking_rating):
+                        self.name = name
+                        self.matchmaking_rating = matchmaking_rating
+
+                player = Player(player_name, matchmaking_rating)
+                active_player_manager.add_player(player)
+                return JsonResponse({"message": f"Player {player_name} added."})
+            except Exception as e:
+                return JsonResponse({"error": str(e)}, status=500)
+
+class tetris_remove_player(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+            try:
+                data = json.loads(request.body)
+                player_name = data.get("name")
+                if not player_name:
+                    return JsonResponse({"error": "Player name is required."}, status=400)
+                active_player_manager.remove_player(player_name)
+                return JsonResponse({"message": f"Player {player_name} removed."})
+            except Exception as e:
+                return JsonResponse({"error": str(e)}, status=500)
+
+class tetris_get_next_match(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            player_name = request.GET.get('player')
+            match = active_player_manager.find_next_match(player_name)
+            if match:
+                return JsonResponse({'player1': match[0], 'player2': match[1]})
+            else:
+                return JsonResponse({'error': 'No match found'}, status=404)
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+class tetris_save_tetris_scores(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            players_data = request.data.get('players', [])
+            ranked = request.data.get('ranked', False)
+            
+            for player in players_data:
+                TetrisScore.objects.create(
+                    gameid=player.get('gameid'),
+                    name=player.get('name'),
+                    score=player.get('score'),
+                    lines_cleared=player.get('lines_cleared'),
+                    level=player.get('level')
+                )
+                
+            if ranked and len(players_data) >= 2:
+                first_player = players_data[0]
+                second_player = players_data[1]
+                tetris.calculate_mmr.update_player_ratings(
+                    first_player.get('name'),
+                    second_player.get('name'),
+                    first_player.get('score'),
+                    second_player.get('score')
+                )
+            
+            return Response({'message': 'Scores processed successfully.'})
+        
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)

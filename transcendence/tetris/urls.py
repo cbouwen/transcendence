@@ -15,10 +15,4 @@ urlpatterns = [
     path('1_player_original/', views.one_player_original, name='1_player_original'),
     path('2_player_original/', views.two_player_original, name='2_player_original'),
     path('3_player_original/', views.three_player_original, name='3_player_original'),
-
-    path('api/save-tetris-scores/', views.save_tetris_scores, name='save_tetris_scores'),
-
-    path('api/next-match/', views.get_next_match, name='next_match'),
-    path('api/add-player/', views.add_player, name='add_player'),
-    path('api/remove-player/', views.remove_player, name='remove_player'),
 ]
