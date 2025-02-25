@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html>
   <body>
-    <center><h1>Logged in as {{request.user}}</h1></center>
-    <br>
-    {% if request.user.is_authenticated  %}
-    <center>
-      Logout the chat Page
-      <form method="post" action="{% url 'logout-user' %}">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-      </form>
-    </center>
-    {% endif %}
     <div
       class="chat__item__container"
       id="id_chat_item_container"

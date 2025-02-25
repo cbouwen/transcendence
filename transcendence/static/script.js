@@ -145,9 +145,9 @@ async function router() {
 			}
 		},
 		{
-			path: "/chat/",
+			path: "/chat",
 			view: () => {
-				viewHTML("/chat/", JWTs).then(() => {
+				viewHTML("/static/chatPage.html", JWTs).then(() => {
 					chatStart();
 				});
 			}
