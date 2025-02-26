@@ -116,6 +116,7 @@ class tetris_remove_player(APIView):
                 if not player_name:
                     return JsonResponse({"error": "Player name is required."}, status=400)
                 active_player_manager.remove_player(player_name)
+                active_player_manager.update_match_history
                 return JsonResponse({"message": f"Player {player_name} removed."})
             except Exception as e:
                 return JsonResponse({"error": str(e)}, status=500)
@@ -126,6 +127,7 @@ class tetris_get_next_match(APIView):
 
     def get(self, request):
         try:
+            active_player_manager.update_match_history
             player_name = request.GET.get('player')
             match = active_player_manager.find_next_match(player_name)
             if match:
@@ -162,8 +164,36 @@ class tetris_save_tetris_scores(APIView):
                     first_player.get('score'),
                     second_player.get('score')
                 )
-            
+            active_player_manager.update_match_history
             return Response({'message': 'Scores processed successfully.'})
         
         except Exception as e:
             return Response({'error': str(e)}, status=400)
+
+class tournament_add_player(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class tournament_remove_player(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class tournament_start(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class tournament_generate_round(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class tournament_update_match(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class tournament_get_current_match(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class tournament_cancel_tournament(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
