@@ -100,7 +100,11 @@ async function router() {
 			}
 		},
 		{
-			path: "/tetris",
+			path:"/tetris",
+			view: () => viewStaticHTML("tetris/tetris.html").then(() => {})
+		},
+		{
+			path: "/tetris_start",
 			view: () => {
 				viewStaticHTML("/tetris/1_player.html").then(() => {
 					const matchConfig = {
@@ -115,15 +119,6 @@ async function router() {
 								right: 'ArrowRight',
 								down: 'ArrowDown',
 								rotate: 'ArrowUp'
-							}
-						},
-						{
-							name: "Yannick",
-							controls: {
-								left: 'a',
-								right: 'd',
-								down: 's',
-								rotate: 'w'
 							}
 						}
 					]
@@ -242,7 +237,7 @@ function launchTetrisGame(playerConfigs) {
             this.linesCleared = 0;
             this.gameOver = false;
             this.losingTetromino = null;
-            this.lastPlacedPositions = []; // Store last placed piece positions and type
+            this.lastPlacedPositions = [];
             this.grid = 20;
             this.rows = 22;
             this.cols = 10;
@@ -757,7 +752,7 @@ function launchTetrisGame(playerConfigs) {
 
 	    // Prepare data to send to backend
 	    const gameData = sortedPlayers.map(player => ({
-			is_tournament: tournament,
+			is_tournament: matchConfigs.tournament,
 			gameid: game_id,
 			ranked: matchConfigs.ranked,
 	        name: player.name,
@@ -771,7 +766,7 @@ function launchTetrisGame(playerConfigs) {
 	}
 
 	function sendGameDataToBackend(gameData) {
-    	fetch('/tetris/save-tetris-scores'', { // Ensure this URL matches your Django endpoint
+    	fetch('/tetris/save-tetris-scores', { // Ensure this URL matches your Django endpoint
     	    method: 'POST',
     	    headers: {
     	        'Content-Type': 'application/json',
@@ -862,6 +857,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (e.target.matches("[data-link]")) {
 			e.preventDefault();
 			navigateTo(e.target.href);
+		}
+		if (e.target.matches("[data-tetris-start-button]"))
+		{
+			history.pushState(null, null, "/tetris_start");
+			router();
 		}
 	});
 	router();

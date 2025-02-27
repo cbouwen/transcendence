@@ -13,9 +13,8 @@ import requests
 import json
 import tetris.calculate_mmr
 from tetris.tournament import g_tournament
-from tetris.tournament import Tournament
-from ..tetris.models import TetrisScore
 from tetris.active_player_manager import active_player_manager
+from tetris.models import TetrisScore
 from .serializers import UserSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
