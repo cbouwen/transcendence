@@ -3,7 +3,7 @@ from api.views import CustomTokenObtainPairView
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import Test
+from .views import Test, tournament_add_player, tournament_cancel_tournament, tournament_declare_game, tournament_generate_round, tournament_get_current_match, tournament_remove_player, tournament_start, tournament_update_match
 from .views import Me
 from .views import tetris_get_next_match
 from .views import tetris_save_tetris_scores
@@ -32,5 +32,6 @@ urlpatterns = [
     path('tournament/get_current_match', tournament_get_current_match.as_view(),
          name='to_get_current_match'),
     path('tournament/cancel_tournament', tournament_cancel_tournament.as_view(),
-         name='to_cancel_tournament')),
+         name='to_cancel_tournament'),
+    path('tournament/declare_game', tournament_declare_game.as_view(), name='to_declare_tournament'),
 ]

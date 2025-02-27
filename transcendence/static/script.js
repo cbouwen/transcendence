@@ -104,6 +104,7 @@ async function router() {
 			view: () => {
 				viewStaticHTML("/tetris/1_player.html").then(() => {
 					const matchConfig = {
+						tournament : false,
 						ranked : true,
 					};
 					const playerConfigs = [
@@ -756,6 +757,7 @@ function launchTetrisGame(playerConfigs) {
 
 	    // Prepare data to send to backend
 	    const gameData = sortedPlayers.map(player => ({
+			is_tournament: tournament,
 			gameid: game_id,
 			ranked: matchConfigs.ranked,
 	        name: player.name,
