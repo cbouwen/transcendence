@@ -858,7 +858,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			e.preventDefault();
 			navigateTo(e.target.href);
 		}
-		if (e.target.matches("[data-tetris-start-button]"))
+		else if (e.target.matches("[data-tetris-start-button]"))
 		{
 			history.pushState(null, null, "/tetris_start");
 			router();
