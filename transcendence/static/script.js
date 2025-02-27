@@ -85,12 +85,7 @@ function navigateTo(url) {
 
 async function router() {
 	if (location.pathname !== "/tetris") {
-		cleanupTetris();
-	}
-	if (location.pathname !== "/pong") {
-		//cleanupPong();
-		//document.body.innerHTML = '' // Clears the body
-	}
+    }
 	const routes = [
 		{
 			path: "/",
@@ -108,29 +103,30 @@ async function router() {
 		},
 		{
 			path: "/tetris",
-			view: async () => {
-				await viewStaticHTML("/tetris/1_player.html");
-				const playerConfigs = [
-					{
-						name: "Alice",
-						controls: {
-							left: 'ArrowLeft',
-							right: 'ArrowRight',
-							down: 'ArrowDown',
-							rotate: 'ArrowUp'
+			view: () => {
+				viewStaticHTML("/tetris/1_player.html").then(() => {
+					const playerConfigs = [
+						{
+							name: "Alice",
+							controls: {
+								left: 'ArrowLeft',
+								right: 'ArrowRight',
+								down: 'ArrowDown',
+								rotate: 'ArrowUp'
+							}
+						},
+						{
+							name: "Yannick",
+							controls: {
+								left: 'a',
+								right: 'd',
+								down: 's',
+								rotate: 'w'
+							}
 						}
-					},
-					{
-						name: "Yannick",
-						controls: {
-							left: 'a',
-							right: 'd',
-							down: 's',
-							rotate: 'w'
-						}
-					}
-				]
-				launchTetrisGame(playerConfigs);
+					]
+					launchTetrisGame(playerConfigs);
+				});
 			}
 		},
 	];
@@ -188,7 +184,6 @@ function launchTetrisGame(playerConfigs) {
             color: white;
         }
         body {
-            background-color: black;
             text-align: center;
             padding-top: 20px;
         }
@@ -232,13 +227,13 @@ function launchTetrisGame(playerConfigs) {
 			this.container = document.getElementById(containerId);
 			this.name = name;
 
-			this.canvas = document.createElement('canvas');
-			this.canvas.width = 200;
-			this.canvas.height = 440;
-			this.canvas.style.border = '2px solid white';
-			this.canvas.style.backgroundColor = 'black';
-			this.context = this.canvas.getContext('2d');
-			document.body.appendChild(this.canvas);
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = 200;
+            this.canvas.height = 440;
+            this.canvas.style.border = '2px solid white';
+            this.canvas.style.backgroundColor = 'black';
+            this.context = this.canvas.getContext('2d');
+            this.container.appendChild(this.canvas);
 
 			// Initialize game state
 			this.score = 0;
@@ -695,10 +690,11 @@ function launchTetrisGame(playerConfigs) {
 		}
 	}
 
-	// Create a main container for all games
-	const mainContainer = document.createElement('div');
-	mainContainer.id = 'content';
-	document.body.appendChild(mainContainer);
+    // Create a main container for all games
+    const mainContainer = document.createElement('div');
+    mainContainer.id = 'tetris-main-container';
+    const contentElement = document.getElementById("content");
+    contentElement.appendChild(mainContainer);
 
 	// Initialize each player
 	playerConfigs.forEach((config, index) => {
@@ -836,19 +832,6 @@ function launchTetrisGame(playerConfigs) {
 			}
 		});
 	});
-}
-
-function cleanupTetris() {
-	const container = document.getElementById('tetris-main-container');
-	if (container) {
-		// Assuming you have stored your game instances in a global "games" array:
-		if (games && games.length) {
-			games.forEach(game => game.destroy());
-		}
-		container.remove();
-		// Clear the global games array to avoid referencing the destroyed games.
-		games = [];
-	}
 }
 
 // TETRIS JAVASCRIPT END
