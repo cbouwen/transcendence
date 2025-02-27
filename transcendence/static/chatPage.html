@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <style>
+      .chat__item__container {
+        font-size: 20px;
+        height: 400px; /* Set a fixed height */
+        overflow-y: scroll; /* Enable vertical scrolling */
+        border: 1px solid #ccc; /* Optional: Add a border for better visibility */
+        padding: 10px; /* Optional: Add padding for better spacing */
+      }
+    </style>
+  </head>
   <body>
-    <div
-      class="chat__item__container"
-      id="id_chat_item_container"
-      style="font-size: 20px"
-    >
+    <div class="chat__item__container" id="id_chat_item_container">
       <br />
       <input type="text" id="id_message_send_input" />
       <button type="submit" id="id_message_send_button">Send Message</button>
