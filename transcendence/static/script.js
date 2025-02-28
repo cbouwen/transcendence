@@ -83,6 +83,34 @@ function navigateTo(url) {
 	router();
 };
 
+async function addPlayer(playerName, matchmakingRating, jwtToken) {
+  try {
+    const response = await fetch('/tetris/add-player', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Include the JWT token in the Authorization header
+        'Authorization': `Bearer ${jwtToken}`,
+        // If your Django view requires CSRF protection, include the token:
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        name: playerName,
+        matchmaking_rating: matchmakingRating
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('Error adding player:', data.error);
+      return;
+    }
+    console.log('Player added:', data.message);
+  } catch (error) {
+    console.error('Network error:', error);
+  }
+}
+
 async function router() {
 	if (location.pathname !== "/tetris") {
     }
@@ -101,7 +129,7 @@ async function router() {
 		},
 		{
 			path:"/tetris",
-			view: () => viewStaticHTML("tetris/tetris.html").then(() => {})
+			view: () => viewStaticHTML("/tetris/tetris.html").then(() => {})
 		},
 		{
 			path: "/tetris_start",
@@ -178,7 +206,7 @@ function launchTetrisGame(playerConfigs) {
         .score, .level, .lines {
             font-size: 20px;
             margin-top: 10px;
-            color: white;
+            color: black;
         }
         body {
             text-align: center;
@@ -188,7 +216,7 @@ function launchTetrisGame(playerConfigs) {
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: white;
+            color: black;
         }
         .scoreboard-overlay {
             position: fixed;
@@ -202,18 +230,18 @@ function launchTetrisGame(playerConfigs) {
             text-align: center;
             min-width: 300px;
             box-shadow: 0 0 10px rgba(255,255,255,0.5);
-            color: white;
+            color: black;
         }
         .scoreboard-title {
             font-size: 28px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: white;
+            color: black;
         }
         .scoreboard-entry {
             font-size: 20px;
             margin: 5px 0;
-            color: white;
+            color: black;
         }
     `;
     document.head.appendChild(style);
@@ -853,16 +881,21 @@ function launchTetrisGame(playerConfigs) {
 window.addEventListener("popstate", router);
 
 document.addEventListener("DOMContentLoaded", () => {
-	document.body.addEventListener("click", e => {
-		if (e.target.matches("[data-link]")) {
-			e.preventDefault();
-			navigateTo(e.target.href);
-		}
-		else if (e.target.matches("[data-tetris-start-button]"))
-		{
-			history.pushState(null, null, "/tetris_start");
-			router();
-		}
-	});
-	router();
+    const tetrisButton = document.querySelector("[data-tetris-start-button]");
+    if (tetrisButton) {
+        console.log("Tetris start button exists!");
+    } else {
+        console.log("Tetris start button does not exist yet.");
+    }
+
+    document.body.addEventListener("click", e => {
+        if (e.target.matches("[data-link]")) {
+            e.preventDefault();
+            navigateTo(e.target.href);
+        } else if (e.target.matches("[data-tetris-start-button]")) {
+            history.pushState(null, null, "/tetris_start");
+            router();
+        }
+    });
+    router();
 });

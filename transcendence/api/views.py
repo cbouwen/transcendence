@@ -7,14 +7,14 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.conf import settings
 import requests
 import json
 import tetris.calculate_mmr
 from tetris.tournament import g_tournament
 from tetris.active_player_manager import active_player_manager
-from tetris.models import TetrisScore
+from tetris.models import TetrisPlayer, TetrisScore
 from .serializers import UserSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -89,23 +89,41 @@ class tetris_add_player(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-            try:
-                data = json.loads(request.body)
-                player_name = data.get("name")
-                matchmaking_rating = data.get("matchmaking_rating")
-                if not player_name or matchmaking_rating is None:
-                    return Response({"error": "Missing required fields."}, status=400)
-                
-                class Player:
-                    def __init__(self, name, matchmaking_rating):
-                        self.name = name
-                        self.matchmaking_rating = matchmaking_rating
+        try:
+            data = json.loads(request.body)
+            user_id = data.get("user_id")
+            nickname = data.get("nickname")
+            if not user_id or not nickname:
+                return Response({"error": "Missing required fields."}, status=400)
 
-                player = Player(player_name, matchmaking_rating)
-                active_player_manager.add_player(player)
-                return Response({"message": f"Player {player_name} added."})
-            except Exception as e:
-                return Response({"error": str(e)}, status=500)
+            # Try to fetch the TetrisPlayer instance for the given user
+            try:
+                player_instance = TetrisPlayer.objects.get(user__id=user_id)
+                # Update the nickname if it does not match the current value
+                if player_instance.name != nickname:
+                    player_instance.name = nickname
+                    player_instance.save()
+            except TetrisPlayer.DoesNotExist:
+                User = get_user_model()
+                try:
+                    user = User.objects.get(id=user_id)
+                except User.DoesNotExist:
+                    return Response({"error": "User does not exist."}, status=404)
+                player_instance = TetrisPlayer.objects.create(
+                    user=user,
+                    name=nickname,
+                    matchmaking_rating=1200
+                )
+
+            # Now that we have the updated player, add them to the active player manager.
+            active_player_manager.add_player(player_instance)
+
+            return Response({
+                "message": f"Player {player_instance.name} added.",
+                "mmr": player_instance.matchmaking_rating
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 class tetris_remove_player(APIView):
     authentication_classes = [JWTAuthentication]
