@@ -904,6 +904,12 @@ function chatStart() {
 };
 // CHAT JAVASCRIPT END
 
+async function fillInFirstNamePlaceholders() {
+	const userdata = await apiRequest('/me', 'GET', JWTs, null);
+	console.log(userdata);
+	queryAndReplace("#firstName", userdata.first_name);
+};
+
 // all of our code is wrapped in async because we want to be able to use `await`
 (async () => {
 	let code;
@@ -918,6 +924,7 @@ function chatStart() {
 	JWTs = await login(code);
 	console.log(JWTs.access);
     
+	fillInFirstNamePlaceholders();
 })();
 
 window.addEventListener("popstate", router);
