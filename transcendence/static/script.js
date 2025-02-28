@@ -2,6 +2,7 @@ const urlRoot = "http://localhost:8000";
 const apiPath = "/api";
 const staticDir = "/static";
 const intraLoginUrl = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-106ab599e58a35bf00e2a4e2a3f6af8f27a450ca5e30e1c6643e1f78b68d65ae&redirect_uri=http%3A%2F%2Flocalhost%3A8000&response_type=code";
+let JWTs;
 
 async function apiRequest(endpoint, method, jwtTokens, body) {
 	const url = urlRoot + apiPath + endpoint;
@@ -13,11 +14,19 @@ async function apiRequest(endpoint, method, jwtTokens, body) {
 		headers['Authorization'] = 'Bearer ' + jwtTokens.access
 	}
 
-	const request = {
-		method: method,
-		headers: headers,
-		body: JSON.stringify(body)
-	};
+	let request;
+	if (body) {
+		request = {
+			method: method,
+			headers: headers,
+			body: JSON.stringify(body)
+		};
+	} else {
+		request = {
+			method: method,
+			headers: headers,
+		};
+	}
 
 	console.log("Sending the following request:");
 	console.log(request);
@@ -72,8 +81,16 @@ function queryAndReplace(query, newContent) {
 	});
 };
 
-async function viewStaticHTML(filePath) {
-	const response = await fetch(urlRoot + staticDir + filePath);
+async function viewHTML(filePath, jwtTokens) {
+	let headers = {};
+	if (jwtTokens && jwtTokens.access) {
+		headers['Authorization'] = 'Bearer ' + jwtTokens.access
+	}
+	const request = {
+		method: 'GET',
+		headers: headers,
+	};
+	const response = await fetch(urlRoot + filePath, request);
 	const content = await response.text();
 	document.getElementById("content").innerHTML = content;
 };
@@ -90,13 +107,13 @@ async function router() {
 		{
 			path: "/",
 			view: async () => {
-				await viewStaticHTML("/home.html");
+				await viewHTML("/static/home.html");
 			}
 		},
 		{
 			path: "/pong",
 			view: async () => {
-				await viewStaticHTML("/pong/site.html");
+				await viewHTML("/static/pong/site.html");
 				const pongGame = new PongGame();
 				pongGame.initialize();
 			}
@@ -104,7 +121,7 @@ async function router() {
 		{
 			path: "/tetris",
 			view: () => {
-				viewStaticHTML("/tetris/1_player.html").then(() => {
+				viewHTML("/static/tetris/1_player.html").then(() => {
 					const playerConfigs = [
 						{
 							name: "Alice",
@@ -129,6 +146,14 @@ async function router() {
 				});
 			}
 		},
+		{
+			path: "/chat",
+			view: () => {
+				viewHTML("/static/chatPage.html", JWTs).then(() => {
+					chatStart();
+				});
+			}
+		}
 	];
 
 	const potentialMatches = routes.map(route => {
@@ -836,6 +861,49 @@ function launchTetrisGame(playerConfigs) {
 
 // TETRIS JAVASCRIPT END
 
+
+// CHAT JAVASCRIPT START
+
+function chatStart() {
+      const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+      chatSocket.onopen = function (e) {
+        console.log("The connection was setup successfully !");
+      };
+      chatSocket.onclose = function (e) {
+        console.log("Something unexpected happened !");
+      };
+      document.querySelector("#id_message_send_input").focus();
+      document.querySelector("#id_message_send_input").onkeyup = function (e) {
+        if (e.keyCode == 13) {
+          document.querySelector("#id_message_send_button").click();
+        }
+      };
+
+	document.querySelector("#id_message_send_button").onclick = async function (e) {
+	  var messageInput = document.querySelector("#id_message_send_input").value;
+	  
+	  try {
+	    const userdata = await apiRequest('/me', 'GET', JWTs, null);
+	    console.log(userdata);  // Now it will print the actual data
+
+	    chatSocket.send(JSON.stringify({ 
+	      message: messageInput, 
+	      username: userdata.username || "Unknown User" 
+	    }));
+	  } catch (error) {
+	    console.error("Error fetching user data:", error);
+	  }
+	};
+        chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        var div = document.createElement("div");
+        div.innerHTML = data.username + " : " + data.message;
+        document.querySelector("#id_message_send_input").value = "";
+        document.querySelector("#id_chat_item_container").appendChild(div);
+      };
+};
+// CHAT JAVASCRIPT END
+
 // all of our code is wrapped in async because we want to be able to use `await`
 (async () => {
 	let code;
@@ -847,8 +915,9 @@ function launchTetrisGame(playerConfigs) {
 		redirectToIntra();
 		return;
 	}
-	const JWTs = await login(code);
+	JWTs = await login(code);
 	console.log(JWTs.access);
+    
 })();
 
 window.addEventListener("popstate", router);
