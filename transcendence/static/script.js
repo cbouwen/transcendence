@@ -3,6 +3,8 @@ const apiPath = "/api";
 const staticDir = "/static";
 const intraLoginUrl = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-106ab599e58a35bf00e2a4e2a3f6af8f27a450ca5e30e1c6643e1f78b68d65ae&redirect_uri=http%3A%2F%2Flocalhost%3A8000&response_type=code";
 
+let tetrisActive = false;
+
 async function apiRequest(endpoint, method, jwtTokens, body) {
 	const url = urlRoot + apiPath + endpoint;
 
@@ -114,6 +116,7 @@ async function addPlayer(playerName, matchmakingRating, jwtToken) {
 async function router() {
 	if (location.pathname !== "/tetris") {
     }
+	tetrisActive = false
 	const routes = [
 		{
 			path: "/",
@@ -134,6 +137,7 @@ async function router() {
 		{
 			path: "/tetris_start",
 			view: () => {
+				tetrisActive = true
 				viewStaticHTML("/tetris/1_player.html").then(() => {
 					const matchConfig = {
 						tournament : false,
@@ -835,6 +839,7 @@ function launchTetrisGame(playerConfigs) {
 
     // Global key events for all Tetris games
     document.addEventListener('keydown', function(e) {
+		if (!tetrisActive) return ;
         games.forEach(game => {
             if (
                 e.key === game.controls.left ||
@@ -848,6 +853,7 @@ function launchTetrisGame(playerConfigs) {
     });
 
     document.addEventListener('keyup', function(e) {
+		if (!tetrisActive) return ;
         games.forEach(game => {
             if (
                 e.key === game.controls.left ||
