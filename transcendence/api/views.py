@@ -8,9 +8,15 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 from django.conf import settings
 from django.shortcuts import redirect
+from django.utils import timezone
+from django.contrib.auth import get_user_model
 import requests
 import urllib.parse
 from .serializers import UserSerializer
+from accounts.models import PuppetGrant
+
+
+User = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request):
@@ -46,6 +52,40 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        })
+
+
+class CustomTokenObtainPuppetPairView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Get the puppet's username from the request body
+        username = request.data.get("username")
+        if not username:
+            raise AuthenticationFailed("Please provide a username.")
+
+        try:
+            puppet = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise AuthenticationFailed("User that you want to puppet is not found.")
+
+        # Check that there is at least one PuppetGrant record where:
+        # - puppet equals the specified user,
+        # - puppeteer equals the current authenticated user,
+        # - and expiry is after the current time.
+        if not PuppetGrant.objects.filter(
+            puppet=puppet,
+            puppeteer=request.user,
+            expiry__gt=timezone.now()
+        ).exists():
+            raise AuthenticationFailed("You don't have the user's permission to puppet them")
+
+        # Generate JWT tokens for the puppet user.
+        refresh = RefreshToken.for_user(puppet)
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),

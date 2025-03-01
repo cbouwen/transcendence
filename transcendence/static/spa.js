@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 	JWTs = await login(code);
 	console.log(JWTs.access);
-    
+
 	fillInFirstNamePlaceholders();
 })();
 
