@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 
@@ -17,7 +19,14 @@
 			<li><a href="/account" data-link>Account</a></li>
 		</ul>
 	</nav>
-	<script src="/static/script.js"></script>
+	<script src="{% static 'script.js' %}"></script>
+	<script src="{% static 'utils.js' %}"></script>
+	<script src="{% static 'pong/pong.js' %}"></script>
+	<script src="{% static 'api/api.js' %}"></script>
+	<script src="{% static 'tetris/tetris.js' %}"></script>
+	<script src="{% static 'chat/chat.js' %}"></script>
+	<script src="{% static 'accounts/auth.js' %}"></script>
+	<script src="{% static 'spa.js' %}"></script>
 	<main id="content">
 	</main>
 </body>
