@@ -147,6 +147,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'pong/static'),
     os.path.join(BASE_DIR, 'tetris/static'),
+    os.path.join(BASE_DIR, 'chat/static'),
+    os.path.join(BASE_DIR, 'api/static'),
+    os.path.join(BASE_DIR, 'accounts/static'),
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
