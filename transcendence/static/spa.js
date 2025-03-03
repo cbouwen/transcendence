@@ -61,7 +61,7 @@ async function router() {
 							}
 						}
 					]
-					launchTetrisGame(playerConfigs);
+					launchTetrisGame(playerConfigs, matchConfig);
 				});
 			}
 		},

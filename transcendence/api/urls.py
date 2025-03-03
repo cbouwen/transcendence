@@ -21,6 +21,7 @@ urlpatterns = [
 
     path('tetris/next-match', tetris_get_next_match.as_view(), name='next_match'),
     path('tetris/add-player', tetris_add_player.as_view(), name='add_player'),
+    path('tetris/get-player', tetris_get_player.as_view(), name='get_player'),
     path('tetris/remove-player', tetris_remove_player.as_view(), name='remove_player'),
 
     path('tournament/add_player', tournament_add_player.as_view(), name='to_add_player'),

@@ -1,40 +1,25 @@
-
 async function addPlayer(playerName, matchmakingRating, jwtToken) {
-  try {
-    const response = await fetch('/tetris/add-player', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Include the JWT token in the Authorization header
-        'Authorization': `Bearer ${jwtToken}`,
-        // If your Django view requires CSRF protection, include the token:
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({
-        name: playerName,
-        matchmaking_rating: matchmakingRating
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      console.error('Error adding player:', data.error);
-      return;
-    }
-    console.log('Player added:', data.message);
-  } catch (error) {
-    console.error('Network error:', error);
+  const jwtTokens = { access: jwtToken };
+  const body = {
+    name: playerName,
+    matchmaking_rating: matchmakingRating
+  };
+  const response = await apiRequest('/tetris/add-player', 'POST', jwtTokens, body);
+  if (!response) {
+    console.error('Error adding player');
+    return;
   }
+  console.log('Player added:', response.message);
 }
 
-function launchTetrisGame(playerConfigs) {
+function launchTetrisGame(playerConfigs, matchConfig) {
+	GlobalMatchConfig = matchConfig
 	let game_id = 0;
 	if (game_id == 0) {
                 game_id = generateGameId();
     }
     console.log("launchTetrisGame called with:", playerConfigs);
 
-    // Global variables to track game status
     const totalPlayers = playerConfigs.length;
     let playersDeadCount = 0;
     let games = [];
@@ -44,7 +29,6 @@ function launchTetrisGame(playerConfigs) {
         return `${timestamp}`
     }
 
-    // Inject CSS (optional, but included here for completeness)
     const style = document.createElement('style');
     style.textContent = `
         .game-container {
@@ -110,7 +94,6 @@ function launchTetrisGame(playerConfigs) {
             this.context = this.canvas.getContext('2d');
             this.container.appendChild(this.canvas);
 
-            // Initialize game state
             this.score = 0;
             this.linesCleared = 0;
             this.gameOver = false;
@@ -122,13 +105,11 @@ function launchTetrisGame(playerConfigs) {
             this.dropCounter = 0;
             this.lastTime = 0;
 
-            // Initial drop interval (speed)
             this.dropInterval = 1000; 
 
             this.tetrominoSequence = [];
             this.controls = controls;
 
-            // Key states for handling continuous movement
             this.keysState = {
                 left: { pressed: false, timeout: null, interval: null },
                 right: { pressed: false, timeout: null, interval: null },
@@ -138,13 +119,11 @@ function launchTetrisGame(playerConfigs) {
             this.initialDelay = 300;
             this.repeatInterval = 50;
 
-            // Display elements
             this.scoreElement = document.createElement('div');
             this.scoreElement.classList.add('score');
             this.scoreElement.textContent = 'Score: ' + this.score;
             this.container.appendChild(this.scoreElement);
 
-            // New: lines cleared display
             this.linesElement = document.createElement('div');
             this.linesElement.classList.add('lines');
             this.linesElement.textContent = 'Lines: ' + this.linesCleared;
@@ -155,10 +134,8 @@ function launchTetrisGame(playerConfigs) {
             this.updateLevelDisplay();
             this.container.appendChild(this.levelDisplay);
 
-            // Initialize playfield
             this.playfield = Array.from({ length: this.rows }, () => Array(this.cols).fill(0));
 
-            // Tetromino definitions
             this.tetrominoes = [
                 [[1],[1],[1],[1]],     // I
                 [[2,2],[2,2]],         // O
@@ -169,34 +146,27 @@ function launchTetrisGame(playerConfigs) {
                 [[0,0,7],[7,7,7]]      // L
             ];
 
-            // Extra colors: grey (8), white (9)
             this.colors = [
                 null,
                 'cyan', 'yellow', 'purple', 'green', 'red', 'blue', 'orange',
                 'grey', 'white'
             ];
 
-            // Grab the first tetromino
             this.currentTetromino = this.getNextTetromino();
             this.update();
         }
 
 		destroy() {
-        	// Cancel the animation frame to stop the game loop
         	if (this.animationFrameId) {
         	    cancelAnimationFrame(this.animationFrameId);
         	}
-        	// If you have set timeouts/intervals (for key repeats), clear them here.
-        	// For each key in keysState:
         	for (const key in this.keysState) {
         	    this.stopKeyRepeat(key);
         	}
-        	// Optionally remove any event listeners specific to this instance.
         	console.log(`Destroyed game for ${this.name}`);
     	}
 
         generateSequence() {
-            // Shuffle the 7 tetromino types
             const sequence = [0, 1, 2, 3, 4, 5, 6];
             while (sequence.length) {
                 const rand = Math.floor(Math.random() * sequence.length);
@@ -221,10 +191,7 @@ function launchTetrisGame(playerConfigs) {
                 type: tetrominoType + 1
             };
             console.log("Next Tetromino:", tetromino);
-
-            // If we can't place the new tetromino, game over
             if (!this.isValidMove(tetromino.matrix, tetromino.row, tetromino.col)) {
-                // Force-place the losing piece so we can see the overlap in grey/white
                 for (let y = 0; y < matrix.length; y++) {
                     for (let x = 0; x < matrix[y].length; x++) {
                         if (matrix[y][x]) {
@@ -233,10 +200,8 @@ function launchTetrisGame(playerConfigs) {
                             const newX = col + x;
                             if (newY >= 0 && newY < this.rows && newX >= 0 && newX < this.cols) {
                                 if (this.playfield[newY][newX] !== 0) {
-                                    // Overlap => white
                                     this.playfield[newY][newX] = 9; 
                                 } else {
-                                    // Empty => grey
                                     this.playfield[newY][newX] = 8;
                                 }
                                 this.draw();
@@ -253,7 +218,6 @@ function launchTetrisGame(playerConfigs) {
         }
 
         rotate(matrix) {
-            // Transpose + reverse each row
             const transposed = matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
             return transposed.map(row => row.reverse());
         }
@@ -268,7 +232,6 @@ function launchTetrisGame(playerConfigs) {
         }
 
         updateDropInterval() {
-            // Increase the speed at higher levels
             const level = this.getLevel();
             this.dropInterval = Math.max(1000 - (level - 1) * 100, 50); 
         }
@@ -316,7 +279,6 @@ function launchTetrisGame(playerConfigs) {
 
             this.lastPlacedPositions = placedPositions;
 
-            // Check for completed lines
             let lines = 0;
             for (let y = this.rows - 1; y >= 0; ) {
                 if (this.playfield[y].every(value => value > 0)) {
@@ -337,7 +299,6 @@ function launchTetrisGame(playerConfigs) {
 
                 this.score += points;
 
-                // Update the displays
                 this.scoreElement.textContent = 'Score: ' + this.score;
                 this.linesElement.textContent = 'Lines: ' + this.linesCleared;
                 this.updateLevelDisplay();
@@ -348,10 +309,9 @@ function launchTetrisGame(playerConfigs) {
 				this.currentTetromino = null;
             	this.gameOver = true;
             	playerLost(this);
-            	return;  // Stop here, no next tetromino
+            	return;
         	}
 
-            // Next tetromino
             this.currentTetromino = this.getNextTetromino();
         }
 
@@ -381,7 +341,6 @@ function launchTetrisGame(playerConfigs) {
         draw() {
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-            // Draw placed blocks
             for (let y = 0; y < this.rows; y++) {
                 for (let x = 0; x < this.cols; x++) {
                     if (this.playfield[y][x]) {
@@ -396,7 +355,6 @@ function launchTetrisGame(playerConfigs) {
                 }
             }
 
-            // Draw current falling tetromino
             if (this.currentTetromino) {
                 for (let y = 0; y < this.currentTetromino.matrix.length; y++) {
                     for (let x = 0; x < this.currentTetromino.matrix[y].length; x++) {
@@ -417,17 +375,14 @@ function launchTetrisGame(playerConfigs) {
                 }
             }
 
-            // Draw grid lines (optional)
             this.context.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             this.context.lineWidth = 1;
-            // Vertical lines
             for (let i = 1; i < this.cols; i++) {
                 this.context.beginPath();
                 this.context.moveTo(i * this.grid, 0);
                 this.context.lineTo(i * this.grid, this.canvas.height);
                 this.context.stroke();
             }
-            // Horizontal lines
             for (let j = 1; j < this.rows; j++) {
                 this.context.beginPath();
                 this.context.moveTo(0, j * this.grid);
@@ -552,7 +507,6 @@ function launchTetrisGame(playerConfigs) {
 
         finalizeLosingBoard() {
             console.log(`Finalizing losing board for player: ${this.name}`);
-            // Turn all existing placed blocks to grey
             for (let y = 0; y < this.rows; y++) {
                 for (let x = 0; x < this.cols; x++) {
                     if (this.playfield[y][x] > 0 && this.playfield[y][x] < 9) {
@@ -565,13 +519,11 @@ function launchTetrisGame(playerConfigs) {
         }
     }
 
-    // Create a main container for all games
     const mainContainer = document.createElement('div');
     mainContainer.id = 'tetris-main-container';
     const contentElement = document.getElementById("content");
     contentElement.appendChild(mainContainer);
 
-    // Initialize each player
     playerConfigs.forEach((config, index) => {
         const container = document.createElement('div');
         container.classList.add('game-container');
@@ -589,17 +541,14 @@ function launchTetrisGame(playerConfigs) {
         console.log(`Initialized game for ${config.name}`);
     });
 
-    // Called when a player loses
     function playerLost(gameInstance) {
         playersDeadCount++;
         gameInstance.finalizeLosingBoard();
 
-        // Single-player game => show scoreboard immediately
         if (totalPlayers === 1) {
             showFinalScoreboard();
         }
         else {
-            // Multi-player => wait until all players are dead
             if (playersDeadCount === totalPlayers) {
                 showFinalScoreboard();
             }
@@ -607,7 +556,6 @@ function launchTetrisGame(playerConfigs) {
     }
 
 	function showFinalScoreboard() {
-	    // Sort players by score
 	    const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
 
 	    const scoreboardContainer = document.createElement('div');
@@ -625,26 +573,23 @@ function launchTetrisGame(playerConfigs) {
 	        scoreboardContainer.appendChild(entry);
 	    });
 
-	    // Append the scoreboard overlay to body
 	    document.body.appendChild(scoreboardContainer);
 
-	    // Prepare data to send to backend
 	    const gameData = sortedPlayers.map(player => ({
-			is_tournament: matchConfigs.tournament,
+			is_tournament: GlobalMatchConfig.tournament,
 			gameid: game_id,
-			ranked: matchConfigs.ranked,
+			ranked: GlobalMatchConfig.ranked,
 	        name: player.name,
 	        score: player.score,
 	        lines_cleared: player.linesCleared,
-	        level: player.getLevel(), // Ensure getLevel is accessible or pass level separately
+	        level: player.getLevel(),
 	    }));
 
-	    // Send data to backend
 	    sendGameDataToBackend(gameData);
 	}
 
 	function sendGameDataToBackend(gameData) {
-    	fetch('/tetris/save-tetris-scores', { // Ensure this URL matches your Django endpoint
+    	fetch('/tetris/save-tetris-scores', {
     	    method: 'POST',
     	    headers: {
     	        'Content-Type': 'application/json',
@@ -666,14 +611,12 @@ function launchTetrisGame(playerConfigs) {
     	});
 	}
 
-	// Helper function to get CSRF token from cookies
 	function getCookie(name) {
     	let cookieValue = null;
 	    if (document.cookie && document.cookie !== '') {
 	        const cookies = document.cookie.split(';');
 	        for (let cookie of cookies) {
 	            cookie = cookie.trim();
-	            // Does this cookie string begin with the name we want?
 	            if (cookie.startsWith(name + '=')) {
 	                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
 	                break;
@@ -683,7 +626,6 @@ function launchTetrisGame(playerConfigs) {
 	    return cookieValue;
 	}
 
-    // Global key events for all Tetris games
     document.addEventListener('keydown', function(e) {
 		if (!tetrisActive) return ;
         games.forEach(game => {

@@ -12,6 +12,7 @@ from django.conf import settings
 import requests
 import json
 import tetris.calculate_mmr
+from tetris.serializers import TetrisPlayerSerializer
 from tetris.tournament import g_tournament
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
@@ -83,6 +84,19 @@ class Me(APIView):
             return Response({"message": "User updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TetrisGetPlayer(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Retrieve the TetrisPlayer instance for the current logged-in user.
+            player = TetrisPlayer.objects.get(user=request.user)
+            serializer = TetrisPlayerSerializer(player)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({"error": "Tetris player not found."}, status=404)
 
 class tetris_add_player(APIView):
     authentication_classes = [JWTAuthentication]
