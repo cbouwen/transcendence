@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-#*stj^ylxznts%bu%(sqz)uob@@b#@5*k3%ga@rp*8_p(ah&ze
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]', os.getenv("HOSTNAME")]
 
 
 # Application definition
@@ -38,15 +38,24 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
+    'channels',
     'django.contrib.staticfiles',
     'django_bootstrap5',
     'pong',
     'tetris',
+    'chat',
     'accounts',
     'rest_framework',
     'rest_framework_simplejwt',
     'api'
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -80,6 +89,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'transcendence.wsgi.application'
+ASGI_APPLICATION = 'transcendence.asgi.application'
+
 
 
 # Database
@@ -136,6 +147,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'pong/static'),
     os.path.join(BASE_DIR, 'tetris/static'),
+    os.path.join(BASE_DIR, 'chat/static'),
+    os.path.join(BASE_DIR, 'api/static'),
+    os.path.join(BASE_DIR, 'accounts/static'),
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -147,7 +161,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTHENTICATION_BACKENDS = [
-        'accounts.auth_backend.CustomAuthBackend',
+    'accounts.auth_backend.CustomAuthBackend',
 ]
 
 # 42 API
@@ -170,3 +184,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
 }
+
+LOGIN_URL = 'login-user'
+LOGIN_REDIRECT_URL = 'chat-page'
+LOGOUT_REDIRECT_URL = 'login-user'
