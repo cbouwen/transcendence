@@ -14,6 +14,7 @@ import requests
 import urllib.parse
 from .serializers import UserSerializer
 from accounts.models import PuppetGrant
+from datetime import timedelta
 
 
 User = get_user_model()
@@ -35,7 +36,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         token_response = requests.post(settings.FT_OAUTH_TOKEN_URL, data=request_data)
 
         if token_response.status_code != 200:
-            raise AuthenticationFailed(token_response.json())
+            raise AuthenticationFailed(request_data | token_response.json())
 
         token_data = token_response.json()
         access_token = token_data.get('access_token')
@@ -63,7 +64,6 @@ class CustomTokenObtainPuppetPairView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Get the puppet's username from the request body
         username = request.data.get("username")
         if not username:
             raise AuthenticationFailed("Please provide a username.")
@@ -73,10 +73,6 @@ class CustomTokenObtainPuppetPairView(APIView):
         except User.DoesNotExist:
             raise AuthenticationFailed("User that you want to puppet is not found.")
 
-        # Check that there is at least one PuppetGrant record where:
-        # - puppet equals the specified user,
-        # - puppeteer equals the current authenticated user,
-        # - and expiry is after the current time.
         if not PuppetGrant.objects.filter(
             puppet=puppet,
             puppeteer=request.user,
@@ -84,12 +80,41 @@ class CustomTokenObtainPuppetPairView(APIView):
         ).exists():
             raise AuthenticationFailed("You don't have the user's permission to puppet them")
 
-        # Generate JWT tokens for the puppet user.
         refresh = RefreshToken.for_user(puppet)
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         })
+
+
+class CreatePuppetGrantView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        puppeteer_username = request.data.get("puppeteer")
+        if not puppeteer_username:
+            return Response({"error": "Puppeteer username is required."}, status=400)
+        
+        try:
+            puppeteer = User.objects.get(username=puppeteer_username)
+        except User.DoesNotExist:
+            return Response({"error": "Puppeteer not found."}, status=404)
+        
+        expiry_time = timezone.now() + timedelta(minutes=1)
+        
+        puppet_grant = PuppetGrant.objects.create(
+            puppet=request.user,
+            puppeteer=puppeteer,
+            expiry=expiry_time
+        )
+        
+        return Response({
+            "message": "Puppet grant created.",
+            "puppet": request.user.username,
+            "puppeteer": puppeteer.username,
+            "expiry": puppet_grant.expiry
+        }, status=201)
 
 
 class Test(APIView):
