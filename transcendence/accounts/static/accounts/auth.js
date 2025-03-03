@@ -32,3 +32,38 @@ function extractLoginCodeFromURL() {
 	}
 };
 
+async function createPuppetGrant(jwtTokens, puppeteerUsername) {
+    // Build the request body with the puppeteer username
+    const body = { puppeteer: puppeteerUsername };
+
+    // Call the "grant" endpoint via the apiRequest helper function.
+    // Adjust "grant" below if your endpoint path is different.
+    const response = await apiRequest("/token/grant", "POST", jwtTokens, body);
+
+    if (response) {
+        console.log("Puppet grant created successfully:", response);
+    } else {
+        console.error("Failed to create puppet grant.");
+    }
+};
+
+function puppetGrantSubmitButtonHandler() {
+      const puppeteerUsername = document.getElementById("puppetGrantInput").value.trim();
+      if (!puppeteerUsername) {
+        alert("Please enter the user whom you allow to login on your behalf.");
+        return;
+      }
+      
+      // Show confirmation popup
+      const confirmMessage = "Do you agree that you give'" + puppeteerUsername + "' access to your account?";
+      if (window.confirm(confirmMessage)) {
+        // Replace these with your actual JWT tokens
+        createPuppetGrant(JWTs, puppeteerUsername);
+      } else {
+        console.log("Operation canceled by user.");
+      }
+};
+
+function accountsPageStart() {
+	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
+};
