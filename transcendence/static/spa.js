@@ -72,6 +72,13 @@ async function router() {
 					chatStart();
 				});
 			}
+		},
+		{
+			path: "/account",
+			view: async () => {
+				await viewHTML("/static/accounts/account.html");
+				accountsPageStart();
+			}
 		}
 	];
 
@@ -115,20 +122,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     router();
 });
-
-(async () => {
-	let code;
-
-	try {
-		code = extractLoginCodeFromURL();
-	} catch (exception) {
-		console.log(exception);
-		redirectToIntra();
-		return;
-	}
-	JWTs = await login(code);
-	console.log(JWTs.access);
-    
-	fillInFirstNamePlaceholders();
-})();
 

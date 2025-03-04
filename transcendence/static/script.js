@@ -5,3 +5,19 @@ const intraLoginUrl = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2u
 let JWTs;
 let tetrisActive = false;
 let GlobalMatchConfig = null;
+
+(async () => {
+	let code;
+
+	try {
+		code = extractLoginCodeFromURL();
+	} catch (exception) {
+		console.log(exception);
+		redirectToIntra();
+		return;
+	}
+	JWTs = await login(code);
+	console.log(JWTs.access);
+
+	fillInFirstNamePlaceholders();
+})();
