@@ -67,3 +67,31 @@ function puppetGrantSubmitButtonHandler() {
 function accountsPageStart() {
 	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
 };
+
+function generateOTPSecret() {
+	const array = new Uint8Array(length);
+	window.crypto.getRandomValues(array);
+	return base32Encode(array);
+};
+
+function verifyOTPCode(OTPCode, OTPSecret) {
+};
+
+function getOrCreateOTP() {
+	let OTP = null;
+	while (OTP == null || OTP == "") {
+		let OTP = prompt("Please enter your OTP code or type SETUP if you don't have one already"); 
+	}
+	if (OTP != "SETUP") {
+		return {
+			2fa-type: "OTPCode",
+			value: OTP
+		};
+	} else {
+
+		return {
+			2fa-type: "OTPSecret",
+			value: generateOTPSecret()
+		};
+	}
+};

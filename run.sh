@@ -1,1 +1,1 @@
-HOSTNAME=$(hostname) docker compose up
+HOSTNAME=$(hostname) docker compose up $@
