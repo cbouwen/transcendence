@@ -1,9 +1,5 @@
-async function addPlayer(playerName, matchmakingRating, jwtToken) {
+async function addPlayer(jwtToken) {
   const jwtTokens = { access: jwtToken };
-  const body = {
-    name: playerName,
-    matchmaking_rating: matchmakingRating
-  };
   const response = await apiRequest('/tetris/add-player', 'POST', jwtTokens, body);
   if (!response) {
     console.error('Error adding player');

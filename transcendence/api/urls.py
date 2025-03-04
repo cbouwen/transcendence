@@ -3,7 +3,7 @@ from api.views import CustomTokenObtainPairView, CustomTokenObtainPuppetPairView
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import Test, tournament_add_player, tournament_cancel_tournament, tournament_declare_game, tournament_generate_round, tournament_get_current_match, tournament_remove_player, tournament_start, tournament_update_match
+from .views import Test, tetris_get_player, tournament_add_player, tournament_cancel_tournament, tournament_declare_game, tournament_generate_round, tournament_get_current_match, tournament_remove_player, tournament_start, tournament_update_match
 from .views import Me
 from .views import tetris_get_next_match
 from .views import tetris_save_tetris_scores
@@ -21,10 +21,10 @@ urlpatterns = [
     path('tetris/save-tetris-scores', tetris_save_tetris_scores.as_view(),
          name='save_tetris_scores'),
 
-    path('tetris/next-match', tetris_get_next_match.as_view(), name='next_match'),
-    path('tetris/add-player', tetris_add_player.as_view(), name='add_player'),
-    path('tetris/get-player', tetris_get_player.as_view(), name='get_player'),
-    path('tetris/remove-player', tetris_remove_player.as_view(), name='remove_player'),
+    path('tetris/next-match', tetris_get_next_match.as_view(), name='tetris_next_match'),
+    path('tetris/add-player', tetris_add_player.as_view(), name='tetris_add_player'),
+    path('tetris/get-player', tetris_get_player.as_view(), name='tetris_get_player'),
+    path('tetris/remove-player', tetris_remove_player.as_view(), name='tetris_remove_player'),
 
     path('tournament/add_player', tournament_add_player.as_view(), name='to_add_player'),
     path('tournament/remove_player', tournament_remove_player.as_view(), name='to_remove_player'),

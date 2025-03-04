@@ -1,4 +1,5 @@
 import random
+from django.contrib.auth.models import User  # assuming Django’s built-in User model
 
 class TournamentError(Exception):
     """Custom exception for Tournament-related errors."""
@@ -7,102 +8,106 @@ class TournamentError(Exception):
 class Tournament:
     def __init__(self):
         self.init = 0
-        self.game = []
-        self.players = []         # List of registered players (strings)
+        self.game = None
+        self.players = []         # List of registered users (Django User objects)
         self.started = False      # Once True, players cannot be added/removed
         self.rounds = []          # List of rounds. Each round is a list of matches.
         self.current_round_index = -1  # Index for current round (starts at 0 once started)
 
     def declare_game(self, game_name: str):
-        if (game_name != "tetris" and game_name != "pong"):
+        if game_name not in ["tetris", "pong"]:
             raise TournamentError("unknown game")
         self.game = game_name
         self.init = 1
 
-    def add_player(self, player_name: str) -> None:
+    def add_player(self, user: User) -> None:
         """
-        Add a player by name to the tournament.
+        Add a user to the tournament.
         Only allowed before the tournament starts.
         Raises TournamentError if the tournament has already started or
-        if the player is already registered.
+        if the user is already registered.
         """
         if self.init == 0:
             raise TournamentError("Tournament not setup with a game")
         if self.started:
-            raise TournamentError("Tournament already started – cannot add new players.")
-        if player_name in self.players:
-            raise TournamentError(f"Player '{player_name}' is already registered.")
-        self.players.append(player_name)
+            raise TournamentError("Tournament already started – cannot add new users.")
+        # Check by user ID to avoid duplicates.
+        if any(player.id == user.id for player in self.players):
+            raise TournamentError(f"User '{user.username}' is already registered.")
+        self.players.append(user)
 
-    def remove_player(self, player_name: str) -> None:
+    def remove_player(self, user: User) -> None:
         """
-        Remove a player by name from the tournament.
+        Remove a user from the tournament.
         Only allowed before the tournament starts.
         Raises TournamentError if the tournament has already started or
-        if the player is not registered.
+        if the user is not registered.
         """
         if self.init == 0:
             raise TournamentError("Tournament not setup with a game")
         if self.started:
-            raise TournamentError("Tournament already started – cannot remove players.")
-        if player_name not in self.players:
-            raise TournamentError(f"Player '{player_name}' is not registered.")
-        self.players.remove(player_name)
+            raise TournamentError("Tournament already started – cannot remove users.")
+        for player in self.players:
+            if player.id == user.id:
+                self.players.remove(player)
+                return
+        raise TournamentError(f"User '{user.username}' is not registered.")
 
     def start_tournament(self) -> dict:
         """
-        Starts the tournament by shuffling players and creating the first round bracket.
-        Returns a dictionary containing the list of players and round info.
+        Starts the tournament by shuffling users and creating the first round bracket.
+        Returns a dictionary containing the list of users and round info.
         Raises TournamentError if the tournament is already started or if there 
-        are fewer than 2 players.
+        are fewer than 2 users.
         """
         if self.init == 0:
             raise TournamentError("Tournament not setup with a game")
         if self.started:
             raise TournamentError("Tournament already started.")
         if len(self.players) < 2:
-            raise TournamentError("Not enough players to start a tournament (need at least 2).")
+            raise TournamentError("Not enough users to start a tournament (need at least 2).")
         self.started = True
         random.shuffle(self.players)
         round_info = self.generate_round(self.players)
-        return {"players": self.players, "round": round_info}
+        # Returning usernames for display
+        return {"players": [user.username for user in self.players], "round": round_info}
 
-    def generate_round(self, players_list: list) -> dict:
+    def generate_round(self, users_list: list) -> dict:
         """
-        Given a list of players, creates match pairings for the round.
-        If the number of players is odd, the last player gets a bye (auto-advances).
+        Given a list of users, creates match pairings for the round.
+        If the number of users is odd, the last user gets a bye (auto-advances).
         Each match is represented as a dictionary:
-          {"player1": <name>, "player2": <name or None>, "winner": <None or name>}
+          {"player1": <User>, "player2": <User or None>, "winner": <None or User>}
         Returns round information:
-          - If only one player remains, returns {"champion": <player_name>}
+          - If only one user remains, returns {"champion": <user.username>}
           - Otherwise, returns {"matches": <detailed match info>}
         """
         if self.init == 0:
             raise TournamentError("Tournament not setup with a game")
         round_matches = []
         i = 0
-        while i < len(players_list):
-            if i + 1 < len(players_list):
-                match = {"player1": players_list[i], "player2": players_list[i+1], "winner": None}
+        while i < len(users_list):
+            if i + 1 < len(users_list):
+                match = {"player1": users_list[i], "player2": users_list[i+1], "winner": None}
                 round_matches.append(match)
                 i += 2
             else:
-                # Odd number of players: this player gets a bye.
-                match = {"player1": players_list[i], "player2": None, "winner": players_list[i]}
+                # Odd number of users: this user gets a bye.
+                match = {"player1": users_list[i], "player2": None, "winner": users_list[i]}
                 round_matches.append(match)
                 i += 1
 
         self.rounds.append(round_matches)
         self.current_round_index = len(self.rounds) - 1
 
-        # If only one player remains, the tournament is over.
-        if len(players_list) == 1:
+        # If only one user remains, the tournament is over.
+        if len(users_list) == 1:
             self.started = False
-            return {"champion": players_list[0]}
+            return {"champion": users_list[0].username}
         else:
             return {"matches": self.get_current_round_matches_info()}
 
-    def update_match(self, winner: str, loser: str) -> dict:
+    def update_match(self, winner: User, loser: User) -> dict:
         """
         Update the current round by marking a match result.
         After each update, if the round is complete, generates the next round.
@@ -118,19 +123,16 @@ class Tournament:
         current_round = self.rounds[self.current_round_index]
         match_found = False
 
-        # Search for the match in the current round where both players are present.
         for match in current_round:
-            # Skip if this match already has a recorded winner (for regular matches).
-            if match["winner"] is not None and match["player2"] is not None:
+            # Skip bye matches (player2 is None) or already updated matches.
+            if match["player2"] is None or (match["winner"] is not None and match["player2"] is not None):
                 continue
 
-            # For a regular match, check if the pair (winner, loser) matches (order doesn't matter).
-            if match["player2"] is not None:
-                players_in_match = {match["player1"], match["player2"]}
-                if {winner, loser} == players_in_match:
-                    match["winner"] = winner
-                    match_found = True
-                    break
+            # Check if the provided winner and loser correspond to the match.
+            if {winner.id, loser.id} == {match["player1"].id, match["player2"].id}:
+                match["winner"] = winner
+                match_found = True
+                break
 
         if not match_found:
             raise TournamentError("Match not found or already updated in the current round.")
@@ -142,7 +144,7 @@ class Tournament:
             # If only one winner remains, we have a champion.
             if len(winners) == 1:
                 self.started = False
-                return {"champion": winners[0]}
+                return {"champion": winners[0].username}
             else:
                 round_info = self.generate_round(winners)
                 return {
@@ -151,14 +153,14 @@ class Tournament:
                 }
 
         return {
-            "message": f"Match result updated: '{winner}' defeated '{loser}'.",
+            "message": f"Match result updated: '{winner.username}' defeated '{loser.username}'.",
             "round": self.get_current_round_matches_info()
         }
 
     def get_current_round_matches(self) -> list:
         """
         Returns the current round bracket as a list of strings, where each string represents
-        the two players in a match. For a bye match, it indicates that the player auto-advances.
+        the two users in a match. For a bye match, it indicates that the user auto-advances.
         """
         if self.init == 0:
             raise TournamentError("Tournament not setup with a game")
@@ -167,17 +169,17 @@ class Tournament:
         round_bracket = []
         for match in self.rounds[self.current_round_index]:
             if match["player2"] is None:
-                match_str = f"{match['player1']} gets a bye (auto-advances)."
+                match_str = f"{match['player1'].username} gets a bye (auto-advances)."
             else:
-                match_str = f"{match['player1']} vs {match['player2']}"
+                match_str = f"{match['player1'].username} vs {match['player2'].username}"
                 if match["winner"]:
-                    match_str += f" -> Winner: {match['winner']}"
+                    match_str += f" -> Winner: {match['winner'].username}"
             round_bracket.append(match_str)
         return round_bracket
 
     def get_current_match(self):
         """
-        Returns the next (unplayed) match in the current round as a tuple of two strings:
+        Returns the next (unplayed) match in the current round as a tuple of two User objects:
         (player1, player2). This does not include bye matches.
         If all matches have been played or if no regular match exists, returns None.
         """
@@ -195,9 +197,9 @@ class Tournament:
         """
         Returns detailed match information for the current round as a list of dictionaries.
         Each dictionary contains:
-           - "player1": str
-           - "player2": str or None
-           - "winner": str or None
+           - "player1": str (username)
+           - "player2": str or None (username)
+           - "winner": str or None (username)
            - "played": bool (True if the match has been played or is a bye, else False)
         """
         if self.current_round_index < 0 or self.current_round_index >= len(self.rounds):
@@ -208,9 +210,9 @@ class Tournament:
         matches_info = []
         for match in self.rounds[self.current_round_index]:
             info = {
-                "player1": match["player1"],
-                "player2": match["player2"],
-                "winner": match["winner"],
+                "player1": match["player1"].username,
+                "player2": match["player2"].username if match["player2"] else None,
+                "winner": match["winner"].username if match["winner"] else None,
                 "played": (match["winner"] is not None)
             }
             matches_info.append(info)
@@ -219,13 +221,22 @@ class Tournament:
     def cancel_tournament(self) -> None:
         """
         Cancels the tournament by resetting all internal state.
-        This removes all registered players, clears rounds, and resets the current round index.
+        This removes all registered users, clears rounds, and resets the current round index.
         """
         self.init = 0
-        self.game.clear()
+        self.game = None
         self.players.clear()
         self.rounds.clear()
         self.current_round_index = -1
         self.started = False
 
 g_tournament = Tournament()
+
+# Example usage:
+# g_tournament = Tournament()
+# g_tournament.declare_game("tetris")
+# user1 = User.objects.get(pk=1)
+# user2 = User.objects.get(pk=2)
+# g_tournament.add_player(user1)
+# g_tournament.add_player(user2)
+# tournament_data = g_tournament.start_tournament()

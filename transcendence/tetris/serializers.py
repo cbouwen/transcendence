@@ -8,9 +8,9 @@ class TetrisScoreSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = TetrisScore
-        fields = ('gameid', 'name', 'score', 'lines_cleared', 'level')
+        fields = ('gameid', 'user', 'score', 'lines_cleared', 'level')
 
 class TetrisPlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = TetrisPlayer
-        fields = ('id', 'name', 'matchmaking_rating')
+        fields = ('user', 'matchmaking_rating')

@@ -151,7 +151,7 @@ class Me(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class TetrisGetPlayer(APIView):
+class tetris_get_player(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -170,40 +170,29 @@ class tetris_add_player(APIView):
 
     def post(self, request):
         try:
-            data = json.loads(request.body)
-            user_id = data.get("user_id")
-            nickname = data.get("nickname")
-            if not user_id or not nickname:
-                return Response({"error": "Missing required fields."}, status=400)
+            # Get the authenticated user from the request.
+            user = request.user
 
-            # Try to fetch the TetrisPlayer instance for the given user
+            # Try to fetch the TetrisPlayer instance for the authenticated user.
             try:
-                player_instance = TetrisPlayer.objects.get(user__id=user_id)
-                # Update the nickname if it does not match the current value
-                if player_instance.name != nickname:
-                    player_instance.name = nickname
-                    player_instance.save()
+                player_instance = TetrisPlayer.objects.get(user=user)
             except TetrisPlayer.DoesNotExist:
-                User = get_user_model()
-                try:
-                    user = User.objects.get(id=user_id)
-                except User.DoesNotExist:
-                    return Response({"error": "User does not exist."}, status=404)
+                # Create a new TetrisPlayer if one does not exist.
                 player_instance = TetrisPlayer.objects.create(
                     user=user,
-                    name=nickname,
                     matchmaking_rating=1200
                 )
 
-            # Now that we have the updated player, add them to the active player manager.
+            # Add the player to the active player manager.
             active_player_manager.add_player(player_instance)
 
             return Response({
-                "message": f"Player {player_instance.name} added.",
+                "message": f"Player {player_instance.user.username} added.",
                 "mmr": player_instance.matchmaking_rating
             })
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
 
 class tetris_remove_player(APIView):
     authentication_classes = [JWTAuthentication]
@@ -211,13 +200,12 @@ class tetris_remove_player(APIView):
 
     def delete(self, request):
             try:
-                data = json.loads(request.body)
-                player_name = data.get("name")
-                if not player_name:
-                    return Response({"error": "Player name is required."}, status=400)
-                active_player_manager.remove_player(player_name)
+                user = request.user
+                if not user:
+                    return Response({"error": "Player id is required."}, status=400)
+                active_player_manager.remove_player(user)
                 active_player_manager.update_match_history
-                return Response({"Message": f"Player {player_name} removed."})
+                return Response({"Message": f"Player {user} removed."})
             except Exception as e:
                 return Response({"error": str(e)}, status=500)
 
@@ -228,8 +216,8 @@ class tetris_get_next_match(APIView):
     def get(self, request):
         try:
             active_player_manager.update_match_history
-            player_name = request.GET.get('player')
-            match = active_player_manager.find_next_match(player_name)
+            user = request.user
+            match = active_player_manager.find_next_match(user)
             if match:
                 return Response({'player1': match[0], 'player2': match[1]})
             else:
@@ -249,7 +237,7 @@ class tetris_save_tetris_scores(APIView):
             for player in players_data:
                 TetrisScore.objects.create(
                     gameid=player.get('gameid'),
-                    name=player.get('name'),
+                    user=player.get('user'),
                     score=player.get('score'),
                     lines_cleared=player.get('lines_cleared'),
                     level=player.get('level')
@@ -259,8 +247,8 @@ class tetris_save_tetris_scores(APIView):
                 first_player = players_data[0]
                 second_player = players_data[1]
                 tetris.calculate_mmr.update_player_ratings(
-                    first_player.get('name'),
-                    second_player.get('name'),
+                    first_player.get('user'),
+                    second_player.get('user'),
                     first_player.get('score'),
                     second_player.get('score')
                 )
@@ -276,9 +264,9 @@ class tournament_add_player(APIView):
 
     def post(self, request):
         try:
-            player_name = request.data.get('player_name', [])
-            g_tournament.add_player(player_name)
-            return Response({'Player added': player_name})
+            user = request.user
+            g_tournament.add_player(user)
+            return Response({'Player added': user})
 
         except Exception as e:
             return Response({'error': str(e)}, status=400)
@@ -289,9 +277,9 @@ class tournament_remove_player(APIView):
 
     def delete(self, request):
         try:
-           player_name = request.data.get('player_name', [])
-           g_tournament.remove_player(player_name)
-           return Response({'Player removed': player_name})
+           user = request.user
+           g_tournament.remove_player(user)
+           return Response({'Player removed': user})
 
         except Exception as e:
             return Response({'error': str(e)}, status=400)
@@ -331,16 +319,16 @@ class tournament_update_match(APIView):
             for player in players_data:
                 TetrisScore.objects.create(
                     gameid=player.get('gameid'),
-                    name=player.get('name'),
+                    user=player.get('user'),
                     score=player.get('score'),
                     lines_cleared=player.get('lines_cleared'),
                     level=player.get('level')
                 )
             if (players_data[0].get('score') > players_data[1].get('score')):
-                g_tournament.update_match(players_data[0].get('name'), players_data[1].get('name'))
+                g_tournament.update_match(players_data[0].get('user'), players_data[1].get('user'))
                 return Response ({'Message': 'tournament match updated'})
             if (players_data[0].get('score') < players_data[1].get('score')):
-                g_tournament.update_match(players_data[1].get('name'), players_data[0].get('name'))
+                g_tournament.update_match(players_data[1].get('user'), players_data[0].get('user'))
                 return Response ({'Message': 'tournament match updated'})
             return Response({'Message': 'match ended in a draw'})
 
