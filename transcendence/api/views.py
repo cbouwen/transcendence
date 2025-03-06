@@ -25,6 +25,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         ft_api_user_login_code = request.data.get("ft_api_user_login_code")
         if not ft_api_user_login_code:
             raise AuthenticationFailed('Please provide ft_api_user_login_code')
+        totp = request.data.get("TOTP")
+        if not totp:
+            raise AuthenticationFailed('Please provide TOTP details')
 
         request_data = {
             'client_id': settings.FT_OAUTH_CLIENT_ID,
@@ -36,7 +39,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         token_response = requests.post(settings.FT_OAUTH_TOKEN_URL, data=request_data)
 
         if token_response.status_code != 200:
-            raise AuthenticationFailed(request_data | token_response.json())
+            error_data = token_response.json()
+            # error_data |= request_data
+            raise AuthenticationFailed(error_data)
 
         token_data = token_response.json()
         access_token = token_data.get('access_token')
