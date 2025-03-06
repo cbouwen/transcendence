@@ -1,15 +1,50 @@
-async function login(code) {
+async function loginAsRecurringUser() {
 	try {
-		const response = await apiRequest("/token", 'POST', undefined, { ft_api_user_login_code: code });
+		const TOTPToken = getTOTPToken()
+		try {
+			JWTs = await apiRequest("/token", 'POST', undefined, {
+				ft_api_user_login_code: intraCode,
+				TOTP: {
+					type: "token",
+					value: TOTPToken
+				}
+			});
+			if (!response) {
+				console.error("Couldn't login using code");
+				return;
+			}
+		} catch (error) {
+			console.error("Error during fetch:", error);
+		}
+	} catch (exception) {
+		throw ("needs set-up");
+	};
+};
+
+async function loginFirstTime() {
+	try {
+		JWTs = await apiRequest("/token", 'POST', undefined, {
+			ft_api_user_login_code: intraCode,
+			TOTP: {
+				type: "setup",
+				value: TOTPSetup
+			}
+		});
 		if (!response) {
-			console.error("Couldn't login using code");
+			console.error("Couldn't login for the first time");
 			return;
 		}
-
-		return await response;
 	} catch (error) {
 		console.error("Error during fetch:", error);
 		return undefined;
+	}
+};
+
+async function login() {
+	try {
+		loginAsRecurringUser();
+	} catch (exception) {
+		promptTOTPSetUp();
 	};
 };
 
@@ -64,34 +99,57 @@ function puppetGrantSubmitButtonHandler() {
       }
 };
 
-function accountsPageStart() {
-	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
+function displayQRforTOTP() {
+	let TOTPUri = TOTPSetup.toString();
+	new QRCode(document.getElementById("qrcode"), TOTPUri);
 };
 
-function generateOTPSecret() {
-	const array = new Uint8Array(length);
-	window.crypto.getRandomValues(array);
-	return base32Encode(array);
+function promptTOTPSetUp() {
+	TOTPSetup = generateTOTPSetup();
+
+	navigateTo("/register");
+	displayQRforTOTP();
+};
+
+function TOTPTokenSubmitButtonHandler() {
+	if (inputTokenIsValid()) {
+		loginFirstTime();
+	} else {
+		alert("The code you put in is not valid. Please try again");
+	}
+};
+
+function generateTOTP() {
+	let totp = new OTPAuth.TOTP({
+		issuer: "Transcendence Inc.",
+		label: "Play Pong and Tetris.",
+		algorithm: "SHA1",
+		digits: 6,
+		period: 30,
+		secret: new OTPAuth.Secret()
+	});
+	return totp;
 };
 
 function verifyOTPCode(OTPCode, OTPSecret) {
 };
 
-function getOrCreateOTP() {
-	let OTP = null;
-	while (OTP == null || OTP == "") {
-		let OTP = prompt("Please enter your OTP code or type SETUP if you don't have one already"); 
+function getTOTPToken() {
+	let token = "";
+	while (token === "") {
+		token = prompt("Please enter your OTP code or type SETUP if you don't have one already"); 
 	}
-	if (OTP != "SETUP") {
-		return {
-			2fa-type: "OTPCode",
-			value: OTP
-		};
+	if (token != "SETUP") {
+		return (token);
 	} else {
-
-		return {
-			2fa-type: "OTPSecret",
-			value: generateOTPSecret()
-		};
+		throw "TOTP set-up needed";
 	}
+};
+
+function accountsPageStart() {
+	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
+};
+
+function registerPageStart() {
+	document.getElementById("TOTPTokenSubmit").addEventListener("click", TOTPTokenSubmitButtonHandler); 
 };

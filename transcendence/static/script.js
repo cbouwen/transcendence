@@ -1,15 +1,13 @@
 
 (async () => {
-	let code;
-
 	try {
-		code = extractLoginCodeFromURL();
+		intraCode = extractLoginCodeFromURL();
 	} catch (exception) {
 		console.log(exception);
 		redirectToIntra();
 		return;
 	}
-	JWTs = await login(code);
+	JWTs = await login();
 	console.log(JWTs.access);
 
 	fillInFirstNamePlaceholders();
