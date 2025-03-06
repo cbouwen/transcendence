@@ -233,6 +233,7 @@ class tetris_save_tetris_scores(APIView):
         try:
             players_data = request.data.get('players', [])
             ranked = request.data.get('ranked', False)
+            user = request.user
             
             for player in players_data:
                 TetrisScore.objects.create(

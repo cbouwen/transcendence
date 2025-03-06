@@ -520,14 +520,16 @@ function launchTetrisGame(playerConfigs, matchConfig) {
     const contentElement = document.getElementById("content");
     contentElement.appendChild(mainContainer);
 
-    playerConfigs.forEach((config, index) => {
+    playerConfigs.forEach(async (config, index) => {
         const container = document.createElement('div');
         container.classList.add('game-container');
         container.id = `player${index + 1}`;
 
         const playerNameEl = document.createElement('div');
+		data = await apiRequest("/me", "GET", config.user, null)
+		console.log(data);
         playerNameEl.classList.add('player-name');
-        playerNameEl.textContent = config.name;
+        playerNameEl.textContent = data.username;
         container.appendChild(playerNameEl);
 
         mainContainer.appendChild(container);
@@ -584,42 +586,17 @@ function launchTetrisGame(playerConfigs, matchConfig) {
 	    sendGameDataToBackend(gameData);
 	}
 
-	function sendGameDataToBackend(gameData) {
-    	fetch('/tetris/save-tetris-scores', {
-    	    method: 'POST',
-    	    headers: {
-    	        'Content-Type': 'application/json',
-    	        'X-CSRFToken': getCookie('csrftoken'),
-    	    },
-    	    body: JSON.stringify({ players: gameData }),
-    	})
-    	.then(response => {
-    	    if (!response.ok) {
-    	        throw new Error('Network response was not ok');
-    	    }
-    	    return response.json();
-    	})
-    	.then(data => {
-    	    console.log('Game data successfully sent to backend:', data);
-    	})
-    	.catch((error) => {
-    	    console.error('Error sending game data:', error);
-    	});
-	}
-
-	function getCookie(name) {
-    	let cookieValue = null;
-	    if (document.cookie && document.cookie !== '') {
-	        const cookies = document.cookie.split(';');
-	        for (let cookie of cookies) {
-	            cookie = cookie.trim();
-	            if (cookie.startsWith(name + '=')) {
-	                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-	                break;
-	            }
-	        }
-	    }
-	    return cookieValue;
+	async function sendGameDataToBackend(gameData) {
+		try {
+			const response = await apiRequest("tetris/save_tetris_scores", "POST", JWTs, gameData)
+			if (!response.ok) {
+				throw new Error('Server error: ${response.statusText}');
+			}
+			const data = await reponse.json();
+			console.log("Scores processed succesfully:", data);
+		} catch {
+			console.error("Error processing scores:", error);
+		}
 	}
 
     document.addEventListener('keydown', function(e) {

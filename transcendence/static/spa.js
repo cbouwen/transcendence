@@ -45,14 +45,14 @@ async function router() {
 			path: "/tetris_start",
 			view: () => {
 				tetrisActive = true
-				viewHTML("/static/tetris/1_player.html").then(() => {
+				viewHTML("/static/tetris/1_player.html").then( async () => {
 					const matchConfig = {
 						tournament : false,
 						ranked : true,
 					};
 					const playerConfigs = [
 						{
-							name: "Alice",
+							user: JWTs,
 							controls: {
 								left: 'ArrowLeft',
 								right: 'ArrowRight',
