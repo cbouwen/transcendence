@@ -7,9 +7,6 @@
 		redirectToIntra();
 		return;
 	}
-	JWTs = await login();
-	console.log(JWTs.access);
-
-	fillInFirstNamePlaceholders();
+	await login();
 })();
 

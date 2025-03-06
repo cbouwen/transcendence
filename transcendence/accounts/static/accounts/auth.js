@@ -9,7 +9,7 @@ async function loginAsRecurringUser() {
 					value: TOTPToken
 				}
 			});
-			if (!response) {
+			if (!JWTs) {
 				console.error("Couldn't login using code");
 				return;
 			}
@@ -30,7 +30,7 @@ async function loginFirstTime() {
 				value: TOTPSetup
 			}
 		});
-		if (!response) {
+		if (!JWTs) {
 			console.error("Couldn't login for the first time");
 			return;
 		}
@@ -42,9 +42,9 @@ async function loginFirstTime() {
 
 async function login() {
 	try {
-		loginAsRecurringUser();
+		await loginAsRecurringUser();
 	} catch (exception) {
-		promptTOTPSetUp();
+		await navigateTo("/register");
 	};
 };
 
@@ -101,14 +101,26 @@ function puppetGrantSubmitButtonHandler() {
 
 function displayQRforTOTP() {
 	let TOTPUri = TOTPSetup.toString();
-	new QRCode(document.getElementById("qrcode"), TOTPUri);
+	let qr = qrcode(0, 'L');
+	qr.addData(TOTPUri);
+	qr.make();
+	document.getElementById("qrcode").innerHTML = qr.createImgTag();
 };
 
-function promptTOTPSetUp() {
+async function promptTOTPSetUp() {
 	TOTPSetup = generateTOTPSetup();
 
-	navigateTo("/register");
 	displayQRforTOTP();
+};
+
+function inputTokenIsValid() {
+	let token = document.getElementById("TOTPTokenInput").value;
+	let delta = TOTPSetup.validate({ token, window: 1 }); 
+	if (delta != null) {
+		return (true);
+	} else {
+		return (false);
+	}
 };
 
 function TOTPTokenSubmitButtonHandler() {
@@ -119,16 +131,15 @@ function TOTPTokenSubmitButtonHandler() {
 	}
 };
 
-function generateTOTP() {
-	let totp = new OTPAuth.TOTP({
+function generateTOTPSetup() {
+	return (new OTPAuth.TOTP({
 		issuer: "Transcendence Inc.",
 		label: "Play Pong and Tetris.",
 		algorithm: "SHA1",
 		digits: 6,
 		period: 30,
 		secret: new OTPAuth.Secret()
-	});
-	return totp;
+	}));
 };
 
 function verifyOTPCode(OTPCode, OTPSecret) {
@@ -152,4 +163,5 @@ function accountsPageStart() {
 
 function registerPageStart() {
 	document.getElementById("TOTPTokenSubmit").addEventListener("click", TOTPTokenSubmitButtonHandler); 
+	promptTOTPSetUp();
 };
