@@ -18,7 +18,7 @@ urlpatterns = [
     path('test', Test.as_view(), name='test'),
     path('me', Me.as_view(), name='me'),
 
-    path('tetris/save-tetris-scores', tetris_save_tetris_scores.as_view(),
+    path('tetris/save_tetris_scores', tetris_save_tetris_scores.as_view(),
          name='save_tetris_scores'),
 
     path('tetris/next-match', tetris_get_next_match.as_view(), name='tetris_next_match'),

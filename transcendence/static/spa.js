@@ -48,7 +48,7 @@ async function router() {
 				viewHTML("/static/tetris/1_player.html").then( async () => {
 					const matchConfig = {
 						tournament : false,
-						ranked : true,
+						ranked : false,
 					};
 					const playerConfigs = [
 						{

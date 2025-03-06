@@ -58,21 +58,6 @@ class ActivePlayerManager:
                 f"Database error while fetching match history for user ID '{user_id}': {str(e)}"
             ) from e
 
-    def update_match_history(self, p1_id: int, p2_id: int):
-        if p1_id not in self.active_players:
-            raise ActivePlayerManagerError(f"Player with ID '{p1_id}' is not an active player.")
-        if p2_id not in self.active_players:
-            raise ActivePlayerManagerError(f"Player with ID '{p2_id}' is not an active player.")
-
-        p1_data = self.active_players[p1_id]
-        p2_data = self.active_players[p2_id]
-
-        p1_data["times_matched_with"][p2_id] = p1_data["times_matched_with"].get(p2_id, 0) + 1
-        p2_data["times_matched_with"][p1_id] = p2_data["times_matched_with"].get(p1_id, 0) + 1
-
-        # Optionally, persist a new match to the DB here:
-        # self.save_new_match_to_db(p1_id, p2_id)
-
     def refresh_all_players_match_histories(self):
         for user_id in list(self.active_players.keys()):
             try:

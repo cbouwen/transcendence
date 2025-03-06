@@ -535,7 +535,8 @@ function launchTetrisGame(playerConfigs, matchConfig) {
         mainContainer.appendChild(container);
 
         const gameInstance = new TetrisGame(`player${index + 1}`, config.controls, config.name);
-        games[index] = gameInstance;
+		gameInstance.user = config.user;  // attach the JWT token as a property
+		games[index] = gameInstance;
         console.log(`Initialized game for ${config.name}`);
     });
 
@@ -554,49 +555,64 @@ function launchTetrisGame(playerConfigs, matchConfig) {
     }
 
 	function showFinalScoreboard() {
-	    const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+	  const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
 
-	    const scoreboardContainer = document.createElement('div');
-	    scoreboardContainer.classList.add('scoreboard-overlay');
+	  // Build the scoreboard UI
+	  const scoreboardContainer = document.createElement('div');
+	  scoreboardContainer.classList.add('scoreboard-overlay');
+	  const title = document.createElement('div');
+	  title.classList.add('scoreboard-title');
+	  title.textContent = 'Game Over! Final Scores';
+	  scoreboardContainer.appendChild(title);
+	  sortedPlayers.forEach((player, rank) => {
+		const entry = document.createElement('div');
+		entry.classList.add('scoreboard-entry');
+		entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
+		scoreboardContainer.appendChild(entry);
+	  });
+	  document.body.appendChild(scoreboardContainer);
 
-	    const title = document.createElement('div');
-	    title.classList.add('scoreboard-title');
-	    title.textContent = 'Game Over! Final Scores';
-	    scoreboardContainer.appendChild(title);
-
-	    sortedPlayers.forEach((player, rank) => {
-	        const entry = document.createElement('div');
-	        entry.classList.add('scoreboard-entry');
-	        entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
-	        scoreboardContainer.appendChild(entry);
-	    });
-
-	    document.body.appendChild(scoreboardContainer);
-
-	    const gameData = sortedPlayers.map(player => ({
+	  // Send each player's data as a separate API call.
+	  const totalParts = sortedPlayers.length;
+	  sortedPlayers.forEach((player, index) => {
+		const payload = {
+			jwtToken: player.user,
+			ranked: GlobalMatchConfig.ranked,
 			is_tournament: GlobalMatchConfig.tournament,
 			gameid: game_id,
-			ranked: GlobalMatchConfig.ranked,
-	        name: player.name,
-	        score: player.score,
-	        lines_cleared: player.linesCleared,
-	        level: player.getLevel(),
-	    }));
-
-	    sendGameDataToBackend(gameData);
+			jwtToken: player.user,  
+			score: player.score,
+			lines_cleared: player.linesCleared,
+			level: player.getLevel(),
+			part: index + 1,         // current part number (1-indexed)
+			total_parts: totalParts   // total number of parts for this game
+		
+		};
+		// Call the API with the specific player’s JWT token.
+		sendGameDataToBackend(payload, player.user);
+	  });
 	}
 
-	async function sendGameDataToBackend(gameData) {
-		try {
-			const response = await apiRequest("tetris/save_tetris_scores", "POST", JWTs, gameData)
-			if (!response.ok) {
-				throw new Error('Server error: ${response.statusText}');
-			}
-			const data = await reponse.json();
-			console.log("Scores processed succesfully:", data);
-		} catch {
-			console.error("Error processing scores:", error);
+	async function sendGameDataToBackend(playerData, playerJWT) {
+	  try {
+		// Use the individual player's JWT token in the API request.
+		console.log(playerData);
+		console.log("sending data");
+		const response = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
+		if (!response.ok) {
+		  throw new Error(`Server error: ${response.statusText}`);
 		}
+		const data = await response.json();
+		console.log(
+		  `Score processed successfully for part ${playerData.part}/${playerData.total_parts}:`,
+		  data
+		);
+	  } catch (error) {
+		console.error(
+		  `Error processing score for part ${playerData.part}/${playerData.total_parts}:`,
+		  error
+		);
+	  }
 	}
 
     document.addEventListener('keydown', function(e) {
