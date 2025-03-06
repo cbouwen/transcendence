@@ -236,8 +236,8 @@ class tetris_save_tetris_scores(APIView):
     def post(self, request):
         print(request)
         print("\n\n")
-        # Remove 'jwtToken' from required_keys and add user info via request.user
-        required_keys = ['gameid', 'score', 'lines_cleared', 'level', 'part', 'total_parts']
+        # Define required keys without 'part' and 'total_parts'
+        required_keys = ['gameid', 'score', 'lines_cleared', 'level']
         player_data = {}
         for key in required_keys:
             value = request.data.get(key)
@@ -248,57 +248,17 @@ class tetris_save_tetris_scores(APIView):
         # Add authenticated user's id to the player_data
         player_data['user_id'] = request.user.id
 
-        Ranked = 0  # Set your ranked flag as needed
-        game_key = f"tetris_{player_data['gameid']}"
-        current_time = time.time()
-
-        # Retrieve temporary data (if any) for this game
-        temp_data = cache.get(game_key)
-        if temp_data is None or (current_time - temp_data.get('timestamp', current_time)) > 20:
-            # Initialize new storage if nothing exists or timeout expired
-            temp_data = {'players': [], 'timestamp': current_time}
-
-        # Append this player's piece
-        temp_data['players'].append(player_data)
-        cache.set(game_key, temp_data, timeout=20)  # reset the timeout
-
-        if len(temp_data['players']) == int(player_data['total_parts']):
-            for p in temp_data['players']:
-                # Use get_or_create to update if a record already exists
-                score_obj, created = TetrisScore.objects.update_or_create(
-                    user_id=p.get('user_id'),
-                    gameid=p.get('gameid'),
-                    defaults={
-                        'score': p.get('score'),
-                        'lines_cleared': p.get('lines_cleared'),
-                        'level': p.get('level'),
-                    }
-                )
-
-            # Optionally, handle ranked matches if there are exactly two players.
-            if Ranked and len(temp_data['players']) == 2:
-                first_player = temp_data['players'][0]
-                second_player = temp_data['players'][1]
-                tetris.calculate_mmr.update_player_ratings(
-                    first_player.get('user_id'),
-                    second_player.get('user_id'),
-                    first_player.get('score'),
-                    second_player.get('score')
-                )
-                # Update match history
-                active_player_manager.update_match_history(
-                    first_player.get('user_id'),
-                    second_player.get('user_id')
-                )
-            # Clear temporary data
-            cache.delete(game_key)
-            return Response({'Message': 'Scores processed successfully.'})
-        else:
-            # Not all parts received yet; respond with the current state.
-            return Response({
-                'Message': f"Received part {player_data['part']} of {player_data['total_parts']}. Waiting for remaining parts."
-            })
-
+        # Immediately save or update the Tetris score
+        score_obj, created = TetrisScore.objects.update_or_create(
+            user_id=player_data.get('user_id'),
+            gameid=player_data.get('gameid'),
+            defaults={
+                'score': player_data.get('score'),
+                'lines_cleared': player_data.get('lines_cleared'),
+                'level': player_data.get('level'),
+            }
+        )
+        return Response({'Message': 'Score processed successfully.'})
 
 class tournament_add_player(APIView):
     authentication_classes = [JWTAuthentication]

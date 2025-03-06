@@ -573,20 +573,14 @@ function launchTetrisGame(playerConfigs, matchConfig) {
 	  document.body.appendChild(scoreboardContainer);
 
 	  // Send each player's data as a separate API call.
-	  const totalParts = sortedPlayers.length;
-	  sortedPlayers.forEach((player, index) => {
+	  sortedPlayers.forEach((player) => {
 		const payload = {
-			jwtToken: player.user,
 			ranked: GlobalMatchConfig.ranked,
 			is_tournament: GlobalMatchConfig.tournament,
 			gameid: game_id,
-			jwtToken: player.user,  
 			score: player.score,
 			lines_cleared: player.linesCleared,
 			level: player.getLevel(),
-			part: index + 1,         // current part number (1-indexed)
-			total_parts: totalParts   // total number of parts for this game
-		
 		};
 		// Call the API with the specific player’s JWT token.
 		sendGameDataToBackend(payload, player.user);
