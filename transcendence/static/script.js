@@ -10,6 +10,8 @@
 	}
 	JWTs = await login(code);
 	console.log(JWTs.access);
+	apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
+
 
 	fillInFirstNamePlaceholders();
 })();

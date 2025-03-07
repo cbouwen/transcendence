@@ -173,29 +173,26 @@ class tetris_add_player(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Get the authenticated user from the request.
+        user = request.user
+
+        # Try to fetch the TetrisPlayer instance for the authenticated user.
         try:
-            # Get the authenticated user from the request.
-            user = request.user
+            player_instance = TetrisPlayer.objects.get(user=user)
+        except TetrisPlayer.DoesNotExist:
+            # Create a new TetrisPlayer if one does not exist.
+            player_instance = TetrisPlayer.objects.create(
+                user=user,
+                matchmaking_rating=1200
+            )
 
-            # Try to fetch the TetrisPlayer instance for the authenticated user.
-            try:
-                player_instance = TetrisPlayer.objects.get(user=user)
-            except TetrisPlayer.DoesNotExist:
-                # Create a new TetrisPlayer if one does not exist.
-                player_instance = TetrisPlayer.objects.create(
-                    user=user,
-                    matchmaking_rating=1200
-                )
+        # Add the player to the active player manager.
+        active_player_manager.add_player(player_instance)
 
-            # Add the player to the active player manager.
-            active_player_manager.add_player(player_instance)
-
-            return Response({
-                "message": f"Player {player_instance.user.username} added.",
-                "mmr": player_instance.matchmaking_rating
-            })
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+        return Response({
+            "message": f"Player {player_instance.user.username} added.",
+            "mmr": player_instance.matchmaking_rating
+        })
 
 
 class tetris_remove_player(APIView):
