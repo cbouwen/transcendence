@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import TetrisPlayer, TetrisScore
 from django.contrib.auth import authenticate
-from active_player_manager.py import ActivePlayerManager
+from active_player_manager import active_player_manager
 
 def temporary_login(request):
     # Extract username and password from the request

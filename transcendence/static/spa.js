@@ -21,6 +21,7 @@ function navigateTo(url) {
 async function router() {
 	if (location.pathname !== "/tetris") {
     }
+	tetrisActive = false
 	const routes = [
 		{
 			path: "/",
@@ -37,30 +38,30 @@ async function router() {
 			}
 		},
 		{
-			path: "/tetris",
+			path:"/tetris",
+			view: () => viewHTML("/static/tetris/tetris.html").then(() => {})
+		},
+		{
+			path: "/tetris_start",
 			view: () => {
-				viewHTML("/static/tetris/1_player.html").then(() => {
+				tetrisActive = true
+				viewHTML("/static/tetris/1_player.html").then( async () => {
+					const matchConfig = {
+						tournament : false,
+						ranked : false,
+					};
 					const playerConfigs = [
 						{
-							name: "Alice",
+							user: JWTs,
 							controls: {
 								left: 'ArrowLeft',
 								right: 'ArrowRight',
 								down: 'ArrowDown',
 								rotate: 'ArrowUp'
 							}
-						},
-						{
-							name: "Yannick",
-							controls: {
-								left: 'a',
-								right: 'd',
-								down: 's',
-								rotate: 'w'
-							}
 						}
 					]
-					launchTetrisGame(playerConfigs);
+					launchTetrisGame(playerConfigs, matchConfig);
 				});
 			}
 		},
@@ -103,12 +104,22 @@ async function router() {
 window.addEventListener("popstate", router);
 
 document.addEventListener("DOMContentLoaded", () => {
-	document.body.addEventListener("click", e => {
-		if (e.target.matches("[data-link]")) {
-			e.preventDefault();
-			navigateTo(e.target.href);
-		}
-	});
-	router();
+    const tetrisButton = document.querySelector("[data-tetris-start-button]");
+    if (tetrisButton) {
+        console.log("Tetris start button exists!");
+    } else {
+        console.log("Tetris start button does not exist yet.");
+    }
+
+    document.body.addEventListener("click", e => {
+        if (e.target.matches("[data-link]")) {
+            e.preventDefault();
+            navigateTo(e.target.href);
+        } else if (e.target.matches("[data-tetris-start-button]")) {
+            history.pushState(null, null, "/tetris_start");
+            router();
+        }
+    });
+    router();
 });
 
