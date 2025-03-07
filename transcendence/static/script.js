@@ -1,4 +1,3 @@
-
 (async () => {
 	let code;
 
@@ -14,4 +13,3 @@
 
 	fillInFirstNamePlaceholders();
 })();
-

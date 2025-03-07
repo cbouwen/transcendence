@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import TetrisScore
+from .models import TetrisPlayer, TetrisScore
 
 class TetrisScoreSerializer(serializers.ModelSerializer):
     """
@@ -8,4 +8,9 @@ class TetrisScoreSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = TetrisScore
-        fields = ('gameid', 'name', 'score', 'lines_cleared', 'level')
+        fields = ('gameid', 'user', 'score', 'lines_cleared', 'level')
+
+class TetrisPlayerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TetrisPlayer
+        fields = ('user', 'matchmaking_rating')
