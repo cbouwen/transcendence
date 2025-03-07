@@ -184,7 +184,3 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
 }
-
-LOGIN_URL = 'login-user'
-LOGIN_REDIRECT_URL = 'chat-page'
-LOGOUT_REDIRECT_URL = 'login-user'
