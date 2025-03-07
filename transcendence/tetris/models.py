@@ -1,12 +1,12 @@
 from django.db import models
-from django.conf import settings  # Import settings for AUTH_USER_MODEL
+from django.conf import settings
 
 class TetrisScore(models.Model):
     """
     Model to store Tetris game results.
     """
     gameid = models.CharField(max_length=100)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     score = models.IntegerField()
     lines_cleared = models.IntegerField()
     level = models.IntegerField()
