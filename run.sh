@@ -1,1 +1,2 @@
-HOSTNAME=$(hostname) docker compose up
+export HOSTNAME=$(hostname)
+docker compose up
