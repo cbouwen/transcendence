@@ -1,6 +1,6 @@
 #!/bin/bash
 
 set -e
-python manage.py makemigrations --noinput
-python manage.py migrate --noinput
+python manage.py makemigrations $APPS
+python manage.py migrate 
 exec "$@"  # Run the CMD from Dockerfile or docker-compose
