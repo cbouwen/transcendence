@@ -17,7 +17,7 @@ class ActivePlayerManager:
 
         # Use the player's id from the Django backend as key.
         if player.id in self.active_players:
-            raise ActivePlayerManagerError(f"Player with ID '{player.id}' is already active.")
+            return ("alreaddy active")
 
         try:
             match_history = self.fetch_match_history_from_db(player.id)

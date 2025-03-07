@@ -187,13 +187,15 @@ class tetris_add_player(APIView):
             )
 
         # Add the player to the active player manager.
-        active_player_manager.add_player(player_instance)
+        response = active_player_manager.add_player(player_instance)
+        if (response == "alreaddy active"):
+            return Response({
+                "message": f"player {player_instance.user.username} alreaddy active."})
 
         return Response({
             "message": f"Player {player_instance.user.username} added.",
             "mmr": player_instance.matchmaking_rating
         })
-
 
 class tetris_remove_player(APIView):
     authentication_classes = [JWTAuthentication]
