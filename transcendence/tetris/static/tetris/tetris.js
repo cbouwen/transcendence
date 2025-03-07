@@ -589,23 +589,19 @@ function launchTetrisGame(playerConfigs, matchConfig) {
 
 	async function sendGameDataToBackend(playerData, playerJWT) {
 	  try {
-		// Use the individual player's JWT token in the API request.
 		console.log(playerData);
 		console.log("sending data");
-		const response = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
-		if (!response.ok) {
-		  throw new Error(`Server error: ${response.statusText}`);
+		const data = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
+		
+		// If your API returns an "error" key when something goes wrong,
+		// check for that, otherwise assume the call was successful.
+		if (data.error) {
+		  throw new Error(`Server error: ${data.error}`);
 		}
-		const data = await response.json();
-		console.log(
-		  `Score processed successfully for part ${playerData.part}/${playerData.total_parts}:`,
-		  data
-		);
+		
+		console.log("Score processed successfully:", data);
 	  } catch (error) {
-		console.error(
-		  `Error processing score for part ${playerData.part}/${playerData.total_parts}:`,
-		  error
-		);
+		console.error("Error processing score:", error);
 	  }
 	}
 

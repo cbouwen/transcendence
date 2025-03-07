@@ -160,13 +160,10 @@ class tetris_get_player(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Retrieve the TetrisPlayer instance for the current logged-in user.
-            player = TetrisPlayer.objects.get(user=request.user)
-            serializer = TetrisPlayerSerializer(player)
-            return Response(serializer.data)
-        except Exception as e:
-            return Response({"error": "Tetris player not found."}, status=404)
+        # Retrieve the TetrisPlayer instance for the current logged-in user.
+        player = TetrisPlayer.objects.get(user=request.user)
+        serializer = TetrisPlayerSerializer(player)
+        return Response(serializer.data)
 
 class tetris_add_player(APIView):
     authentication_classes = [JWTAuthentication]
@@ -202,31 +199,25 @@ class tetris_remove_player(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-            try:
-                user = request.user
-                if not user:
-                    return Response({"error": "Player id is required."}, status=400)
-                active_player_manager.remove_player(user)
-                active_player_manager.update_match_history
-                return Response({"Message": f"Player {user} removed."})
-            except Exception as e:
-                return Response({"error": str(e)}, status=500)
+        user = request.user
+        if not user:
+            return Response({"error": "Player id is required."}, status=400)
+        active_player_manager.remove_player(user)
+        active_player_manager.update_match_history
+        return Response({"Message": f"Player {user} removed."})
 
 class tetris_get_next_match(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            active_player_manager.update_match_history
-            user = request.user
-            match = active_player_manager.find_next_match(user)
-            if match:
-                return Response({'player1': match[0], 'player2': match[1]})
-            else:
-                return Response({'error': 'No match found'}, status=404)
-        except ValueError as e:
-            return Response({'error': str(e)}, status=400)
+        active_player_manager.update_match_history
+        user = request.user
+        match = active_player_manager.find_next_match(user)
+        if match:
+            return Response({'player1': match[0], 'player2': match[1]})
+        else:
+            return Response({'error': 'No match found'}, status=404)
 
 class tetris_save_tetris_scores(APIView):
     authentication_classes = [JWTAuthentication]
@@ -257,117 +248,86 @@ class tetris_save_tetris_scores(APIView):
                 'level': player_data.get('level'),
             }
         )
-        return Response({'Message': 'Score processed successfully.'})
+        return Response({'Message': 'Score processed successfully.'}, status=200)
 
 class tournament_add_player(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        try:
-            user = request.user
-            g_tournament.add_player(user)
-            return Response({'Player added': user})
+        user = request.user
+        g_tournament.add_player(user)
+        return Response({'Player added': user})
 
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
 
 class tournament_remove_player(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        try:
-           user = request.user
-           g_tournament.remove_player(user)
-           return Response({'Player removed': user})
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+        user = request.user
+        g_tournament.remove_player(user)
+        return Response({'Player removed': user})
 
 class tournament_start(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        try:
-            g_tournament.start_tournament()
-            return Response({'Message': 'tournament started'})
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+        g_tournament.start_tournament()
+        return Response({'Message': 'tournament started'})
 
 class tournament_generate_round(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        try:
-            g_tournament.generate_round(g_tournament.players)
-            return Response({'Message': 'Round generated'})
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+        g_tournament.generate_round(g_tournament.players)
+        return Response({'Message': 'Round generated'})
 
 class tournament_update_match(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        try:
-            players_data = request.data.get('players', [])
-            
-            for player in players_data:
-                TetrisScore.objects.create(
-                    gameid=player.get('gameid'),
-                    user=player.get('user'),
-                    score=player.get('score'),
-                    lines_cleared=player.get('lines_cleared'),
-                    level=player.get('level')
-                )
-            if (players_data[0].get('score') > players_data[1].get('score')):
-                g_tournament.update_match(players_data[0].get('user'), players_data[1].get('user'))
-                return Response ({'Message': 'tournament match updated'})
-            if (players_data[0].get('score') < players_data[1].get('score')):
-                g_tournament.update_match(players_data[1].get('user'), players_data[0].get('user'))
-                return Response ({'Message': 'tournament match updated'})
-            return Response({'Message': 'match ended in a draw'})
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+        players_data = request.data.get('players', [])
+        
+        for player in players_data:
+            TetrisScore.objects.create(
+                gameid=player.get('gameid'),
+                user=player.get('user'),
+                score=player.get('score'),
+                lines_cleared=player.get('lines_cleared'),
+                level=player.get('level')
+            )
+        if (players_data[0].get('score') > players_data[1].get('score')):
+            g_tournament.update_match(players_data[0].get('user'), players_data[1].get('user'))
+            return Response ({'Message': 'tournament match updated'})
+        if (players_data[0].get('score') < players_data[1].get('score')):
+            g_tournament.update_match(players_data[1].get('user'), players_data[0].get('user'))
+            return Response ({'Message': 'tournament match updated'})
+        return Response({'Message': 'match ended in a draw'})
 
 class tournament_get_current_match(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            return Response({'Message': g_tournament.get_current_match()})
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+        return Response({'Message': g_tournament.get_current_match()})
 
 class tournament_cancel_tournament(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        try:
-            g_tournament.cancel_tournament()
-            return Response({'Message': 'tournament canceled'})
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+        g_tournament.cancel_tournament()
+        return Response({'Message': 'tournament canceled'})
 
 class tournament_declare_game(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        try:
-            game_name = request.data.get('game_name')
-            g_tournament.declare_game(game_name)
-            return JsonResponse({'Message': 'game name declared'})
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+        game_name = request.data.get('game_name')
+        g_tournament.declare_game(game_name)
+        return JsonResponse({'Message': 'game name declared'})
