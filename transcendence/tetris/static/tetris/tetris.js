@@ -12,6 +12,7 @@ async function launchCustomTetrisGame(jwtTokens, tournament = false, ranked = fa
     { rotate: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown' } // Player 3
   ];
 
+  // Create a player configuration for each provided JWT token
   const playerConfigs = jwtTokens.map((jwt, index) => ({
     user: jwt,
     controls: controlsMapping[index]
@@ -22,6 +23,7 @@ async function launchCustomTetrisGame(jwtTokens, tournament = false, ranked = fa
     ranked: ranked
   };
 
+  // Launch the Tetris game using the player and match configurations
   launchTetrisGame(playerConfigs, matchConfig);
 }
 
@@ -35,10 +37,56 @@ async function addPlayer(jwtToken) {
   console.log('Player added:', response.message);
 }
 
-async function searching_for_tetris_match()
-{
-	const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
+async function awaitingPupperResponse(player2) {
+	let counter = 0;
+	while (1)
+	{
+		var txt = ("awaiting response from puppeteering from " + player2);
+		if (confirm(txt)) {
+			const payload = {
+				username : player2,
+			}
+			const response = await apiRequest('/token/puppet', 'POST', JWTs, payload);
+			console.log("printing puppet token request response ", response);
+			if (response.status == 401)
+			{
+				counter++;
+				if (counter == 5)
+					return ;
+				console.log("printing status", response.status);
+				continue ;
+			}
+			else
+			{
+				return (response);
+			}
+		} else {
+			return ;
+		}
+	}
+	return ;
+}
+
+async function searching_for_tetris_match() {
+    const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
+
 	console.log(response);
+	if (response) {
+		console.log(response.player2);
+		console.log(response.player1);
+	}
+
+    if (!response || !response.player1?.trim() || !response.player2?.trim()) 
+        return; // Handles undefined, null, or empty strings safely
+
+    puppetToken = awaitingPupperResponse(response.player2);
+	console.log("PRINTING PUPPET TOKEN", puppetToken.value);
+	if (puppetToken.status == 401)
+		return ;
+	console.log(await apiRequest("/me", "GET", puppetToken.value, null));
+	console.log("LAUNCHING TETRIS GAME ", JWTs, puppetToken.value);
+	launchCustomTetrisGame([JWTs, puppetToken.value], false, true);
+	console.log(puppetToken);
 }
 
 async function startTetrisGame() {
@@ -563,6 +611,7 @@ function launchTetrisGame(playerConfigs, matchConfig) {
         container.id = `player${index + 1}`;
 
         const playerNameEl = document.createElement('div');
+		console.log("printing the token off ", config.user);
 		data = await apiRequest("/me", "GET", config.user, null)
 		console.log(data);
         playerNameEl.classList.add('player-name');
@@ -633,7 +682,8 @@ function launchTetrisGame(playerConfigs, matchConfig) {
 		// If your API returns an "error" key when something goes wrong,
 		// check for that, otherwise assume the call was successful.
 		if (data.error) {
-		  throw new Error(`Server error: ${data.error}`);
+		  throw new Error(`Server error: ${data.error}`)
+			console.log(JWTs, puppetToken);;
 		}
 		
 		console.log("Score processed successfully:", data);

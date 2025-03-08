@@ -86,12 +86,15 @@ class CustomTokenObtainPuppetPairView(APIView):
             puppeteer=request.user,
             expiry__gt=timezone.now()
         ).exists():
-            raise AuthenticationFailed("You don't have the user's permission to puppet them")
+            return Response({'status' : 401})
 
         refresh = RefreshToken.for_user(puppet)
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            'status': 200,
+            'value': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token)
+            }
         })
 
 class CreatePuppetGrantView(APIView):
