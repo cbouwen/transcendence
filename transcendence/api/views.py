@@ -40,7 +40,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         if token_response.status_code != 200:
             error_data = token_response.json()
-            # error_data |= request_data
+            error_data |= { 'type': "intra error" }
             raise AuthenticationFailed(error_data)
 
         token_data = token_response.json()
@@ -52,9 +52,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             raise AuthenticationFailed("42 OAuth access token is required.")
 
         # Authenticate user using the custom backend
-        user = authenticate(request, token=access_token)
+        user = authenticate(token=access_token, totp=totp)
         if not user:
-            raise AuthenticationFailed("Invalid 42 OAuth access token.")
+            raise AuthenticationFailed("Invalid OTP (2FA) or invalid 42 OAuth access token.")
 
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)

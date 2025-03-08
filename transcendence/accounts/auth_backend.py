@@ -1,11 +1,15 @@
 import requests
 from django.contrib.auth.backends import BaseBackend
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.conf import settings
 import sys
+# import pyotp
+import time
+
+User = get_user_model()
 
 class CustomAuthBackend(BaseBackend):
-    def authenticate(self, request, token=None):
+    def authenticate(self, token=None, totp=None):
         userinfo_url = settings.FT_OAUTH_USERINFO_URL
         try:
             response = requests.get(
@@ -27,7 +31,10 @@ class CustomAuthBackend(BaseBackend):
                 first_name = user_data['first_name']
                 last_name = user_data['first_name']
                 email = user_data['email']
-                user = User.objects.create(username=username, first_name=first_name, last_name=last_name, email=email)
+                # if not totp.setup:
+                #     return None
+                totpsecret = totp.value.secret.base32
+                user = User.objects.create(username=username, first_name=first_name, last_name=last_name, email=email, totpsecret=totpsecret)
             return user
         return None
 
