@@ -1,3 +1,30 @@
+let looking_for_match = 0;
+
+async function launchCustomTetrisGame(jwtTokens, tournament = false, ranked = false) {
+  if (!Array.isArray(jwtTokens) || jwtTokens.length < 1 || jwtTokens.length > 3) {
+    console.error("Error: You must provide an array of 1 to 3 JWT tokens.");
+    return;
+  }
+
+  const controlsMapping = [
+    { rotate: 'W', left: 'A', right: 'D', down: 'S' }, // Player 1
+    { rotate: 'I', left: 'J', right: 'L', down: 'K' }, // Player 2
+    { rotate: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown' } // Player 3
+  ];
+
+  const playerConfigs = jwtTokens.map((jwt, index) => ({
+    user: jwt,
+    controls: controlsMapping[index]
+  }));
+
+  const matchConfig = {
+    tournament: tournament,
+    ranked: ranked
+  };
+
+  launchTetrisGame(playerConfigs, matchConfig);
+}
+
 async function addPlayer(jwtToken) {
   const jwtTokens = { access: jwtToken };
   const response = await apiRequest('/tetris/add-player', 'POST', jwtTokens, body);
@@ -6,6 +33,16 @@ async function addPlayer(jwtToken) {
     return;
   }
   console.log('Player added:', response.message);
+}
+
+async function searching_for_tetris_match()
+{
+	const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
+	console.log(response);
+}
+
+async function startTetrisGame() {
+	launchCustomTetrisGame([JWTs]);
 }
 
 function launchTetrisGame(playerConfigs, matchConfig) {
@@ -589,23 +626,19 @@ function launchTetrisGame(playerConfigs, matchConfig) {
 
 	async function sendGameDataToBackend(playerData, playerJWT) {
 	  try {
-		// Use the individual player's JWT token in the API request.
 		console.log(playerData);
 		console.log("sending data");
-		const response = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
-		if (!response.ok) {
-		  throw new Error(`Server error: ${response.statusText}`);
+		const data = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
+		
+		// If your API returns an "error" key when something goes wrong,
+		// check for that, otherwise assume the call was successful.
+		if (data.error) {
+		  throw new Error(`Server error: ${data.error}`);
 		}
-		const data = await response.json();
-		console.log(
-		  `Score processed successfully for part ${playerData.part}/${playerData.total_parts}:`,
-		  data
-		);
+		
+		console.log("Score processed successfully:", data);
 	  } catch (error) {
-		console.error(
-		  `Error processing score for part ${playerData.part}/${playerData.total_parts}:`,
-		  error
-		);
+		console.error("Error processing score:", error);
 	  }
 	}
 
