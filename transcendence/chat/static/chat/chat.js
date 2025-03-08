@@ -20,7 +20,7 @@ function chatStart() {
       document.querySelector("#id_message_send_button").click();
     }
   };
-
+  
   document.querySelector("#id_message_send_button").onclick = async function (e) {
     var messageInput = document.querySelector("#id_message_send_input").value.trim();
 
