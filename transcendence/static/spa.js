@@ -41,11 +41,16 @@ async function router() {
     },
     {
       path: "/tetris",
-      view: () => viewHTML("/static/tetris/tetris.html")
+	  
+      view: async () => { 
+		  response = await apiRequest('/tetris/add-player', 'POST', JWTs, null);
+		  console.log(response);
+		  viewHTML("/static/tetris/tetris.html")
+	  }
     },
     {
       path: "/tetris_start",
-      view: () => {
+      view: async () => {
         tetrisActive = true;
         viewHTML("/static/tetris/1_player.html").then(() => {
           startTetrisGame();
@@ -68,7 +73,6 @@ async function router() {
       }
     }
   ];
-
   const potentialMatches = routes.map(route => {
     return {
       route: route,
@@ -111,4 +115,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     router();
 });
-

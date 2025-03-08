@@ -23,7 +23,6 @@ import tetris.calculate_mmr
 from tetris.serializers import TetrisPlayerSerializer
 from tetris.tournament import g_tournament
 from tetris.active_player_manager import active_player_manager
-
 from tetris.models import TetrisPlayer, TetrisScore
 
 from .serializers import UserSerializer
@@ -254,7 +253,6 @@ class tournament_add_player(APIView):
         user = request.user
         g_tournament.add_player(user)
         return Response({'Player added': user})
-
 
 class tournament_remove_player(APIView):
     authentication_classes = [JWTAuthentication]

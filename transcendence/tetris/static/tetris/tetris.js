@@ -42,7 +42,7 @@ async function searching_for_tetris_match()
 }
 
 async function startTetrisGame() {
-	launchCustomTetrisGame(JWTs);
+	launchCustomTetrisGame([JWTs]);
 }
 
 function launchTetrisGame(playerConfigs, matchConfig) {
