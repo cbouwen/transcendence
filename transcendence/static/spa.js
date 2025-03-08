@@ -19,87 +19,74 @@ function navigateTo(url) {
 };
 
 async function router() {
-	if (location.pathname !== "/tetris") {
+  if (location.pathname !== "/tetris") {
+    // Additional code can be placed here if needed.
+  }
+  
+  tetrisActive = false;
+  const routes = [
+    {
+      path: "/",
+      view: async () => {
+        await viewHTML("/static/home.html");
+      }
+    },
+    {
+      path: "/pong",
+      view: async () => {
+        await viewHTML("/static/pong/site.html");
+        const pongGame = new PongGame();
+        pongGame.initialize();
+      }
+    },
+    {
+      path: "/tetris",
+      view: () => viewHTML("/static/tetris/tetris.html")
+    },
+    {
+      path: "/tetris_start",
+      view: () => {
+        tetrisActive = true;
+        viewHTML("/static/tetris/1_player.html").then(() => {
+          startTetrisGame();
+        });
+      }
+    },
+    {
+      path: "/chat",
+      view: () => {
+        viewHTML("/static/chat/chatPage.html", JWTs).then(() => {
+          chatStart();
+        });
+      }
+    },
+    {
+      path: "/account",
+      view: async () => {
+        await viewHTML("/static/accounts/account.html");
+        accountsPageStart();
+      }
     }
-	tetrisActive = false
-	const routes = [
-		{
-			path: "/",
-			view: async () => {
-				await viewHTML("/static/home.html");
-			}
-		},
-		{
-			path: "/pong",
-			view: async () => {
-				await viewHTML("/static/pong/site.html");
-				const pongGame = new PongGame();
-				pongGame.initialize();
-			}
-		},
-		{
-			path:"/tetris",
-			view: () => viewHTML("/static/tetris/tetris.html").then(() => {})
-		},
-		{
-			path: "/tetris_start",
-			view: () => {
-				tetrisActive = true
-				viewHTML("/static/tetris/1_player.html").then( async () => {
-					const matchConfig = {
-						tournament : false,
-						ranked : false,
-					};
-					const playerConfigs = [
-						{
-							user: JWTs,
-							controls: {
-								left: 'ArrowLeft',
-								right: 'ArrowRight',
-								down: 'ArrowDown',
-								rotate: 'ArrowUp'
-							}
-						}
-					]
-					launchTetrisGame(playerConfigs, matchConfig);
-				});
-			}
-		},
-		{
-			path: "/chat",
-			view: () => {
-				viewHTML("/static/chat/chatPage.html", JWTs).then(() => {
-					chatStart();
-				});
-			}
-		},
-		{
-			path: "/account",
-			view: async () => {
-				await viewHTML("/static/accounts/account.html");
-				accountsPageStart();
-			}
-		}
-	];
+  ];
 
-	const potentialMatches = routes.map(route => {
-		return {
-			route: route,
-			isMatch: location.pathname === route.path
-		};
-	});
+  const potentialMatches = routes.map(route => {
+    return {
+      route: route,
+      isMatch: location.pathname === route.path
+    };
+  });
 
-	let match = potentialMatches.find(potentialMatch => potentialMatch.isMatch);
+  let match = potentialMatches.find(potentialMatch => potentialMatch.isMatch);
 
-	if (!match) {
-		match = {
-			route: routes[0],
-			isMatch: true
-		}
-	}
+  if (!match) {
+    match = {
+      route: routes[0],
+      isMatch: true
+    };
+  }
 
-	match.route.view();
-};
+  match.route.view();
+}
 
 window.addEventListener("popstate", router);
 
@@ -118,7 +105,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (e.target.matches("[data-tetris-start-button]")) {
             history.pushState(null, null, "/tetris_start");
             router();
-        }
+        } else if (e.target.matches("[find-match]")) {
+			searching_for_tetris_match();
+		}
     });
     router();
 });

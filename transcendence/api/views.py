@@ -23,6 +23,7 @@ import tetris.calculate_mmr
 from tetris.serializers import TetrisPlayerSerializer
 from tetris.tournament import g_tournament
 from tetris.active_player_manager import active_player_manager
+
 from tetris.models import TetrisPlayer, TetrisScore
 
 from .serializers import UserSerializer
@@ -52,8 +53,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         token_data = token_response.json()
         access_token = token_data.get('access_token')
 
-
-
         if not access_token:
             raise AuthenticationFailed("42 OAuth access token is required.")
 
@@ -68,7 +67,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         })
-
 
 class CustomTokenObtainPuppetPairView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -96,7 +94,6 @@ class CustomTokenObtainPuppetPairView(APIView):
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         })
-
 
 class CreatePuppetGrantView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -126,7 +123,6 @@ class CreatePuppetGrantView(APIView):
             "puppeteer": puppeteer.username,
             "expiry": puppet_grant.expiry
         }, status=201)
-
 
 class Test(APIView):
     authentication_classes = [JWTAuthentication]
@@ -203,7 +199,7 @@ class tetris_remove_player(APIView):
         if not user:
             return Response({"error": "Player id is required."}, status=400)
         active_player_manager.remove_player(user)
-        active_player_manager.update_match_history
+        active_player_manager.refresh_all_players_match_histories
         return Response({"Message": f"Player {user} removed."})
 
 class tetris_get_next_match(APIView):
@@ -211,7 +207,7 @@ class tetris_get_next_match(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        active_player_manager.update_match_history
+        active_player_manager.refresh_all_players_match_histories
         user = request.user
         match = active_player_manager.find_next_match(user)
         if match:
