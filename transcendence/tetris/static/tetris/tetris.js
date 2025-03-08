@@ -1,29 +1,89 @@
-let looking_for_match = 0;
-
 async function launchCustomTetrisGame(jwtTokens, tournament = false, ranked = false) {
+  // Check if the number of tokens is valid (must be 1 to 3)
   if (!Array.isArray(jwtTokens) || jwtTokens.length < 1 || jwtTokens.length > 3) {
-    console.error("Error: You must provide an array of 1 to 3 JWT tokens.");
+    console.error("Error: You must provide 1 to 3 JWT tokens.");
     return;
   }
 
-  const controlsMapping = [
-    { rotate: 'W', left: 'A', right: 'D', down: 'S' }, // Player 1
-    { rotate: 'I', left: 'J', right: 'L', down: 'K' }, // Player 2
-    { rotate: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown' } // Player 3
-  ];
+  let playerConfigs = [];
 
-  // Create a player configuration for each provided JWT token
-  const playerConfigs = jwtTokens.map((jwt, index) => ({
-    user: jwt,
-    controls: controlsMapping[index]
-  }));
+  if (jwtTokens.length === 1) {
+    // Single-player: use arrow keys
+    playerConfigs.push({
+      user: jwtTokens[0],
+      controls: {
+        left: 'ArrowLeft',
+        right: 'ArrowRight',
+        down: 'ArrowDown',
+        rotate: 'ArrowUp'
+      },
+      name: "Player"
+    });
+  } else if (jwtTokens.length === 2) {
+    // Two players: player 1 uses WASD style, player 2 uses IJKL style
+    playerConfigs.push({
+      user: jwtTokens[0],
+      controls: {
+        left: 'A',
+        right: 'D',
+        down: 'S',
+        rotate: 'W'
+      },
+      name: "Player 1"
+    });
+    playerConfigs.push({
+      user: jwtTokens[1],
+      controls: {
+        left: 'J',
+        right: 'L',
+        down: 'K',
+        rotate: 'I'
+      },
+      name: "Player 2"
+    });
+  } else if (jwtTokens.length === 3) {
+    // Three players: player 1 uses WASD style, player 2 uses IJKL style, player 3 uses arrow keys
+    playerConfigs.push({
+      user: jwtTokens[0],
+      controls: {
+        left: 'A',
+        right: 'D',
+        down: 'S',
+        rotate: 'W'
+      },
+      name: "Player 1"
+    });
+    playerConfigs.push({
+      user: jwtTokens[1],
+      controls: {
+        left: 'J',
+        right: 'L',
+        down: 'K',
+        rotate: 'I'
+      },
+      name: "Player 2"
+    });
+    playerConfigs.push({
+      user: jwtTokens[2],
+      controls: {
+        left: 'ArrowLeft',
+        right: 'ArrowRight',
+        down: 'ArrowDown',
+        rotate: 'ArrowUp'
+      },
+      name: "Player 3"
+    });
+   } else {
+	   console.error("length of the JWT tokens array needs to be 1  2 or 3");
+	   return ;
+   }
 
   const matchConfig = {
     tournament: tournament,
     ranked: ranked
   };
 
-  // Launch the Tetris game using the player and match configurations
+  // Call the provided Tetris game launcher with the new configuration
   launchTetrisGame(playerConfigs, matchConfig);
 }
 
