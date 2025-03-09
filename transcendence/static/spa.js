@@ -24,6 +24,8 @@ async function router() {
   }
   
   tetrisActive = false;
+  response = await apiRequest('/tetris/add-player', 'POST', JWTs, null);
+  console.log(response);
   const routes = [
     {
       path: "/",
@@ -43,9 +45,7 @@ async function router() {
       path: "/tetris",
 	  
       view: async () => { 
-		  response = await apiRequest('/tetris/add-player', 'POST', JWTs, null);
-		  console.log(response);
-		  viewHTML("/static/tetris/tetris.html")
+		  		  viewHTML("/static/tetris/tetris.html")
 	  }
     },
     {

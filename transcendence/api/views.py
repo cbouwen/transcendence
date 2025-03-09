@@ -86,11 +86,11 @@ class CustomTokenObtainPuppetPairView(APIView):
             puppeteer=request.user,
             expiry__gt=timezone.now()
         ).exists():
-            return Response({'status' : 401})
+            return Response({'status' : "failed"})
 
         refresh = RefreshToken.for_user(puppet)
         return Response({
-            'status': 200,
+            'status': "succes",
             'value': {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token)
@@ -111,7 +111,7 @@ class CreatePuppetGrantView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Puppeteer not found."}, status=404)
         
-        expiry_time = timezone.now() + timedelta(minutes=1)
+        expiry_time = timezone.now() + timedelta(minutes=900) #change this later back to 5
         
         puppet_grant = PuppetGrant.objects.create(
             puppet=request.user,
