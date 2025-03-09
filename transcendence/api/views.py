@@ -52,11 +52,13 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             raise AuthenticationFailed("42 OAuth access token is required.")
 
         # Authenticate user using the custom backend
-        user = authenticate(token=access_token, totp=totp)
-        if not user:
-            raise AuthenticationFailed("Invalid OTP (2FA) or invalid 42 OAuth access token.")
+        user = authenticate(request, token=access_token, totp=totp)
 
         # Generate JWT tokens
+        if not user:
+            return Response({
+                            'error': str(user)
+            })
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
@@ -137,7 +139,10 @@ class Me(APIView):
     def get(self, request):
         user = request.user
         serializer = UserSerializer(user)
-        return Response(serializer.data)
+        userdata = serializer.data
+        userdata.pop("totpsecret")
+        userdata.pop("password")
+        return Response(userdata)
 
     def post(self, request):
         user = request.user
