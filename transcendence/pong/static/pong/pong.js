@@ -122,7 +122,6 @@ class PongGame {
 		this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
 		this.context.fillStyle = '#ffffff';
 		this.context.fillText(text, this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
-		setTimeout(() => { this.reset(); this.initialize(); }, 3000);
 	}
 
 	update() {
