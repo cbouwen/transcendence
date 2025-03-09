@@ -231,16 +231,31 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
 		const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
 		const scoreboardContainer = document.createElement('div');
 		scoreboardContainer.classList.add('scoreboard-overlay');
+
 		const title = document.createElement('div');
 		title.classList.add('scoreboard-title');
 		title.textContent = 'Game Over! Final Scores';
 		scoreboardContainer.appendChild(title);
+
 		sortedPlayers.forEach((player, rank) => {
 			const entry = document.createElement('div');
 			entry.classList.add('scoreboard-entry');
 			entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
 			scoreboardContainer.appendChild(entry);
 		});
+		
+		// Create and add a close button
+		const closeButton = document.createElement('button');
+		closeButton.textContent = 'Close';
+		closeButton.style.marginTop = '10px';
+		closeButton.style.padding = '10px 20px';
+		closeButton.style.fontSize = '16px';
+		closeButton.addEventListener('click', () => {
+			// Remove the scoreboard overlay from the document
+			document.body.removeChild(scoreboardContainer);
+		});
+		scoreboardContainer.appendChild(closeButton);
+
 		document.body.appendChild(scoreboardContainer);
 
 		// Send each player's data as a separate API call.
