@@ -43,9 +43,7 @@ async function router() {
       path: "/tetris",
 	  
       view: async () => { 
-		  response = await apiRequest('/tetris/add-player', 'POST', JWTs, null);
-		  console.log(response);
-		  viewHTML("/static/tetris/tetris.html")
+		  		  viewHTML("/static/tetris/tetris.html")
 	  }
     },
     {
@@ -110,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
             history.pushState(null, null, "/tetris_start");
             router();
         } else if (e.target.matches("[find-match]")) {
-			searching_for_tetris_match();
+			searching_for_game_match("tetris");
 		}
     });
     router();
