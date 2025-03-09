@@ -64,10 +64,14 @@ async function awaitingPupperResponse(player2) {
             return;
         }
     }
-    return;
 }
 
-async function searching_for_tetris_match() {
+async function searching_for_game_match(gameName) {
+	if (gameName != "tetris" && gameName != "pong")
+	{
+		console.error("wrong game name sent to function searching for game");
+		return ;
+	}
     const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
 
     console.log(response);
@@ -84,8 +88,10 @@ async function searching_for_tetris_match() {
     if (puppetToken && puppetToken.status == 401) return;
     console.log(await apiRequest("/me", "GET", puppetToken.value, null));
     console.log("LAUNCHING TETRIS GAME ", JWTs, puppetToken.value);
-    await launchCustomTetrisGameTwoPlayer([JWTs, puppetToken.value], false, true);
-    console.log(puppetToken);
+	if (gameName == "tetris") {
+    	await launchCustomTetrisGameTwoPlayer([JWTs, puppetToken.value], false, true);
+	}
+	console.log(puppetToken);
 }
 
 async function startTetrisGame() {

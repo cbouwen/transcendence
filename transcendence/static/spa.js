@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
             history.pushState(null, null, "/tetris_start");
             router();
         } else if (e.target.matches("[find-match]")) {
-			searching_for_tetris_match();
+			searching_for_game_match("tetris");
 		}
     });
     router();
