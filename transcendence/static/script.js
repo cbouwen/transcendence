@@ -10,7 +10,7 @@
 	}
 	JWTs = await login(code);
 	console.log(JWTs.access);
-	let response = apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
+	let response = await apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
 	console.log(response);
 
 	fillInFirstNamePlaceholders();
