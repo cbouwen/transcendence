@@ -27,6 +27,7 @@ async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ra
     };
 
     // Launch the Tetris game for both players
+	tetrisActive = true;
     await launchTetrisGame(playerConfigs, matchConfig);
 }
 
