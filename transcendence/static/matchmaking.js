@@ -18,7 +18,7 @@ async function awaitingPupperResponse(player2) {
                 username: player2,
             };
             const response = await apiRequest('/token/puppet', 'POST', JWTs, payload);
-            if (response.status === "failed") {
+            if (!response || response.status === "failed") {
                 counter++;
                 if (counter === 5) return;
                 console.log("printing status", response.status);
@@ -40,6 +40,8 @@ async function searching_for_game_match(gameName) {
 		return ;
 	}
     const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
+	if (!response)
+		return ;
 
     console.log(response);
     if (response) {
