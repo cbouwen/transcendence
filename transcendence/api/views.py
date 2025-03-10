@@ -21,7 +21,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
 from tetris.serializers import TetrisPlayerSerializer
-from tetris.tournament import g_tournament
+from tournamnt.tournament import g_tournament
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
 
