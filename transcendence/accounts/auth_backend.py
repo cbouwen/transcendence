@@ -5,7 +5,7 @@ from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed
 import sys
 import logging
-# import pyotp
+import pyotp
 import time
 
 User = get_user_model()
@@ -23,23 +23,29 @@ class CustomAuthBackend(BaseBackend):
             user_data = response.json()
             username = user_data['login']
 
-            if totp.get("type", {}) == "token":
-                pass
-                user = User.objects.filter(username=username).first()
-            else if totp.get("type", {}) == "setup":
-                if user is None:
+            user = User.objects.filter(username=username).first()
+            totp_type = totp.get("type", {})
+            totp_value = totp.get("value", {})
+            if user is None:
+                if (totp_type == "setup"):
                     first_name = user_data['first_name']
                     last_name = user_data['first_name']
                     email = user_data['email']
-                    if totp.get("type", {}) == "token":
-                        raise AuthenticationFailed('expected a totp type "setup" but got "token"')
-                    totpsecret = totp.get("value", {}).get("secret", {}).get("base32")
+                    totpsecret = totp_value.get("secret", {}).get("base32")
                     user = User.objects.create(username=username, first_name=first_name, last_name=last_name, email=email, totpsecret=totpsecret)
-            else
-                raise AuthenticationFailed("unexpected totp type")
+                else:
+                    raise AuthenticationFailed("You need to set up 2FA first")
+            else:
+                if (totp_type == "token"):
+                    if pyotp.TOTP(user.totpsecret).verify(totp_value):
+                        pass
+                    else:
+                        raise AuthenticationFailed("Invalid 2FA code")
+                else:
+                    raise AuthenticationFailed("Please provide your 2FA code")
             return user
-
-        raise AuthenticationFailed("intra call failed", response)
+        else:
+            raise AuthenticationFailed("intra call failed", response)
 
     def get_user(self, user_id):
         try:

@@ -10,7 +10,7 @@ async function loginAsRecurringUser() {
 				}
 			});
 			if (!JWTs) {
-				console.error("Couldn't login using code");
+				alert("Couldn't login. Is your code correct?");
 				return;
 			}
 		} catch (error) {
@@ -31,7 +31,7 @@ async function loginFirstTime() {
 			}
 		});
 		if (!JWTs) {
-			console.error("Couldn't login for the first time");
+			alert("Couldn't login. Did you already set 2FA?");
 			return;
 		}
 	} catch (error) {
