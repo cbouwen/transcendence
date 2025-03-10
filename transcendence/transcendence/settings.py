@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'accounts',
     'rest_framework',
     'rest_framework_simplejwt',
-    'api'
+    'api',
+    'django_extensions'
 ]
 
 CHANNEL_LAYERS = {
