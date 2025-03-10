@@ -1,36 +1,42 @@
+// -----------------------------------------------------------------------------
+// Function to launch a custom two-player Tetris game
+// -----------------------------------------------------------------------------
 async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ranked = false) {
     const playerConfigs = [
         {
-            user: jwtTokens[0], // Example token for player 1
+            user: jwtTokens[0], // Token for player 1
             controls: {
                 left: "a",       // Move left
                 right: "d",      // Move right
                 down: "s",       // Move down
                 rotate: "w"      // Rotate piece
             },
+            name: "Player 1"
         },
         {
-            user: jwtTokens[1], // Example token for player 2
+            user: jwtTokens[1], // Token for player 2
             controls: {
-                left: "ArrowLeft",  // Move left
-                right: "ArrowRight",// Move right
-                down: "ArrowDown",  // Move down
-                rotate: "ArrowUp"   // Rotate piece
+                left: "ArrowLeft",   // Move left
+                right: "ArrowRight", // Move right
+                down: "ArrowDown",   // Move down
+                rotate: "ArrowUp"    // Rotate piece
             },
+            name: "Player 2"
         }
     ];
 
-    // Define a match configuration object
     const matchConfig = {
         ranked: ranked,
         tournament: tournament
     };
 
-    // Launch the Tetris game for both players
-	tetrisActive = true;
+    tetrisActive = true;
     await launchTetrisGame(playerConfigs, matchConfig);
 }
 
+// -----------------------------------------------------------------------------
+// Other helper functions (addPlayer, awaitingPupperResponse, searching_for_game_match, etc.)
+// -----------------------------------------------------------------------------
 async function addPlayer(jwtToken) {
     const jwtTokens = { access: jwtToken };
     // Ensure that 'body' is defined or passed as needed.
@@ -67,31 +73,27 @@ async function awaitingPupperResponse(player2) {
 }
 
 async function searching_for_game_match(gameName) {
-	if (gameName != "tetris" && gameName != "pong")
-	{
-		console.error("wrong game name sent to function searching for game");
-		return ;
-	}
+    if (gameName != "tetris" && gameName != "pong") {
+        console.error("wrong game name sent to function searching for game");
+        return;
+    }
     const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
-
     console.log(response);
     if (response) {
         console.log(response.player2);
         console.log(response.player1);
     }
-
-    if (!response || !response.player1?.trim() || !response.player2?.trim()) 
-        return; // Handles undefined, null, or empty strings safely
+    if (!response || !response.player1?.trim() || !response.player2?.trim()) return;
 
     const puppetToken = await awaitingPupperResponse(response.player2);
     console.log("PRINTING PUPPET TOKEN", puppetToken);
     if (puppetToken && puppetToken.status == 401) return;
     console.log(await apiRequest("/me", "GET", puppetToken.value, null));
     console.log("LAUNCHING TETRIS GAME ", JWTs, puppetToken.value);
-	if (gameName == "tetris") {
-    	await launchCustomTetrisGameTwoPlayer([JWTs, puppetToken.value], false, true);
-	}
-	console.log(puppetToken);
+    if (gameName == "tetris") {
+        await launchCustomTetrisGameTwoPlayer([JWTs, puppetToken.value], false, true);
+    }
+    console.log(puppetToken);
 }
 
 async function startTetrisGame() {
@@ -114,12 +116,12 @@ async function startTetrisGame() {
     await launchTetrisGame(playerConfigs, matchConfig);
 }
 
+// -----------------------------------------------------------------------------
+// Main function to launch a Tetris game for the provided players
+// -----------------------------------------------------------------------------
 async function launchTetrisGame(playerConfigs, matchConfig) {
     GlobalMatchConfig = matchConfig;
-    let game_id = 0;
-    if (game_id === 0) {
-        game_id = generateGameId();
-    }
+    let game_id = generateGameId();
     console.log("launchTetrisGame called with:", playerConfigs);
 
     const totalPlayers = playerConfigs.length;
@@ -127,10 +129,10 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
     let games = [];
 
     function generateGameId() {
-        const timestamp = Date.now();
-        return `${timestamp}`;
+        return `${Date.now()}`;
     }
 
+    // Append game styles
     const style = document.createElement('style');
     style.textContent = `
         .game-container {
@@ -172,22 +174,32 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
             font-size: 28px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: black;
+            color: white;
         }
         .scoreboard-entry {
             font-size: 20px;
             margin: 5px 0;
-            color: black;
+            color: white;
         }
     `;
     document.head.appendChild(style);
 
+    // Create the main container for games
     const mainContainer = document.createElement('div');
     mainContainer.id = 'tetris-main-container';
     const contentElement = document.getElementById("content");
     contentElement.appendChild(mainContainer);
 
-    // Loop over playerConfigs using a for loop so we can await the API calls.
+    // Define onGameOver callback function
+    const playerLost = async () => {
+        playersDeadCount++;
+        // Optionally, call a function like finalizeLosingBoard() if needed.
+        if (totalPlayers === 1 || playersDeadCount === totalPlayers) {
+            await showFinalScoreboard();
+        }
+    };
+
+    // Create each player's game instance
     for (let index = 0; index < playerConfigs.length; index++) {
         const config = playerConfigs[index];
         const container = document.createElement('div');
@@ -204,57 +216,61 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
 
         mainContainer.appendChild(container);
 
-        const gameInstance = new TetrisGame(`player${index + 1}`, config.controls, config.name);
+        // Pass the onGameOver callback to the TetrisGame instance.
+        const gameInstance = new TetrisGame(`player${index + 1}`, config.controls, config.name, playerLost);
         gameInstance.user = config.user;  // attach the JWT token as a property
         games[index] = gameInstance;
         console.log(`Initialized game for ${config.name}`);
     }
 
-    // These inner functions use await when sending API calls at game over.
-    async function playerLost(gameInstance) {
-        playersDeadCount++;
-        gameInstance.finalizeLosingBoard();
+	async function showFinalScoreboard() {
+		// Finalize every game board so all tetrominoes become gray (or white where needed)
+		games.forEach(game => game.finalizeLosingBoard());
 
-        if (totalPlayers === 1) {
-            await showFinalScoreboard();
-        } else {
-            if (playersDeadCount === totalPlayers) {
-                await showFinalScoreboard();
-            }
-        }
-    }
+		// Build the scoreboard UI
+		const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+		const scoreboardContainer = document.createElement('div');
+		scoreboardContainer.classList.add('scoreboard-overlay');
 
-    async function showFinalScoreboard() {
-        const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+		const title = document.createElement('div');
+		title.classList.add('scoreboard-title');
+		title.textContent = 'Game Over! Final Scores';
+		scoreboardContainer.appendChild(title);
 
-        // Build the scoreboard UI
-        const scoreboardContainer = document.createElement('div');
-        scoreboardContainer.classList.add('scoreboard-overlay');
-        const title = document.createElement('div');
-        title.classList.add('scoreboard-title');
-        title.textContent = 'Game Over! Final Scores';
-        scoreboardContainer.appendChild(title);
-        sortedPlayers.forEach((player, rank) => {
-            const entry = document.createElement('div');
-            entry.classList.add('scoreboard-entry');
-            entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
-            scoreboardContainer.appendChild(entry);
-        });
-        document.body.appendChild(scoreboardContainer);
+		sortedPlayers.forEach((player, rank) => {
+			const entry = document.createElement('div');
+			entry.classList.add('scoreboard-entry');
+			entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
+			scoreboardContainer.appendChild(entry);
+		});
+		
+		// Create and add a close button
+		const closeButton = document.createElement('button');
+		closeButton.textContent = 'Close';
+		closeButton.style.marginTop = '10px';
+		closeButton.style.padding = '10px 20px';
+		closeButton.style.fontSize = '16px';
+		closeButton.addEventListener('click', () => {
+			// Remove the scoreboard overlay from the document
+			document.body.removeChild(scoreboardContainer);
+		});
+		scoreboardContainer.appendChild(closeButton);
 
-        // Send each player's data as a separate API call.
-        for (const player of sortedPlayers) {
-            const payload = {
-                ranked: GlobalMatchConfig.ranked,
-                is_tournament: GlobalMatchConfig.tournament,
-                gameid: game_id,
-                score: player.score,
-                lines_cleared: player.linesCleared,
-                level: player.getLevel(),
-            };
-            await sendGameDataToBackend(payload, player.user);
-        }
-    }
+		document.body.appendChild(scoreboardContainer);
+
+		// Send each player's data as a separate API call.
+		for (const player of sortedPlayers) {
+			const payload = {
+				ranked: GlobalMatchConfig.ranked,
+				is_tournament: GlobalMatchConfig.tournament,
+				gameid: game_id,
+				score: player.score,
+				lines_cleared: player.linesCleared,
+				level: player.getLevel(),
+			};
+			await sendGameDataToBackend(payload, player.user);
+		}
+	}
 
     async function sendGameDataToBackend(playerData, playerJWT) {
         try {
@@ -270,6 +286,7 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
         }
     }
 
+    // Global key event listeners for all games.
     document.addEventListener('keydown', function(e) {
         if (!tetrisActive) return;
         games.forEach(game => {
@@ -300,13 +317,14 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
 }
 
 // -----------------------------------------------------------------------------
-// TetrisGame class (unchanged from your original code)
+// TetrisGame class with onGameOver callback support
 // -----------------------------------------------------------------------------
 class TetrisGame {
-    constructor(containerId, controls, name) {
+    constructor(containerId, controls, name, onGameOver = null) {
         console.log(`Initializing TetrisGame for container: ${containerId}`);
         this.container = document.getElementById(containerId);
         this.name = name;
+        this.onGameOver = onGameOver; // Store the callback
 
         this.canvas = document.createElement('canvas');
         this.canvas.width = 200;
@@ -326,12 +344,10 @@ class TetrisGame {
         this.cols = 10;
         this.dropCounter = 0;
         this.lastTime = 0;
-
         this.dropInterval = 1000; 
 
         this.tetrominoSequence = [];
         this.controls = controls;
-
         this.keysState = {
             left: { pressed: false, timeout: null, interval: null },
             right: { pressed: false, timeout: null, interval: null },
@@ -421,20 +437,16 @@ class TetrisGame {
                         const newY = row + y;
                         const newX = col + x;
                         if (newY >= 0 && newY < this.rows && newX >= 0 && newX < this.cols) {
-                            if (this.playfield[newY][newX] !== 0) {
-                                this.playfield[newY][newX] = 9; 
-                            } else {
-                                this.playfield[newY][newX] = 8;
-                            }
+                            this.playfield[newY][newX] = (this.playfield[newY][newX] !== 0) ? 9 : 8;
                             this.draw();
                         }
                     }
                 }
             }
             this.gameOver = true;
+			this.currentTetromino = null;
             this.losingTetromino = tetromino;
-            // Note: playerLost is called in the outer scope.
-            playerLost(this);
+            if (this.onGameOver) this.onGameOver();
             return null;
         }
         return tetromino;
@@ -519,7 +531,6 @@ class TetrisGame {
             const level = this.getLevel();
             const multiplier = 1 + (level - 1) * 0.1; 
             points = points * multiplier;
-
             this.score += points;
 
             this.scoreElement.textContent = 'Score: ' + this.score;
@@ -531,7 +542,7 @@ class TetrisGame {
         if (this.getLevel() >= 15) {
             this.currentTetromino = null;
             this.gameOver = true;
-            playerLost(this);
+            if (this.onGameOver) this.onGameOver();
             return;
         }
 
@@ -539,6 +550,7 @@ class TetrisGame {
     }
 
     update(time = 0) {
+		if (!tetrisActive) return;
         if (this.gameOver) return;
 
         const deltaTime = time - this.lastTime;
@@ -552,9 +564,7 @@ class TetrisGame {
                 this.currentTetromino.row++;
             } else {
                 this.placeTetromino();
-                if (this.gameOver) {
-                    return;
-                }
+                if (this.gameOver) return;
             }
         }
         this.draw();
@@ -564,6 +574,7 @@ class TetrisGame {
     draw() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // Draw the playfield
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {
                 if (this.playfield[y][x]) {
@@ -578,6 +589,7 @@ class TetrisGame {
             }
         }
 
+        // Draw the current tetromino
         if (this.currentTetromino) {
             for (let y = 0; y < this.currentTetromino.matrix.length; y++) {
                 for (let x = 0; x < this.currentTetromino.matrix[y].length; x++) {
@@ -598,6 +610,7 @@ class TetrisGame {
             }
         }
 
+        // Draw grid lines for clarity
         this.context.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         this.context.lineWidth = 1;
         for (let i = 1; i < this.cols; i++) {
@@ -724,11 +737,12 @@ class TetrisGame {
     }
 
     finalizeLosingBoard() {
+		if (!tetrisActive) return;
         console.log(`Finalizing losing board for player: ${this.name}`);
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {
                 if (this.playfield[y][x] > 0 && this.playfield[y][x] < 9) {
-                    this.playfield[y][x] = 8; // grey
+                    this.playfield[y][x] = 8; // grey out the board
                 }
             }
         }

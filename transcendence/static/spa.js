@@ -19,6 +19,12 @@ function navigateTo(url) {
 };
 
 async function router() {
+  GlobalTetrisGames.forEach(game => {
+	  if (game.destroy) {
+			game.destroy();
+		}
+  });
+  GlobalTetrisGames.length = 0;
   if (location.pathname !== "/tetris") {
     // Additional code can be placed here if needed.
   }
