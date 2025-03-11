@@ -115,7 +115,10 @@ document.addEventListener("DOMContentLoaded", () => {
             router();
         } else if (e.target.matches("[find-match]")) {
 			searching_for_game_match("tetris");
-		}
+        } else if (e.target.matches("#saveUserInfo")) {
+          updateUserInfo();
+        }
+        
     });
     router();
 });
