@@ -21,7 +21,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
 from tetris.serializers import TetrisPlayerSerializer
-from tournamnt.tournament import g_tournament
+from tournament.tournament import TournamentError, g_tournament
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
 
@@ -248,14 +248,42 @@ class tetris_save_tetris_scores(APIView):
         )
         return Response({'Message': 'Score processed successfully.'}, status=200)
 
+# Endpoint to return active player manager users
+class tetris_get_active_players(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # active_player_manager.active_players is a dict where each value is a dict 
+        # with a "player" key that has a user attribute.
+        usernames = [
+            active_player["player"].user.username 
+            for active_player in active_player_manager.active_players.values()
+        ]
+        return Response({"active_players": usernames}, status=200)
+
+class tournament_get_participants(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Assuming g_tournament.players is a list of Django User objects
+        usernames = [user.username for user in g_tournament.players]
+        return Response({"tournament_users": usernames}, status=200)
+
 class tournament_add_player(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
-        g_tournament.add_player(user)
-        return Response({'Player added': user})
+        try:
+            user = request.user
+            g_tournament.add_player(user)
+            # Ensure user is serializable or return a meaningful identifier.
+            return Response({'Player added': str(user)})
+        except TournamentError as e:
+            # Use DRF's Response for a consistent API response.
+            return Response({"error": str(e)})
 
 class tournament_remove_player(APIView):
     authentication_classes = [JWTAuthentication]
@@ -324,7 +352,7 @@ class tournament_declare_game(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request):
+    def post(self, request):
         game_name = request.data.get('game_name')
         g_tournament.declare_game(game_name)
         return JsonResponse({'Message': 'game name declared'})

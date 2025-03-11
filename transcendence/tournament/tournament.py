@@ -27,8 +27,6 @@ class Tournament:
         Raises TournamentError if the tournament has already started or
         if the user is already registered.
         """
-        if self.init == 0:
-            raise TournamentError("Tournament not setup with a game")
         if self.started:
             raise TournamentError("Tournament already started – cannot add new users.")
         # Check by user ID to avoid duplicates.
@@ -43,8 +41,6 @@ class Tournament:
         Raises TournamentError if the tournament has already started or
         if the user is not registered.
         """
-        if self.init == 0:
-            raise TournamentError("Tournament not setup with a game")
         if self.started:
             raise TournamentError("Tournament already started – cannot remove users.")
         for player in self.players:

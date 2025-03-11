@@ -62,6 +62,15 @@ async function router() {
       }
     },
     {
+      path: "/tournament",
+      view: async () => {
+        tetrisActive = true;
+        viewHTML("/static/tournament/tournament.html").then(() => {
+          console.log("going to tournament");
+        });
+      }
+    },
+    {
       path: "/chat",
       view: () => {
         viewHTML("/static/chat/chatPage.html", JWTs).then(() => {
@@ -115,6 +124,24 @@ document.addEventListener("DOMContentLoaded", () => {
             router();
         } else if (e.target.matches("[find-match]")) {
 			searching_for_game_match("tetris");
+		}
+    });
+	    document.body.addEventListener("click", async e => {
+        if (e.target.matches("[data-link]")) {
+            e.preventDefault();
+            navigateTo(e.target.href);
+        } else if (e.target.matches("[data-tournament-join]")) {
+            const response = await apiRequest('/tournament/add_player', 'POST', JWTs, null);
+			console.log(response);
+		} else if (e.target.matches("[data-tetris]")) {
+			const game_name = "tetris";
+			const payload = { game_name }; 
+            const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+			console.log(response);
+		} else if (e.target.matches("[data-active-players]")) {
+            const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
+			console.log("BLAARGH");
+			console.log(response);
 		}
     });
     router();
