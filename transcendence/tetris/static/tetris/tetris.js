@@ -1,19 +1,81 @@
 function getRandomSillyString() {
-  const subjects = ['Godzilla', 'A unicorn', 'My toaster', 'The sandwich', 'A pineapple', 'The dancing elephant'];
-  const adjectives = ['fluffy', 'sparkly', 'mysterious', 'bizarre', 'confused', 'fancy'];
-  const verbs = ['is a', 'looks like a', 'smells like a', 'tastes like a', 'jumps over a', 'whispers to'];
-  const objects = ['kangaroo', 'rainbow', 'spaceship', 'ninja', 'marshmallow', 'glitter bomb'];
-  const extras = ['in a tutu', 'while eating spaghetti', 'during a moonwalk', 'with extra glitter', 'on a pogo stick', 'at a disco party'];
+  const subjects = [
+    'Godzilla',
+    'A unicorn',
+    'My toaster',
+    'The sandwich',
+    'A pineapple',
+    'The dancing elephant',
+    'Captain Jack Sparrow',
+    'A Terminator',
+    'The mischievous gnome',
+    'An alien pirate'
+  ];
+  
+  const adjectives = [
+    'fluffy',
+    'sparkly',
+    'mysterious',
+    'bizarre',
+    'confused',
+    'fancy',
+    'quirky',
+    'wacky',
+    'silly',
+    'outrageous'
+  ];
+  
+  const verbs = [
+    'is a',
+    'looks like a',
+    'smells like a',
+    'tastes like a',
+    'jumps over a',
+    'whispers to',
+    'sings to',
+    'dances with',
+    'hugs a',
+    'high-fives a'
+  ];
+  
+  const objects = [
+    'kangaroo',
+    'rainbow',
+    'spaceship',
+    'ninja',
+    'marshmallow',
+    'glitter bomb',
+    'robot',
+    'giant burrito',
+    'pineapple',
+    'ice cream cone'
+  ];
+  
+  const extras = [
+    'in a tutu',
+    'while eating spaghetti',
+    'during a moonwalk',
+    'with extra glitter',
+    'on a pogo stick',
+    'at a disco party',
+    'in the middle of a conga line',
+    'under a waterfall of jellybeans',
+    'on a flying carpet',
+    'in a bubble bath'
+  ];
 
+  // Array of sentence templates for even more variety and silliness
   const templates = [
-    // Simple sentence
     () => `${randomItem(subjects)} ${randomItem(verbs)} ${randomItem(objects)}.`,
-    // Adding an adjective
     () => `${randomItem(subjects)} is so ${randomItem(adjectives)} that it ${randomItem(verbs)} ${randomItem(objects)}.`,
-    // Extra detail
     () => `${randomItem(subjects)} ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
-    // Longer sentence
-    () => `In a surprising twist, ${randomItem(subjects)} that is usually ${randomItem(adjectives)} suddenly ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`
+    () => `In a surprising twist, ${randomItem(subjects)} that is usually ${randomItem(adjectives)} suddenly ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    () => `Legend has it that ${randomItem(subjects)} once ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    () => `${randomItem(subjects)} and ${randomItem(subjects)} teamed up to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    () => `Even the ${randomItem(adjectives)} ${randomItem(subjects)} couldn't believe it when it ${randomItem(verbs)} ${randomItem(objects)}.`,
+    () => `Rumor has it that ${randomItem(subjects)} now prefers to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    () => `Out of nowhere, ${randomItem(subjects)} decided to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    () => `In a world of absurdity, ${randomItem(subjects)} who is extremely ${randomItem(adjectives)} began to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`
   ];
 
   // Helper function to choose a random element from an array.
