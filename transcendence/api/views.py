@@ -267,9 +267,12 @@ class tournament_get_participants(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Assuming g_tournament.players is a list of Django User objects
-        usernames = [user.username for user in g_tournament.players]
-        return Response({"tournament_users": usernames}, status=200)
+        try:
+            # Assuming g_tournament.players is a list of Django User objects
+            usernames = [user.username for user in g_tournament.players]
+            return Response({"tournament_users": usernames}, status=200)
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_add_player(APIView):
     authentication_classes = [JWTAuthentication]
@@ -282,7 +285,6 @@ class tournament_add_player(APIView):
             # Ensure user is serializable or return a meaningful identifier.
             return Response({'Player added': str(user)})
         except TournamentError as e:
-            # Use DRF's Response for a consistent API response.
             return Response({"error": str(e)})
 
 class tournament_remove_player(APIView):
@@ -290,69 +292,91 @@ class tournament_remove_player(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        user = request.user
-        g_tournament.remove_player(user)
-        return Response({'Player removed': user})
+        try:
+            user = request.user
+            g_tournament.remove_player(user)
+            return Response({'Player removed': str(user)})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_start(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        g_tournament.start_tournament()
-        return Response({'Message': 'tournament started'})
+        try:
+            g_tournament.start_tournament()
+            return Response({'Message': 'tournament started'})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_generate_round(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        g_tournament.generate_round(g_tournament.players)
-        return Response({'Message': 'Round generated'})
+        try:
+            g_tournament.generate_round(g_tournament.players)
+            return Response({'Message': 'Round generated'})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_update_match(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        players_data = request.data.get('players', [])
-        
-        for player in players_data:
-            TetrisScore.objects.create(
-                gameid=player.get('gameid'),
-                user=player.get('user'),
-                score=player.get('score'),
-                lines_cleared=player.get('lines_cleared'),
-                level=player.get('level')
-            )
-        if (players_data[0].get('score') > players_data[1].get('score')):
-            g_tournament.update_match(players_data[0].get('user'), players_data[1].get('user'))
-            return Response ({'Message': 'tournament match updated'})
-        if (players_data[0].get('score') < players_data[1].get('score')):
-            g_tournament.update_match(players_data[1].get('user'), players_data[0].get('user'))
-            return Response ({'Message': 'tournament match updated'})
-        return Response({'Message': 'match ended in a draw'})
+        try:
+            players_data = request.data.get('players', [])
+
+            for player in players_data:
+                TetrisScore.objects.create(
+                    gameid=player.get('gameid'),
+                    user=player.get('user'),
+                    score=player.get('score'),
+                    lines_cleared=player.get('lines_cleared'),
+                    level=player.get('level')
+                )
+
+            if players_data[0].get('score') > players_data[1].get('score'):
+                g_tournament.update_match(players_data[0].get('user'), players_data[1].get('user'))
+            elif players_data[0].get('score') < players_data[1].get('score'):
+                g_tournament.update_match(players_data[1].get('user'), players_data[0].get('user'))
+            else:
+                return Response({'Message': 'match ended in a draw'})
+            return Response({'Message': 'tournament match updated'})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_get_current_match(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({'Message': g_tournament.get_current_match()})
+        try:
+            return Response({'Message': g_tournament.get_current_match()})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_cancel_tournament(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        g_tournament.cancel_tournament()
-        return Response({'Message': 'tournament canceled'})
+        try:
+            g_tournament.cancel_tournament()
+            return Response({'Message': 'tournament canceled'})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_declare_game(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        game_name = request.data.get('game_name')
-        g_tournament.declare_game(game_name)
-        return JsonResponse({'Message': 'game name declared'})
+        try:
+            game_name = request.data.get('game_name')
+            g_tournament.declare_game(game_name)
+            return JsonResponse({'Message': 'game name declared'})
+        except TournamentError as e:
+            return JsonResponse({"error": str(e)})
