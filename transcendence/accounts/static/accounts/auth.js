@@ -1,24 +1,24 @@
-async function loginAsRecurringUser() {
+async function loginAsRecurringUser(promptext) {
+	const TOTPToken = getTOTPToken(promptext)
+	if (TOTPToken == "SETUP") {
+		return false;
+	}
 	try {
-		const TOTPToken = getTOTPToken()
-		try {
-			JWTs = await apiRequest("/token", 'POST', undefined, {
-				ft_api_user_login_code: intraCode,
-				TOTP: {
-					type: "token",
-					value: TOTPToken
-				}
-			});
-			if (!JWTs) {
-				alert("Couldn't login. Is your code correct?");
-				return;
+		JWTs = await apiRequest("/token", 'POST', undefined, {
+			ft_api_user_login_code: intraCode,
+			TOTP: {
+				type: "token",
+				value: TOTPToken
 			}
-		} catch (error) {
-			console.error("Error during fetch:", error);
-		}
-	} catch (exception) {
-		throw ("needs set-up");
-	};
+		});
+	} catch (error) {
+		console.error("Error during fetch:", error);
+	}
+	if (!JWTs) {
+		alert("Couldn't login. Try again.");
+		return false;
+	}
+	return true;
 };
 
 async function loginFirstTime() {
@@ -30,19 +30,21 @@ async function loginFirstTime() {
 				value: TOTPSetup
 			}
 		});
-		if (!JWTs) {
-			alert("Couldn't login. Did you already set 2FA?");
-			return;
-		}
 	} catch (error) {
 		console.error("Error during fetch:", error);
 		return undefined;
 	}
+	if (!JWTs) {
+		return false;
+	}
+	return true;
 };
 
 async function login() {
 	try {
-		await loginAsRecurringUser();
+		if (await loginAsRecurringUser("Please enter your OTP code or type SETUP if you don't have one already") == false) {
+			redirectToIntra();
+		}
 	} catch (exception) {
 		await navigateTo("/register");
 	};
@@ -127,7 +129,10 @@ function inputTokenIsValid() {
 
 function TOTPTokenSubmitButtonHandler() {
 	if (inputTokenIsValid()) {
-		loginFirstTime();
+		if (loginFirstTime() == false) {
+			alert("Couldn't login. Did you already set 2FA?");
+			redirectToIntra();
+		}
 	} else {
 		alert("The code you put in is not valid. Please try again");
 	}
@@ -147,10 +152,10 @@ function generateTOTPSetup() {
 function verifyOTPCode(OTPCode, OTPSecret) {
 };
 
-function getTOTPToken() {
+function getTOTPToken(promptext) {
 	let token = "";
 	while (token === "") {
-		token = prompt("Please enter your OTP code or type SETUP if you don't have one already"); 
+		token = prompt(promptext); 
 	}
 	if (token != "SETUP") {
 		return (token);
