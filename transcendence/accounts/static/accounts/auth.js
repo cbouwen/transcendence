@@ -41,6 +41,7 @@ async function loginFirstTime() {
 };
 
 async function login() {
+	debugger ;
 	try {
 		if (await loginAsRecurringUser("Please enter your OTP code or type SETUP if you don't have one already") == false) {
 			redirectToIntra();
@@ -127,9 +128,10 @@ function inputTokenIsValid() {
 	}
 };
 
-function TOTPTokenSubmitButtonHandler() {
+async function TOTPTokenSubmitButtonHandler() {
 	if (inputTokenIsValid()) {
-		if (loginFirstTime() == false) {
+		logged_in = await loginFirstTime();
+		if (logged_in == false) {
 			alert("Couldn't login. Did you already set 2FA?");
 			redirectToIntra();
 		}
