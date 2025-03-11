@@ -101,7 +101,6 @@ async function router() {
       isMatch: true
     };
   }
-
   match.route.view();
 }
 
@@ -136,6 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (e.target.matches("[data-tournament-join]")) {
             const response = await apiRequest('/tournament/add_player', 'POST', JWTs, null);
 			console.log(response);
+			console.log(getRandomSillyString());
 		} else if (e.target.matches("[data-tetris]")) {
 			const game_name = "tetris";
 			const payload = { game_name }; 
@@ -149,6 +149,18 @@ document.addEventListener("DOMContentLoaded", () => {
 		} else if (e.target.matches("[data-active-players]")) {
             const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
 			console.log(response);
+		} else if (e.target.matches("[data-start-tournament]")) {
+			const response = await apiRequest('/tournament/start', 'POST', JWTs, null);
+			console.log(response);
+			console.log("WORK HARDER Matisse");
+		} else if (e.target.matches("[data-next-match]")) {
+			const response = await apiRequest('/tournament/get_current_match', 'GET', JWTs, null);
+			console.log(response);
+			console.log(getRandomSillyString());
+		} else if (e.target.matches("[data-generate-round]")) {
+			const response = await apiRequest('/tournament/generate_round', 'POST', JWTs, null);
+			console.log(response);
+			console.log("starting tournament");
 		}
     });
     router();

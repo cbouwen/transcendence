@@ -78,7 +78,7 @@ class Tournament:
           - If only one user remains, returns {"champion": <user.username>}
           - Otherwise, returns {"matches": <detailed match info>}
         """
-        if self.init == 0:
+        if self.init == 0 or self.started == 0:
             raise TournamentError("Tournament not setup with a game")
         round_matches = []
         i = 0

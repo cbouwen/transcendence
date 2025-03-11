@@ -1,3 +1,31 @@
+function getRandomSillyString() {
+  const subjects = ['Godzilla', 'A unicorn', 'My toaster', 'The sandwich', 'A pineapple', 'The dancing elephant'];
+  const adjectives = ['fluffy', 'sparkly', 'mysterious', 'bizarre', 'confused', 'fancy'];
+  const verbs = ['is a', 'looks like a', 'smells like a', 'tastes like a', 'jumps over a', 'whispers to'];
+  const objects = ['kangaroo', 'rainbow', 'spaceship', 'ninja', 'marshmallow', 'glitter bomb'];
+  const extras = ['in a tutu', 'while eating spaghetti', 'during a moonwalk', 'with extra glitter', 'on a pogo stick', 'at a disco party'];
+
+  const templates = [
+    // Simple sentence
+    () => `${randomItem(subjects)} ${randomItem(verbs)} ${randomItem(objects)}.`,
+    // Adding an adjective
+    () => `${randomItem(subjects)} is so ${randomItem(adjectives)} that it ${randomItem(verbs)} ${randomItem(objects)}.`,
+    // Extra detail
+    () => `${randomItem(subjects)} ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    // Longer sentence
+    () => `In a surprising twist, ${randomItem(subjects)} that is usually ${randomItem(adjectives)} suddenly ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`
+  ];
+
+  // Helper function to choose a random element from an array.
+  function randomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Choose a random template function and execute it.
+  const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+  return randomTemplate();
+}
+
 // -----------------------------------------------------------------------------
 // Function to launch a custom two-player Tetris game
 // -----------------------------------------------------------------------------
@@ -11,7 +39,6 @@ async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ra
                 down: "s",       // Move down
                 rotate: "w"      // Rotate piece
             },
-            name: "Player 1"
         },
         {
             user: jwtTokens[1], // Token for player 2
@@ -21,7 +48,6 @@ async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ra
                 down: "ArrowDown",   // Move down
                 rotate: "ArrowUp"    // Rotate piece
             },
-            name: "Player 2"
         }
     ];
 
@@ -110,7 +136,6 @@ async function startTetrisGame() {
                 down: 'ArrowDown',
                 rotate: 'ArrowUp'
             },
-            name: "Player"
         }
     ];
     await launchTetrisGame(playerConfigs, matchConfig);

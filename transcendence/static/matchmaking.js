@@ -1,7 +1,6 @@
 async function addPlayer(jwtToken) {
-    const jwtTokens = { access: jwtToken };
     // Ensure that 'body' is defined or passed as needed.
-    const response = await apiRequest('/tetris/add-player', 'POST', jwtTokens, body);
+    const response = await apiRequest('/tetris/add-player', 'POST', jwtToken, body);
     if (response.status < 200 || response.status >= 300) {
         console.error('Error adding player');
         return;
