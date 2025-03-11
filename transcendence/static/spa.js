@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Tetris start button does not exist yet.");
     }
 
-    document.body.addEventListener("click", e => {
+    document.body.addEventListener("click", async e => {
         if (e.target.matches("[data-link]")) {
             e.preventDefault();
             navigateTo(e.target.href);
@@ -124,6 +124,9 @@ document.addEventListener("DOMContentLoaded", () => {
             router();
         } else if (e.target.matches("[find-match]")) {
 			searching_for_game_match("tetris");
+		} else if (e.target.matches("[get-active-players]")) {
+			const response = await apiRequest('/tetris/get_active_players', 'GET', JWTs, null);
+			console.log(response);
 		}
     });
 	    document.body.addEventListener("click", async e => {
@@ -138,9 +141,13 @@ document.addEventListener("DOMContentLoaded", () => {
 			const payload = { game_name }; 
             const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
 			console.log(response);
+		} else if (e.target.matches("[data-pong]")) {
+			const game_name = "pong";
+			const payload = { game_name }; 
+            const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+			console.log(response);
 		} else if (e.target.matches("[data-active-players]")) {
             const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
-			console.log("BLAARGH");
 			console.log(response);
 		}
     });
