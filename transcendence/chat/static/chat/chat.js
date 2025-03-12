@@ -33,11 +33,15 @@ function chatStart() {
       const userdata = await apiRequest('/me', 'GET', JWTs, null);
       console.log(userdata);  // Now it will print the actual data
 
+
       const messageData = {
         message: messageInput,
         username: userdata.username || "Unknown User",
         target: targetUsername
       };
+
+      console.log("Target username:", targetUsername); // Log the target username
+      console.log("Message target", messageData.target); // Log the target field in the receive
 
       chatSocket.send(JSON.stringify(messageData));
 
@@ -51,7 +55,12 @@ function chatStart() {
 
   chatSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);
-    if (data.username === targetUsername || data.target === targetUsername) {
+
+    console.log("Received message:", data); // Log the received message
+    console.log("Target username:", targetUsername); // Log the target username
+    console.log("Message target", data.target); // Log the target field in the received messa
+
+    if (data.target === userdata.username) {
       displayMessage(data);
     }
   };
