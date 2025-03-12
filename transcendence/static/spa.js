@@ -1,4 +1,3 @@
-
 async function viewHTML(filePath, jwtTokens) {
 	let headers = {};
 	if (jwtTokens && jwtTokens.access) {
@@ -20,103 +19,107 @@ async function navigateTo(url) {
 };
 
 async function router() {
-	if (location.pathname !== "/tetris") {
+  GlobalTetrisGames.forEach(game => {
+	  if (game.destroy) {
+			game.destroy();
+		}
+  });
+  GlobalTetrisGames.length = 0;
+  if (location.pathname !== "/tetris") {
+    // Additional code can be placed here if needed.
+  }
+  
+  tetrisActive = false;
+  const routes = [
+    {
+      path: "/",
+      view: async () => {
+        await viewHTML("/static/home.html");
+      }
+    },
+    {
+      path: "/pong",
+      view: async () => {
+        await viewHTML("/static/pong/site.html");
+        const pongGame = new PongGame();
+        pongGame.initialize();
+      }
+    },
+    {
+      path: "/tetris",
+	  
+      view: async () => { 
+		  		  viewHTML("/static/tetris/tetris.html")
+	  }
+    },
+    {
+      path: "/tetris_start",
+      view: async () => {
+        tetrisActive = true;
+        viewHTML("/static/tetris/1_player.html").then(() => {
+          startTetrisGame();
+        });
+      }
+    },
+    {
+      path: "/chat",
+      view: () => {
+        viewHTML("/static/chat/chatPage.html", JWTs).then(() => {
+          chatStart();
+        });
+      }
+    },
+    {
+      path: "/account",
+      view: async () => {
+        await viewHTML("/static/accounts/account.html");
+        accountsPageStart();
+      }
+    },
+    {
+      path: "/register",
+      view: async () => {
+        await viewHTML("/static/accounts/register.html");
+        registerPageStart();
+      }
     }
-	const routes = [
-		{
-			path: "/",
-			view: async () => {
-				await viewHTML("/static/home.html");
-			}
-		},
-		{
-			path: "/pong",
-			view: async () => {
-				await viewHTML("/static/pong/site.html");
-				const pongGame = new PongGame();
-				pongGame.initialize();
-			}
-		},
-		{
-			path: "/tetris",
-			view: () => {
-				viewHTML("/static/tetris/1_player.html").then(() => {
-					const playerConfigs = [
-						{
-							name: "Alice",
-							controls: {
-								left: 'ArrowLeft',
-								right: 'ArrowRight',
-								down: 'ArrowDown',
-								rotate: 'ArrowUp'
-							}
-						},
-						{
-							name: "Yannick",
-							controls: {
-								left: 'a',
-								right: 'd',
-								down: 's',
-								rotate: 'w'
-							}
-						}
-					]
-					launchTetrisGame(playerConfigs);
-				});
-			}
-		},
-		{
-			path: "/chat",
-			view: () => {
-				viewHTML("/static/chat/chatPage.html", JWTs).then(() => {
-					chatStart();
-				});
-			}
-		},
-		{
-			path: "/account",
-			view: async () => {
-				await viewHTML("/static/accounts/account.html");
-				accountsPageStart();
-			}
-		},
-		{
-			path: "/register",
-			view: async () => {
-				await viewHTML("/static/accounts/register.html");
-				registerPageStart();
-			}
-		}
-	];
+  ];
+  const potentialMatches = routes.map(route => {
+    return {
+      route: route,
+      isMatch: location.pathname === route.path
+    };
+  });
 
-	const potentialMatches = routes.map(route => {
-		return {
-			route: route,
-			isMatch: location.pathname === route.path
-		};
-	});
+  let match = potentialMatches.find(potentialMatch => potentialMatch.isMatch);
 
-	let match = potentialMatches.find(potentialMatch => potentialMatch.isMatch);
-
-	if (!match) {
-		match = {
-			route: routes[0],
-			isMatch: true
-		}
-	}
-
-	match.route.view();
-};
+  if (!match) {
+    navigateTo("/");
+  } else {
+    match.route.view();
+  }
+}
 
 window.addEventListener("popstate", router);
 
 document.addEventListener("DOMContentLoaded", () => {
-	document.body.addEventListener("click", e => {
-		if (e.target.matches("[data-link]")) {
-			e.preventDefault();
-			navigateTo(e.target.href);
-		}
-	});
-	router();
-});
+    const tetrisButton = document.querySelector("[data-tetris-start-button]");
+    if (tetrisButton) {
+        console.log("Tetris start button exists!");
+    } else {
+        console.log("Tetris start button does not exist yet.");
+    }
 
+    document.body.addEventListener("click", e => {
+        if (e.target.matches("[data-link]")) {
+            e.preventDefault();
+            navigateTo(e.target.href);
+        } else if (e.target.matches("[data-tetris-start-button]")) {
+            history.pushState(null, null, "/tetris_start");
+            router();
+        } else if (e.target.matches("[find-match]")) {
+			searching_for_game_match("tetris");
+		}
+    });
+    router();
+});

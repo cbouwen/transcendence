@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#*stj^ylxznts%bu%(sqz)uob@@b#@5*k3%ga@rp*8_p(ah&ze'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -186,7 +186,3 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
 }
-
-LOGIN_URL = 'login-user'
-LOGIN_REDIRECT_URL = 'chat-page'
-LOGOUT_REDIRECT_URL = 'login-user'

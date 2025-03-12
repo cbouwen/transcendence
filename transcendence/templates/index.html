@@ -9,15 +9,20 @@
 </head>
 
 <body>
-	<nav>
-		<h1> Navigation </h1>
-		<ul>
-			<li><a href="/" data-link>Home</a></lili>
-			<li><a href="/pong" data-link>Pong</a></li>
-			<li><a href="/tetris" data-link>Tetris</a></li>
-			<li><a href="/chat" data-link>Chat</a></li>
-			<li><a href="/account" data-link>Account</a></li>
-		</ul>
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="/" data-link>Transcendence</a>
+			</div>
+			<ul class="nav navbar-nav">
+				<li><a href="/pong" data-link>Pong</a></li>
+				<li><a href="/tetris" data-link>Tetris</a></li>
+				<li><a href="/chat" data-link>Chat</a></li>
+			  </ul>
+			  <ul class="nav navbar-nav navbar-right">
+				<li><a href="/account" data-link><span class="glyphicon glyphicon-user"></span> Account</a></li>
+			  </ul>
+		</div>
 	</nav>
 	<script src="{% static 'otpauth.umd.min.js' %}"></script>
 	<script src="{% static 'qrcode.js' %}"></script>
@@ -25,12 +30,16 @@
 	<script src="{% static 'utils.js' %}"></script>
 	<script src="{% static 'pong/pong.js' %}"></script>
 	<script src="{% static 'api/api.js' %}"></script>
+	<script src="{% static 'matchmaking.js' %}"></script>
 	<script src="{% static 'tetris/tetris.js' %}"></script>
 	<script src="{% static 'chat/chat.js' %}"></script>
 	<script src="{% static 'accounts/auth.js' %}"></script>
 	<script src="{% static 'spa.js' %}"></script>
 	<script src="{% static 'puppetTest.js' %}"></script>
 	<script src="{% static 'script.js' %}"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 	<main id="content">
 	</main>
 </body>

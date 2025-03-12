@@ -6,3 +6,6 @@ const intraLoginUrl = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2u
 let intraCode;
 let JWTs;
 let TOTPSetup;
+let tetrisActive = false;
+let GlobalMatchConfig = null;
+let GlobalTetrisGames = [];

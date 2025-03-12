@@ -137,6 +137,7 @@ async function TOTPTokenSubmitButtonHandler() {
 			alert("Couldn't login. Did you already set 2FA?");
 			redirectToIntra();
 		} else {
+			me = apiRequest('/me', 'GET', JWTs, undefined);
 			console.log("Logged in as " + me.first_name);
 			await navigateTo("/");
 		}
