@@ -1,5 +1,5 @@
 
-function chatStart() {
+async function chatStart() {
   const targetUsername = prompt("Enter the username of the person you want to chat with:");
 
   if (!targetUsername) {
@@ -20,6 +20,9 @@ function chatStart() {
       document.querySelector("#id_message_send_button").click();
     }
   };
+
+  const userdata = await apiRequest('/me', 'GET', JWTs, null);
+  console.log(userdata);  // Now it will print the actual data
   
   document.querySelector("#id_message_send_button").onclick = async function (e) {
     var messageInput = document.querySelector("#id_message_send_input").value.trim();
@@ -30,9 +33,6 @@ function chatStart() {
     }
 
     try {
-      const userdata = await apiRequest('/me', 'GET', JWTs, null);
-      console.log(userdata);  // Now it will print the actual data
-
 
       const messageData = {
         message: messageInput,
@@ -57,6 +57,7 @@ function chatStart() {
     const data = JSON.parse(e.data);
 
     console.log("Received message:", data); // Log the received message
+    console.log("username", userdata.username);
     console.log("Target username:", targetUsername); // Log the target username
     console.log("Message target", data.target); // Log the target field in the received messa
 
