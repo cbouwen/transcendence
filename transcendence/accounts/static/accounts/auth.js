@@ -41,10 +41,12 @@ async function loginFirstTime() {
 };
 
 async function login() {
-	debugger ;
 	try {
 		if (await loginAsRecurringUser("Please enter your OTP code or type SETUP if you don't have one already") == false) {
 			redirectToIntra();
+		} else {
+			let me = await apiRequest('/me', 'GET', JWTs, undefined);
+			console.log("Logged in as " + me.first_name);
 		}
 	} catch (exception) {
 		await navigateTo("/register");
@@ -134,6 +136,9 @@ async function TOTPTokenSubmitButtonHandler() {
 		if (logged_in == false) {
 			alert("Couldn't login. Did you already set 2FA?");
 			redirectToIntra();
+		} else {
+			console.log("Logged in as " + me.first_name);
+			await navigateTo("/");
 		}
 	} else {
 		alert("The code you put in is not valid. Please try again");
