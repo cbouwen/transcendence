@@ -11,3 +11,4 @@ djangorestframework-simplejwt==5.4.0
 daphne==4.0.0
 channels==4.0.0
 channels_redis==4.0.0
+pyotp==2.9.0
