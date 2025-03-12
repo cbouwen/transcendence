@@ -327,24 +327,22 @@ class tournament_update_match(APIView):
 
     def post(self, request):
         try:
-            players_data = request.data.get('players', [])
+            winner_id = request.data.get('winner')
+            loser_id = request.data.get('loser')
+            gameid = request.data.get('gameid')
 
-            for player in players_data:
-                TetrisScore.objects.create(
-                    gameid=player.get('gameid'),
-                    user=player.get('user'),
-                    score=player.get('score'),
-                    lines_cleared=player.get('lines_cleared'),
-                    level=player.get('level')
-                )
+            if not all([winner_id, loser_id, gameid]):
+                return Response({'error': 'winner, loser, and gameid are required fields.'}, status=400)
 
-            if players_data[0].get('score') > players_data[1].get('score'):
-                g_tournament.update_match(players_data[0].get('user'), players_data[1].get('user'))
-            elif players_data[0].get('score') < players_data[1].get('score'):
-                g_tournament.update_match(players_data[1].get('user'), players_data[0].get('user'))
-            else:
-                return Response({'Message': 'match ended in a draw'})
-            return Response({'Message': 'tournament match updated'})
+            # Retrieve the User objects for winner and loser.
+            winner = User.objects.get(id=winner_id)
+            loser = User.objects.get(id=loser_id)
+
+            # Call the tournament's update_match method with the new parameters.
+            result = g_tournament.update_match(winner=winner, loser=loser, gameid=gameid)
+            return Response(result)
+        except User.DoesNotExist:
+            return Response({"error": "Winner or loser not found."}, status=404)
         except TournamentError as e:
             return Response({"error": str(e)})
 
@@ -380,3 +378,10 @@ class tournament_declare_game(APIView):
             return JsonResponse({'Message': 'game name declared'})
         except TournamentError as e:
             return JsonResponse({"error": str(e)})
+
+class tournament_get_game(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({'game_name': g_tournament.game})

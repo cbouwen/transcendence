@@ -11,7 +11,7 @@ function getRandomSillyString() {
     'The mischievous gnome',
     'An alien pirate'
   ];
-  
+
   const adjectives = [
     'fluffy',
     'sparkly',
@@ -24,20 +24,25 @@ function getRandomSillyString() {
     'silly',
     'outrageous'
   ];
-  
-  const verbs = [
+
+  // Split verbs into linking and action verbs for better grammatical control.
+  const linkingVerbs = [
     'is a',
     'looks like a',
     'smells like a',
-    'tastes like a',
-    'jumps over a',
+    'tastes like a'
+  ];
+  const actionVerbs = [
+    'jumps over',
     'whispers to',
     'sings to',
     'dances with',
-    'hugs a',
-    'high-fives a'
+    'hugs',
+    'high-fives'
   ];
-  
+  // Combined array for cases where either type works.
+  const allVerbs = linkingVerbs.concat(actionVerbs);
+
   const objects = [
     'kangaroo',
     'rainbow',
@@ -50,7 +55,7 @@ function getRandomSillyString() {
     'pineapple',
     'ice cream cone'
   ];
-  
+
   const extras = [
     'in a tutu',
     'while eating spaghetti',
@@ -64,27 +69,46 @@ function getRandomSillyString() {
     'in a bubble bath'
   ];
 
-  // Array of sentence templates for even more variety and silliness
-  const templates = [
-    () => `${randomItem(subjects)} ${randomItem(verbs)} ${randomItem(objects)}.`,
-    () => `${randomItem(subjects)} is so ${randomItem(adjectives)} that it ${randomItem(verbs)} ${randomItem(objects)}.`,
-    () => `${randomItem(subjects)} ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
-    () => `In a surprising twist, ${randomItem(subjects)} that is usually ${randomItem(adjectives)} suddenly ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
-    () => `Legend has it that ${randomItem(subjects)} once ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
-    () => `${randomItem(subjects)} and ${randomItem(subjects)} teamed up to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
-    () => `Even the ${randomItem(adjectives)} ${randomItem(subjects)} couldn't believe it when it ${randomItem(verbs)} ${randomItem(objects)}.`,
-    () => `Rumor has it that ${randomItem(subjects)} now prefers to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
-    () => `Out of nowhere, ${randomItem(subjects)} decided to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
-    () => `In a world of absurdity, ${randomItem(subjects)} who is extremely ${randomItem(adjectives)} began to ${randomItem(verbs)} ${randomItem(objects)} ${randomItem(extras)}.`
-  ];
-
   // Helper function to choose a random element from an array.
   function randomItem(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  // Sentence templates ensuring grammatical coherence.
+  const templates = [
+    // Template 1: Uses any verb.
+    () => `${randomItem(subjects)} ${randomItem(allVerbs)} ${randomItem(objects)}.`,
+    
+    // Template 2: A "so ... that" construction.
+    () => `${randomItem(subjects)} is so ${randomItem(adjectives)} that it ${randomItem(allVerbs)} ${randomItem(objects)}.`,
+    
+    // Template 3: Adding an extra detail.
+    () => `${randomItem(subjects)} ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 4: With an introductory phrase.
+    () => `In a surprising twist, ${randomItem(subjects)} that is usually ${randomItem(adjectives)} suddenly ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 5: A legendary retelling.
+    () => `Legend has it that ${randomItem(subjects)} once ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 6: Two subjects teaming up (using only action verbs).
+    () => `${randomItem(subjects)} and ${randomItem(subjects)} teamed up to ${randomItem(actionVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 7: An exclamatory observation.
+    () => `Even the ${randomItem(adjectives)} ${randomItem(subjects)} couldn't believe it when it ${randomItem(allVerbs)} ${randomItem(objects)}.`,
+    
+    // Template 8: A rumor has it...
+    () => `Rumor has it that ${randomItem(subjects)} now prefers to ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 9: A sudden decision.
+    () => `Out of nowhere, ${randomItem(subjects)} decided to ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 10: A world of absurdity (removed "began to" for coherence).
+    () => `In a world of absurdity, ${randomItem(subjects)} who is extremely ${randomItem(adjectives)} ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`
+  ];
+
   // Choose a random template function and execute it.
-  const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+  const randomTemplate = randomItem(templates);
   return randomTemplate();
 }
 
@@ -201,206 +225,6 @@ async function startTetrisGame() {
         }
     ];
     await launchTetrisGame(playerConfigs, matchConfig);
-}
-
-// -----------------------------------------------------------------------------
-// Main function to launch a Tetris game for the provided players
-// -----------------------------------------------------------------------------
-async function launchTetrisGame(playerConfigs, matchConfig) {
-    GlobalMatchConfig = matchConfig;
-    let game_id = generateGameId();
-    console.log("launchTetrisGame called with:", playerConfigs);
-
-    const totalPlayers = playerConfigs.length;
-    let playersDeadCount = 0;
-    let games = [];
-
-    function generateGameId() {
-        return `${Date.now()}`;
-    }
-
-    // Append game styles
-    const style = document.createElement('style');
-    style.textContent = `
-        .game-container {
-            display: inline-block;
-            margin: 10px;
-            vertical-align: top;
-            font-family: Arial, sans-serif;
-        }
-        .score, .level, .lines {
-            font-size: 20px;
-            margin-top: 10px;
-            color: black;
-        }
-        body {
-            text-align: center;
-            padding-top: 20px;
-        }
-        .player-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: black;
-        }
-        .scoreboard-overlay {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid white;
-            padding: 20px;
-            z-index: 9999;
-            text-align: center;
-            min-width: 300px;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
-            color: black;
-        }
-        .scoreboard-title {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: white;
-        }
-        .scoreboard-entry {
-            font-size: 20px;
-            margin: 5px 0;
-            color: white;
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Create the main container for games
-    const mainContainer = document.createElement('div');
-    mainContainer.id = 'tetris-main-container';
-    const contentElement = document.getElementById("content");
-    contentElement.appendChild(mainContainer);
-
-    // Define onGameOver callback function
-    const playerLost = async () => {
-        playersDeadCount++;
-        // Optionally, call a function like finalizeLosingBoard() if needed.
-        if (totalPlayers === 1 || playersDeadCount === totalPlayers) {
-            await showFinalScoreboard();
-        }
-    };
-
-    // Create each player's game instance
-    for (let index = 0; index < playerConfigs.length; index++) {
-        const config = playerConfigs[index];
-        const container = document.createElement('div');
-        container.classList.add('game-container');
-        container.id = `player${index + 1}`;
-
-        const playerNameEl = document.createElement('div');
-        console.log("printing the token off ", config.user);
-        const data = await apiRequest("/me", "GET", config.user, null);
-        console.log(data);
-        playerNameEl.classList.add('player-name');
-        playerNameEl.textContent = data.username;
-        container.appendChild(playerNameEl);
-
-        mainContainer.appendChild(container);
-
-        // Pass the onGameOver callback to the TetrisGame instance.
-        const gameInstance = new TetrisGame(`player${index + 1}`, config.controls, config.name, playerLost);
-        gameInstance.user = config.user;  // attach the JWT token as a property
-        games[index] = gameInstance;
-        console.log(`Initialized game for ${config.name}`);
-    }
-
-	async function showFinalScoreboard() {
-		// Finalize every game board so all tetrominoes become gray (or white where needed)
-		games.forEach(game => game.finalizeLosingBoard());
-
-		// Build the scoreboard UI
-		const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
-		const scoreboardContainer = document.createElement('div');
-		scoreboardContainer.classList.add('scoreboard-overlay');
-
-		const title = document.createElement('div');
-		title.classList.add('scoreboard-title');
-		title.textContent = 'Game Over! Final Scores';
-		scoreboardContainer.appendChild(title);
-
-		sortedPlayers.forEach((player, rank) => {
-			const entry = document.createElement('div');
-			entry.classList.add('scoreboard-entry');
-			entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
-			scoreboardContainer.appendChild(entry);
-		});
-		
-		// Create and add a close button
-		const closeButton = document.createElement('button');
-		closeButton.textContent = 'Close';
-		closeButton.style.marginTop = '10px';
-		closeButton.style.padding = '10px 20px';
-		closeButton.style.fontSize = '16px';
-		closeButton.addEventListener('click', () => {
-			// Remove the scoreboard overlay from the document
-			document.body.removeChild(scoreboardContainer);
-		});
-		scoreboardContainer.appendChild(closeButton);
-
-		document.body.appendChild(scoreboardContainer);
-
-		// Send each player's data as a separate API call.
-		for (const player of sortedPlayers) {
-			const payload = {
-				ranked: GlobalMatchConfig.ranked,
-				is_tournament: GlobalMatchConfig.tournament,
-				gameid: game_id,
-				score: player.score,
-				lines_cleared: player.linesCleared,
-				level: player.getLevel(),
-			};
-			await sendGameDataToBackend(payload, player.user);
-		}
-	}
-
-    async function sendGameDataToBackend(playerData, playerJWT) {
-        try {
-            console.log(playerData);
-            console.log("sending data");
-            const data = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
-            if (data.error) {
-                throw new Error(`Server error: ${data.error}`);
-            }
-            console.log("Score processed successfully:", data);
-        } catch (error) {
-            console.error("Error processing score:", error);
-        }
-    }
-
-    // Global key event listeners for all games.
-    document.addEventListener('keydown', function(e) {
-        if (!tetrisActive) return;
-        games.forEach(game => {
-            if (
-                e.key === game.controls.left ||
-                e.key === game.controls.right ||
-                e.key === game.controls.down ||
-                e.key === game.controls.rotate
-            ) {
-                game.handleKeyDown(e);
-            }
-        });
-    });
-
-    document.addEventListener('keyup', function(e) {
-        if (!tetrisActive) return;
-        games.forEach(game => {
-            if (
-                e.key === game.controls.left ||
-                e.key === game.controls.right ||
-                e.key === game.controls.down ||
-                e.key === game.controls.rotate
-            ) {
-                game.handleKeyUp(e);
-            }
-        });
-    });
 }
 
 // -----------------------------------------------------------------------------
@@ -637,7 +461,7 @@ class TetrisGame {
     }
 
     update(time = 0) {
-		if (!tetrisActive) return;
+		if (tetrisActive == false) return;
         if (this.gameOver) return;
 
         const deltaTime = time - this.lastTime;
@@ -824,7 +648,7 @@ class TetrisGame {
     }
 
     finalizeLosingBoard() {
-		if (!tetrisActive) return;
+		if (tetrisActive == false) return;
         console.log(`Finalizing losing board for player: ${this.name}`);
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {

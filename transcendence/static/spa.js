@@ -157,10 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			const response = await apiRequest('/tournament/get_current_match', 'GET', JWTs, null);
 			console.log(response);
 			console.log(getRandomSillyString());
-		} else if (e.target.matches("[data-generate-round]")) {
-			const response = await apiRequest('/tournament/generate_round', 'POST', JWTs, null);
-			console.log(response);
-			console.log("starting tournament");
+			await tournament_get_next_match(response);
 		}
     });
     router();
