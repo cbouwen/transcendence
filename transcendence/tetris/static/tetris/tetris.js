@@ -125,6 +125,7 @@ async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ra
                 down: "s",       // Move down
                 rotate: "w"      // Rotate piece
             },
+            name: "Player 1"
         },
         {
             user: jwtTokens[1], // Token for player 2
@@ -134,6 +135,7 @@ async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ra
                 down: "ArrowDown",   // Move down
                 rotate: "ArrowUp"    // Rotate piece
             },
+            name: "Player 2"
         }
     ];
 
@@ -222,16 +224,205 @@ async function startTetrisGame() {
                 down: 'ArrowDown',
                 rotate: 'ArrowUp'
             },
+            name: "Player"
         }
     ];
     await launchTetrisGame(playerConfigs, matchConfig);
 }
 
 // -----------------------------------------------------------------------------
+// Main function to launch a Tetris game for the provided players
+// -----------------------------------------------------------------------------
+async function launchTetrisGame(playerConfigs, matchConfig) {
+    GlobalMatchConfig = matchConfig;
+    let game_id = generateGameId();
+    console.log("launchTetrisGame called with:", playerConfigs);
+
+    const totalPlayers = playerConfigs.length;
+    let playersDeadCount = 0;
+    let games = [];
+
+    // Expose these variables globally so they are accessible elsewhere.
+    window.currentMatchConfig = matchConfig;
+    window.game_id = game_id;
+    window.games = games;
+
+    function generateGameId() {
+        return `${Date.now()}`;
+    }
+
+    // Append game styles
+    const style = document.createElement('style');
+    style.textContent = `
+        .game-container {
+            display: inline-block;
+            margin: 10px;
+            vertical-align: top;
+            font-family: Arial, sans-serif;
+        }
+        .score, .level, .lines {
+            font-size: 20px;
+            margin-top: 10px;
+            color: black;
+        }
+        body {
+            text-align: center;
+            padding-top: 20px;
+        }
+        .player-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: black;
+        }
+        .scoreboard-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid white;
+            padding: 20px;
+            z-index: 9999;
+            text-align: center;
+            min-width: 300px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            color: black;
+        }
+        .scoreboard-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: black;
+        }
+        .scoreboard-entry {
+            font-size: 20px;
+            margin: 5px 0;
+            color: black;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Create the main container for games
+    const mainContainer = document.createElement('div');
+    mainContainer.id = 'tetris-main-container';
+    const contentElement = document.getElementById("content");
+    contentElement.appendChild(mainContainer);
+
+    // Define onGameOver callback function
+    const playerLost = async () => {
+        playersDeadCount++;
+        // Optionally, call a function like finalizeLosingBoard() if needed.
+        if (totalPlayers === 1 || playersDeadCount === totalPlayers) {
+            await showFinalScoreboard();
+        }
+    };
+
+    // Create each player's game instance
+    for (let index = 0; index < playerConfigs.length; index++) {
+        const config = playerConfigs[index];
+        const container = document.createElement('div');
+        container.classList.add('game-container');
+        container.id = `player${index + 1}`;
+
+        const playerNameEl = document.createElement('div');
+        console.log("printing the token off ", config.user);
+        const data = await apiRequest("/me", "GET", config.user, null);
+        console.log(data);
+        playerNameEl.classList.add('player-name');
+        playerNameEl.textContent = data.username;
+        container.appendChild(playerNameEl);
+
+        mainContainer.appendChild(container);
+
+        // Pass the onGameOver callback to the TetrisGame instance.
+        const gameInstance = new TetrisGame(`player${index + 1}`, config.controls, config.name, playerLost);
+        gameInstance.user = config.user;  // attach the JWT token as a property
+        games[index] = gameInstance;
+        console.log(`Initialized game for ${config.name}`);
+    }
+
+    // Build and show the final scoreboard when all players are done.
+    async function showFinalScoreboard() {
+        const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+
+        const scoreboardContainer = document.createElement('div');
+        scoreboardContainer.classList.add('scoreboard-overlay');
+        const title = document.createElement('div');
+        title.classList.add('scoreboard-title');
+        title.textContent = 'Game Over! Final Scores';
+        scoreboardContainer.appendChild(title);
+        sortedPlayers.forEach((player, rank) => {
+            const entry = document.createElement('div');
+            entry.classList.add('scoreboard-entry');
+            entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
+            scoreboardContainer.appendChild(entry);
+        });
+        document.body.appendChild(scoreboardContainer);
+
+        // Send each player's score to the backend.
+        for (const player of sortedPlayers) {
+            const payload = {
+                ranked: GlobalMatchConfig.ranked,
+                is_tournament: GlobalMatchConfig.tournament,
+                gameid: game_id,
+                score: player.score,
+                lines_cleared: player.linesCleared,
+                level: player.getLevel(),
+            };
+            await sendGameDataToBackend(payload, player.user);
+        }
+    }
+
+    async function sendGameDataToBackend(playerData, playerJWT) {
+        try {
+            console.log(playerData);
+            console.log("sending data");
+            const data = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
+            if (data.error) {
+                throw new Error(`Server error: ${data.error}`);
+            }
+            console.log("Score processed successfully:", data);
+        } catch (error) {
+            console.error("Error processing score:", error);
+        }
+    }
+
+    // Global key event listeners for all games.
+    document.addEventListener('keydown', async function(e) {
+        if (tetrisActive == false) return;
+        for (const game of games) {
+            if (
+                e.key === game.controls.left ||
+                e.key === game.controls.right ||
+                e.key === game.controls.down ||
+                e.key === game.controls.rotate
+            ) {
+                await game.handleKeyDown(e);
+            }
+        }
+    });
+
+    document.addEventListener('keyup', async function(e) {
+        if (tetrisActive == false) return;
+        for (const game of games) {
+            if (
+                e.key === game.controls.left ||
+                e.key === game.controls.right ||
+                e.key === game.controls.down ||
+                e.key === game.controls.rotate
+            ) {
+                await game.handleKeyUp(e);
+            }
+        }
+    });
+}
+
+// -----------------------------------------------------------------------------
 // TetrisGame class with onGameOver callback support
 // -----------------------------------------------------------------------------
 class TetrisGame {
-    constructor(containerId, controls, name, onGameOver = null) {
+    constructor(containerId, controls, name, onGameOver) {
         console.log(`Initializing TetrisGame for container: ${containerId}`);
         this.container = document.getElementById(containerId);
         this.name = name;
@@ -355,7 +546,6 @@ class TetrisGame {
                 }
             }
             this.gameOver = true;
-			this.currentTetromino = null;
             this.losingTetromino = tetromino;
             if (this.onGameOver) this.onGameOver();
             return null;
@@ -461,7 +651,6 @@ class TetrisGame {
     }
 
     update(time = 0) {
-		if (tetrisActive == false) return;
         if (this.gameOver) return;
 
         const deltaTime = time - this.lastTime;
@@ -604,7 +793,7 @@ class TetrisGame {
         if (direction === 'down') this.moveDown();
     }
 
-    handleKeyDown(e) {
+    async handleKeyDown(e) {
         if (this.gameOver || !this.currentTetromino) return;
 
         if (e.key === this.controls.left) {
@@ -634,7 +823,7 @@ class TetrisGame {
         }
     }
 
-    handleKeyUp(e) {
+    async handleKeyUp(e) {
         if (e.key === this.controls.left && this.keysState.left.pressed) {
             this.keysState.left.pressed = false;
             this.stopKeyRepeat('left');
@@ -647,8 +836,10 @@ class TetrisGame {
         }
     }
 
-    finalizeLosingBoard() {
-		if (tetrisActive == false) return;
+    // Mark finalizeLosingBoard as async so it can await the tournament result processing.
+    async finalizeLosingBoard() {
+        if (tetrisActive == false) return;
+        await processTournamentResults(window.games, window.currentMatchConfig);
         console.log(`Finalizing losing board for player: ${this.name}`);
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {
@@ -658,5 +849,27 @@ class TetrisGame {
             }
         }
         this.draw();
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Function to process tournament results
+// -----------------------------------------------------------------------------
+async function sendTournamentResult(winnerId, loserId, gameid, userToken) {
+    const payload = {
+        winner: winnerId,
+        loser: loserId,
+        gameid: gameid,
+    };
+
+    try {
+        const response = await apiRequest('/tournament/update_match', 'POST', userToken, payload);
+        if (response.error) {
+            console.error("Error updating tournament:", response.error);
+        } else {
+            console.log("Tournament match updated successfully:", response);
+        }
+    } catch (error) {
+        console.error("Exception when sending tournament result:", error);
     }
 }
