@@ -5,6 +5,8 @@ from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.core.cache import cache
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from datetime import timedelta
 import time
 import json
@@ -338,3 +340,17 @@ class tournament_declare_game(APIView):
         game_name = request.data.get('game_name')
         g_tournament.declare_game(game_name)
         return JsonResponse({'Message': 'game name declared'})
+
+@csrf_exempt
+@require_POST
+def block_user(request):
+    try:
+        current_user = request.user
+        target_username = request.POST.get('target_username')
+        target_user = User.objects.get(username=target_username)
+        current_user.blocked_users.add(target_user)
+        return JsonResponse({'status': 'success', 'message': f'User {target_username} has been blocked.'})
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})

@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     totpsecret = models.CharField()
+    blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by')
 
     def __str__(self):
         return self.username

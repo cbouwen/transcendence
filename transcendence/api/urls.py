@@ -9,6 +9,8 @@ from .views import tetris_get_next_match
 from .views import tetris_save_tetris_scores
 from .views import tetris_add_player
 from .views import tetris_remove_player
+from .views import block_user
+
 
 urlpatterns = [
     path('token', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -37,4 +39,6 @@ urlpatterns = [
     path('tournament/cancel_tournament', tournament_cancel_tournament.as_view(),
          name='to_cancel_tournament'),
     path('tournament/declare_game', tournament_declare_game.as_view(), name='to_declare_tournament'),
+    path('chat/block_user', block_user, name='block_user'),
+
 ]
