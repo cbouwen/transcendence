@@ -25,12 +25,12 @@ async function apiRequest(endpoint, method, jwtTokens, body) {
 	console.log("Sending the following request:");
 	console.log(request);
 	const response = await fetch(url, request);
+	const responseData = await response.json();
 	if (!response.ok) {
-		console.error("Unexpected response");
-		console.error(response);
+		console.warn("Unexpected response from API:");
+		console.warn(responseData);
 		return undefined;
 	}
-	const responseData = response.json();
 	return responseData;
 };
 
