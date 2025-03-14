@@ -1,4 +1,3 @@
-
 async function viewHTML(filePath, jwtTokens) {
 	let headers = {};
 	if (jwtTokens && jwtTokens.access) {
@@ -13,9 +12,10 @@ async function viewHTML(filePath, jwtTokens) {
 	document.getElementById("content").innerHTML = content;
 };
 
-function navigateTo(url) {
+async function navigateTo(url) {
 	history.pushState(null, null, url);
-	router();
+	await router();
+	fillInFirstNamePlaceholders();
 };
 
 async function router() {
@@ -75,6 +75,13 @@ async function router() {
         await viewHTML("/static/accounts/account.html");
         accountsPageStart();
       }
+    },
+    {
+      path: "/register",
+      view: async () => {
+        await viewHTML("/static/accounts/register.html");
+        registerPageStart();
+      }
     }
   ];
   const potentialMatches = routes.map(route => {
@@ -87,13 +94,10 @@ async function router() {
   let match = potentialMatches.find(potentialMatch => potentialMatch.isMatch);
 
   if (!match) {
-    match = {
-      route: routes[0],
-      isMatch: true
-    };
+    navigateTo("/");
+  } else {
+    match.route.view();
   }
-
-  match.route.view();
 }
 
 window.addEventListener("popstate", router);

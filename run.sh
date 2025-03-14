@@ -1,2 +1,2 @@
 export HOSTNAME=$(hostname)
-docker compose up
+docker compose up $@

@@ -17,6 +17,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     gir1.2-gtk-3.0 \
     && apt-get clean
 
+RUN curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64" \
+    && chmod +x mkcert-v*-linux-amd64 \
+    && cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+
 WORKDIR /app
 
 COPY requirements.txt /app/
