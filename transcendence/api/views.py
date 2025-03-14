@@ -21,7 +21,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
 from tetris.serializers import TetrisPlayerSerializer
-from tournament.tournament import TournamentError, g_tournament
+from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
 
@@ -439,4 +439,27 @@ class tournament_get_game(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({'game_name': g_tournament.game})
+        return Response(g_tournament.game)
+
+class tournament_ping(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def ping(self, request):
+        game_id = request.data.get('game_id')
+        g_tournament.ping_game(game_id)
+
+
+# Assume this is your helper function in another module:
+def get_game_id_value():
+    # Logic to generate or fetch the game id
+    return 42
+
+# Rename your view to avoid naming conflicts
+class get_game_id(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        game_id = get_game_id_number()  # Call the helper function
+        return Response({'game_id': game_id})

@@ -25,7 +25,6 @@ function getRandomSillyString() {
     'outrageous'
   ];
 
-  // Split verbs into linking and action verbs for better grammatical control.
   const linkingVerbs = [
     'is a',
     'looks like a',
@@ -40,7 +39,6 @@ function getRandomSillyString() {
     'hugs',
     'high-fives'
   ];
-  // Combined array for cases where either type works.
   const allVerbs = linkingVerbs.concat(actionVerbs);
 
   const objects = [
@@ -115,7 +113,7 @@ function getRandomSillyString() {
 // -----------------------------------------------------------------------------
 // Function to launch a custom two-player Tetris game
 // -----------------------------------------------------------------------------
-async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ranked = false) {
+async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ranked = false, g_id = 0) {
     const playerConfigs = [
         {
             user: jwtTokens[0], // Token for player 1
@@ -145,7 +143,7 @@ async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ra
     };
 
     tetrisActive = true;
-    await launchTetrisGame(playerConfigs, matchConfig);
+    await launchTetrisGame(playerConfigs, matchConfig, g_id);
 }
 
 // -----------------------------------------------------------------------------
@@ -233,9 +231,16 @@ async function startTetrisGame() {
 // -----------------------------------------------------------------------------
 // Main function to launch a Tetris game for the provided players
 // -----------------------------------------------------------------------------
-async function launchTetrisGame(playerConfigs, matchConfig) {
+async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
+	console.log("LAUNCHING TETRIS GAME");
     GlobalMatchConfig = matchConfig;
-    let game_id = generateGameId();
+    let game_id = g_id;
+	tetrisActive = true;
+	if (game_id == 0)
+	{
+		response = await apiRequest('/get_game_id', 'GET', JWTs, null);
+		game_id = response.game_id;
+	}
     console.log("launchTetrisGame called with:", playerConfigs);
 
     const totalPlayers = playerConfigs.length;
@@ -246,10 +251,6 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
     window.currentMatchConfig = matchConfig;
     window.game_id = game_id;
     window.games = games;
-
-    function generateGameId() {
-        return `${Date.now()}`;
-    }
 
     // Append game styles
     const style = document.createElement('style');
@@ -666,6 +667,8 @@ class TetrisGame {
     update(time = 0) {
         if (this.gameOver) return;
 
+		if (tetrisActive == false)
+			return ;
         const deltaTime = time - this.lastTime;
         this.lastTime = time;
         this.dropCounter += deltaTime;

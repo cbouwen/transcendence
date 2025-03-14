@@ -64,7 +64,6 @@ async function router() {
     {
       path: "/tournament",
       view: async () => {
-        tetrisActive = true;
         viewHTML("/static/tournament/tournament.html").then(() => {
           console.log("going to tournament");
         });
