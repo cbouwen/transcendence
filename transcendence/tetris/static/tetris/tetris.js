@@ -343,36 +343,49 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
     }
 
     // Build and show the final scoreboard when all players are done.
-    async function showFinalScoreboard() {
-        const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+	async function showFinalScoreboard() {
+		const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
 
-        const scoreboardContainer = document.createElement('div');
-        scoreboardContainer.classList.add('scoreboard-overlay');
-        const title = document.createElement('div');
-        title.classList.add('scoreboard-title');
-        title.textContent = 'Game Over! Final Scores';
-        scoreboardContainer.appendChild(title);
-        sortedPlayers.forEach((player, rank) => {
-            const entry = document.createElement('div');
-            entry.classList.add('scoreboard-entry');
-            entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
-            scoreboardContainer.appendChild(entry);
-        });
-        document.body.appendChild(scoreboardContainer);
+		// Tournament mode check: ensure tournament mode is on and there are exactly two players.
+		if (GlobalMatchConfig.tournament) {
+			if (games.length !== 2) {
+				console.error("Tournament game must have exactly two players.");
+			} else {
+				// Assuming sortedPlayers[0] is the winner and sortedPlayers[1] is the loser.
+				await sendTournamentResults(game_id, sortedPlayers[0].user, sortedPlayers[1].user);
+			}
+		}
 
-        // Send each player's score to the backend.
-        for (const player of sortedPlayers) {
-            const payload = {
-                ranked: GlobalMatchConfig.ranked,
-                is_tournament: GlobalMatchConfig.tournament,
-                gameid: game_id,
-                score: player.score,
-                lines_cleared: player.linesCleared,
-                level: player.getLevel(),
-            };
-            await sendGameDataToBackend(payload, player.user);
-        }
-    }
+		// Build and show the final scoreboard overlay.
+		const scoreboardContainer = document.createElement('div');
+		scoreboardContainer.classList.add('scoreboard-overlay');
+		const title = document.createElement('div');
+		title.classList.add('scoreboard-title');
+		title.textContent = 'Game Over! Final Scores';
+		scoreboardContainer.appendChild(title);
+		
+		sortedPlayers.forEach((player, rank) => {
+			const entry = document.createElement('div');
+			entry.classList.add('scoreboard-entry');
+			entry.textContent = `${rank + 1}. ${player.name}: ${player.score} (Lines: ${player.linesCleared})`;
+			scoreboardContainer.appendChild(entry);
+		});
+		
+		document.body.appendChild(scoreboardContainer);
+
+		// Optionally, send each player's score to the backend.
+		for (const player of sortedPlayers) {
+			const payload = {
+				ranked: GlobalMatchConfig.ranked,
+				is_tournament: GlobalMatchConfig.tournament,
+				gameid: game_id,
+				score: player.score,
+				lines_cleared: player.linesCleared,
+				level: player.getLevel(),
+			};
+			await sendGameDataToBackend(payload, player.user);
+		}
+	}
 
     async function sendGameDataToBackend(playerData, playerJWT) {
         try {
@@ -839,7 +852,6 @@ class TetrisGame {
     // Mark finalizeLosingBoard as async so it can await the tournament result processing.
     async finalizeLosingBoard() {
         if (tetrisActive == false) return;
-        await processTournamentResults(window.games, window.currentMatchConfig);
         console.log(`Finalizing losing board for player: ${this.name}`);
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {
@@ -849,27 +861,5 @@ class TetrisGame {
             }
         }
         this.draw();
-    }
-}
-
-// -----------------------------------------------------------------------------
-// Function to process tournament results
-// -----------------------------------------------------------------------------
-async function sendTournamentResult(winnerId, loserId, gameid, userToken) {
-    const payload = {
-        winner: winnerId,
-        loser: loserId,
-        gameid: gameid,
-    };
-
-    try {
-        const response = await apiRequest('/tournament/update_match', 'POST', userToken, payload);
-        if (response.error) {
-            console.error("Error updating tournament:", response.error);
-        } else {
-            console.log("Tournament match updated successfully:", response);
-        }
-    } catch (error) {
-        console.error("Exception when sending tournament result:", error);
     }
 }

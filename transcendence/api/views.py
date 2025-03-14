@@ -327,24 +327,79 @@ class tournament_update_match(APIView):
 
     def post(self, request):
         try:
-            winner_id = request.data.get('winner')
-            loser_id = request.data.get('loser')
+            # Extract and validate required fields from the request payload.
+            status_value = request.data.get('status')  # expected to be "winner" or "loser"
             gameid = request.data.get('gameid')
+            packetnumber = request.data.get('packetnumber')
+            packetamount = request.data.get('packetamount')
 
-            if not all([winner_id, loser_id, gameid]):
-                return Response({'error': 'winner, loser, and gameid are required fields.'}, status=400)
+            if not all([status_value, gameid, packetnumber, packetamount]):
+                return Response(
+                    {'error': 'status, gameid, packetnumber, and packetamount are required fields.'},
+                    status=400
+                )
 
-            # Retrieve the User objects for winner and loser.
-            winner = User.objects.get(id=winner_id)
-            loser = User.objects.get(id=loser_id)
+            # Ensure packetamount is exactly 2 and packetnumber is either 1 or 2.
+            try:
+                packetamount = int(packetamount)
+                packetnumber = int(packetnumber)
+            except ValueError:
+                return Response({'error': 'packetnumber and packetamount must be integers.'}, status=400)
 
-            # Call the tournament's update_match method with the new parameters.
-            result = g_tournament.update_match(winner=winner, loser=loser, gameid=gameid)
-            return Response(result)
+            if packetamount != 2:
+                return Response({'error': 'Invalid packet amount. Must be 2.'}, status=400)
+            if packetnumber not in [1, 2]:
+                return Response({'error': 'Invalid packet number. Must be 1 or 2.'}, status=400)
+
+            # Verify that the status is either "winner" or "loser".
+            if status_value not in ["winner", "loser"]:
+                return Response({'error': 'Invalid status. Must be either "winner" or "loser".'}, status=400)
+
+            # Build a package record; we use the authenticated user's id to determine who sent it.
+            package = {
+                "status": status_value,
+                "user_id": request.user.id,
+                "packetnumber": packetnumber,
+            }
+
+            # Use the gameid as the key to temporarily store packages.
+            cache_key = f"tournament_result_{gameid}"
+            packages = cache.get(cache_key)
+
+            if packages:
+                # Prevent duplicate submission from the same status.
+                if any(pkg['status'] == status_value for pkg in packages):
+                    return Response({'error': 'Duplicate package received.'}, status=400)
+                packages.append(package)
+                # If both packages have been received, process the tournament result.
+                if len(packages) == 2:
+                    # By using the gameid as our cache key, we ensure both packages refer to the same game.
+                    winner_pkg = next((pkg for pkg in packages if pkg['status'] == "winner"), None)
+                    loser_pkg = next((pkg for pkg in packages if pkg['status'] == "loser"), None)
+                    if not winner_pkg or not loser_pkg:
+                        return Response({'error': 'Both winner and loser packages are required.'}, status=400)
+
+                    # Retrieve the User objects corresponding to each package.
+                    winner = User.objects.get(id=winner_pkg['user_id'])
+                    loser = User.objects.get(id=loser_pkg['user_id'])
+
+                    # Call your tournament update_match method.
+                    result = g_tournament.update_match(winner=winner, loser=loser, gameid=gameid)
+                    # Clear the cached packages now that we have processed the result.
+                    cache.delete(cache_key)
+                    return Response(result)
+                else:
+                    # Only one package received so far; update the cache and wait.
+                    cache.set(cache_key, packages, timeout=60)  # expires in 1 minutes
+                    return Response({'message': 'Package received. Waiting for the other package.'})
+            else:
+                # No package has been received yet for this gameid; store this package.
+                cache.set(cache_key, [package], timeout=60)  # expires in 1 minutes
+                return Response({'message': 'Package received. Waiting for the other package.'})
         except User.DoesNotExist:
-            return Response({"error": "Winner or loser not found."}, status=404)
-        except TournamentError as e:
-            return Response({"error": str(e)})
+            return Response({"error": "User not found."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 class tournament_get_current_match(APIView):
     authentication_classes = [JWTAuthentication]

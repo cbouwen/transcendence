@@ -54,3 +54,37 @@ async function tournament_get_next_match(data) {
 		console.log("here is were you launch the pong game");
 	}
 }
+
+async function sendTournamentResults(gameid, winnerToken, loserToken) {
+    const payloadWinner = {
+		status: "winner",
+        gameid: gameid,
+        packetnumber: 1,
+        packetamount: 2,
+    };
+
+    const payloadLoser = {
+		status: "loser",
+        gameid: gameid,
+        packetnumber: 2,
+        packetamount: 2,
+    };
+
+    try {
+        const responseWinner = await apiRequest('/tournament/update_match', 'POST', winnerToken, payloadWinner);
+        if (responseWinner.error) {
+            console.error("Error updating tournament for winner:", responseWinner.error);
+        } else {
+            console.log("Tournament match updated successfully for winner:", responseWinner);
+        }
+
+        const responseLoser = await apiRequest('/tournament/update_match', 'POST', loserToken, payloadLoser);
+        if (responseLoser.error) {
+            console.error("Error updating tournament for loser:", responseLoser.error);
+        } else {
+            console.log("Tournament match updated successfully for loser:", responseLoser);
+        }
+    } catch (error) {
+        console.error("Exception when sending tournament results:", error);
+    }
+}
