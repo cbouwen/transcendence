@@ -241,6 +241,8 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
 		response = await apiRequest('/get_game_id', 'GET', JWTs, null);
 		game_id = response.game_id;
 	}
+	if (matchConfig.tournament == true)
+		pingTournament(game_id);
     console.log("launchTetrisGame called with:", playerConfigs);
 
     const totalPlayers = playerConfigs.length;

@@ -1,4 +1,4 @@
-async function pingTournament(gameID) {
+async function performActionEvery30Seconds() {
   while (tetrisActive) {
     // Perform your action here
     console.log("Action performed at", new Date().toLocaleTimeString());
@@ -8,10 +8,6 @@ async function pingTournament(gameID) {
       // Check if we should stop
       if (!tetrisActive) {
         console.log("tetrisActive is false. Exiting loop.");
-		payload = {
-			game_id : gameID,
-		}
-		response = await apiRequest('/tournament/ping', 'PATCH', JWTs, payload);
         return;
       }
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -90,16 +86,14 @@ async function sendTournamentResults(gameid, winnerToken, loserToken) {
     };
 
     try {
-        const responseWinner = await apiRequest('/tournament/update_match', 'POST',
-			winnerToken, payloadWinner);
+        const responseWinner = await apiRequest('/tournament/update_match', 'POST', winnerToken, payloadWinner);
         if (responseWinner.error) {
             console.error("Error updating tournament for winner:", responseWinner.error);
         } else {
             console.log("Tournament match updated successfully for winner:", responseWinner);
         }
 
-        const responseLoser = await apiRequest('/tournament/update_match', 'POST',
-			loserToken, payloadLoser);
+        const responseLoser = await apiRequest('/tournament/update_match', 'POST', loserToken, payloadLoser);
         if (responseLoser.error) {
             console.error("Error updating tournament for loser:", responseLoser.error);
         } else {

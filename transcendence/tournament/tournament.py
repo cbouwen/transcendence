@@ -141,7 +141,7 @@ class Tournament:
         for match in current_round:
             # Only start matches that have not already been started and are not bye matches.
             if match.get("player2") is not None and match["gameid"] is None:
-                new_gameid = str(uuid.uuid4())
+                new_gameid = get_game_id_number()  # Changed to always use the internal ID
                 match["gameid"] = new_gameid
                 match["last_ping"] = datetime.datetime.now()
                 return {"gameid": new_gameid, "match": f"{match['player1'].username} vs {match['player2'].username}"}
@@ -246,52 +246,6 @@ class Tournament:
             }
             matches_info.append(info)
         return matches_info
-
-    @tournament_error_only
-    def get_current_match(self):
-        """
-        Returns the next pending match that is not active.
-        A match is considered active if it has a game ID and its last ping was within 5 minutes.
-        If a match's last ping is more than 5 minutes old, it is marked inactive,
-        a new game ID is assigned, and the updated match info is returned.
-        If all pending matches are active, returns "all games active".
-        """
-        if self.init == 0 or not self.started:
-            raise TournamentError("Tournament not setup with a game")
-        
-        # If the tournament is over, return the champion info.
-        if not self.started:
-            if self.rounds:
-                last_round = self.rounds[-1]
-                if len(last_round) == 1 and last_round[0].get("winner"):
-                    return {"champion": last_round[0]["winner"].username}
-            return {"champion": None, "message": "Tournament over, but champion not determined."}
-        
-        now = datetime.datetime.now()
-        for match in self.rounds[self.current_round_index]:
-            if match.get("player2") is not None and match["winner"] is None:
-                # Check if the match has a game ID and a last_ping value.
-                if match["gameid"] is not None and match["last_ping"] is not None:
-                    if (now - match["last_ping"]).total_seconds() > 300:
-                        # Stale ping; assign a new game ID and mark as inactive.
-                        new_gameid = get_game_id_number()
-                        match["gameid"] = new_gameid
-                        match["last_ping"] = None
-                        return {"player1": match["player1"].username,
-                                "player2": match["player2"].username,
-                                "gameid": new_gameid, "game_name": self.game}
-                    else:
-                        # Match is active; continue checking the next match.
-                        continue
-                else:
-                    # If the match does not have a game ID, assign one.
-                    new_gameid = get_game_id_number()
-                    match["gameid"] = new_gameid
-                    match["last_ping"] = None
-                    return {"player1": match["player1"].username,
-                            "player2": match["player2"].username,
-                            "gameid": new_gameid, "game_name": self.game}
-        return "all games active"
 
     @tournament_error_only
     def ping_game(self, gameid: str) -> dict:

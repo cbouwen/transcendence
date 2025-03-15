@@ -407,7 +407,7 @@ class tournament_get_current_match(APIView):
 
     def get(self, request):
         try:
-            return Response({'Message': g_tournament.get_current_match()})
+            return Response({'Message': g_tournament.start_game()})
         except TournamentError as e:
             return Response({"error": str(e)})
 
@@ -445,17 +445,10 @@ class tournament_ping(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def ping(self, request):
+    def patch(self, request):
         game_id = request.data.get('game_id')
         g_tournament.ping_game(game_id)
 
-
-# Assume this is your helper function in another module:
-def get_game_id_value():
-    # Logic to generate or fetch the game id
-    return 42
-
-# Rename your view to avoid naming conflicts
 class get_game_id(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
