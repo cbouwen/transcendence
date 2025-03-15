@@ -1,3 +1,49 @@
+async function showError(message) {
+  return new Promise((resolve) => {
+    // Create the overlay container for the error box
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    container.style.display = 'flex';
+    container.style.justifyContent = 'center';
+    container.style.alignItems = 'center';
+    container.style.zIndex = '1000';
+
+    // Create the error box element
+    const errorBox = document.createElement('div');
+    errorBox.style.backgroundColor = 'white';
+    errorBox.style.padding = '20px';
+    errorBox.style.border = '2px solid red';
+    errorBox.style.borderRadius = '5px';
+    errorBox.style.textAlign = 'center';
+
+    // Create the message element and set its text
+    const messageEl = document.createElement('p');
+    messageEl.textContent = message;
+
+    // Create the OK button
+    const okButton = document.createElement('button');
+    okButton.textContent = 'OK';
+    okButton.addEventListener('click', () => {
+      // Remove the container from the document and resolve the promise
+      document.body.removeChild(container);
+      resolve();
+    });
+
+    // Append message and button to the error box, then the box to the container
+    errorBox.appendChild(messageEl);
+    errorBox.appendChild(okButton);
+    container.appendChild(errorBox);
+
+    // Append the container to the body
+    document.body.appendChild(container);
+  });
+}
+
 async function addPlayer(jwtToken) {
     // Ensure that 'body' is defined or passed as needed.
     const response = await apiRequest('/tetris/add-player', 'POST', jwtToken, body);
@@ -46,8 +92,11 @@ async function searching_for_game_match(gameName) {
         console.log(response.player2);
         console.log(response.player1);
     }
-    if (!response || !response.player1?.trim() || !response.player2?.trim()) 
+    if (!response || !response.player1?.trim() || !response.player2?.trim())
+	{
+		showError("A error happened during matchmaking");
         return;
+	}
     const puppetToken = await awaitingPupperResponse(response.player2);
     console.log("PRINTING PUPPET TOKEN", puppetToken);
     if (puppetToken && puppetToken.status == 401) return;
