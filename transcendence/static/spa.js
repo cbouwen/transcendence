@@ -18,14 +18,16 @@ function navigateTo(url) {
 	router();
 };
 
-async function router() {
-  GlobalTetrisGames.forEach(game => {
-	  if (game.destroy) {
-			game.destroy();
-		}
-  });
+async function router()
+{
+  GlobalTetrisGames.forEach(game =>
+	  {
+		  if (game.destroy)
+		  {
+			  game.destroy();
+		  }
+	  });
   GlobalTetrisGames.length = 0;
-  
   tetrisActive = false;
   const routes = [
     {
