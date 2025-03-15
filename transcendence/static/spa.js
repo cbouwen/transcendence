@@ -25,9 +25,6 @@ async function router() {
 		}
   });
   GlobalTetrisGames.length = 0;
-  if (location.pathname !== "/tetris") {
-    // Additional code can be placed here if needed.
-  }
   
   tetrisActive = false;
   const routes = [
