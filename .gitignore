@@ -9,3 +9,5 @@ __pycache__/
 .env.*
 */*/__pycache__/*
 */*/__pycache__/*/*
+run.sh
+.gitignore
