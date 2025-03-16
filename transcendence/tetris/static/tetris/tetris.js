@@ -1,7 +1,171 @@
-// -----------------------------------------------------------------------------
-// Function to launch a custom two-player Tetris game
-// -----------------------------------------------------------------------------
-async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ranked = false) {
+function getRandomSillyString() {
+  const subjects = [
+    'Godzilla',
+    'A unicorn',
+    'My toaster',
+    'The sandwich',
+    'A pineapple',
+    'The dancing elephant',
+    'Captain Jack Sparrow',
+    'A Terminator',
+    'The mischievous gnome',
+    'An alien pirate'
+  ];
+
+  const adjectives = [
+    'fluffy',
+    'sparkly',
+    'mysterious',
+    'bizarre',
+    'confused',
+    'fancy',
+    'quirky',
+    'wacky',
+    'silly',
+    'outrageous'
+  ];
+
+  const linkingVerbs = [
+    'is a',
+    'looks like a',
+    'smells like a',
+    'tastes like a'
+  ];
+  const actionVerbs = [
+    'jumps over',
+    'whispers to',
+    'sings to',
+    'dances with',
+    'hugs',
+    'high-fives'
+  ];
+  const allVerbs = linkingVerbs.concat(actionVerbs);
+
+  const objects = [
+    'kangaroo',
+    'rainbow',
+    'spaceship',
+    'ninja',
+    'marshmallow',
+    'glitter bomb',
+    'robot',
+    'giant burrito',
+    'pineapple',
+    'ice cream cone'
+  ];
+
+  const extras = [
+    'in a tutu',
+    'while eating spaghetti',
+    'during a moonwalk',
+    'with extra glitter',
+    'on a pogo stick',
+    'at a disco party',
+    'in the middle of a conga line',
+    'under a waterfall of jellybeans',
+    'on a flying carpet',
+    'in a bubble bath'
+  ];
+
+  // Helper function to choose a random element from an array.
+  function randomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Sentence templates ensuring grammatical coherence.
+  const templates = [
+    // Template 1: Uses any verb.
+    () => `${randomItem(subjects)} ${randomItem(allVerbs)} ${randomItem(objects)}.`,
+    
+    // Template 2: A "so ... that" construction.
+    () => `${randomItem(subjects)} is so ${randomItem(adjectives)} that it ${randomItem(allVerbs)} ${randomItem(objects)}.`,
+    
+    // Template 3: Adding an extra detail.
+    () => `${randomItem(subjects)} ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 4: With an introductory phrase.
+    () => `In a surprising twist, ${randomItem(subjects)} that is usually ${randomItem(adjectives)} suddenly ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 5: A legendary retelling.
+    () => `Legend has it that ${randomItem(subjects)} once ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 6: Two subjects teaming up (using only action verbs).
+    () => `${randomItem(subjects)} and ${randomItem(subjects)} teamed up to ${randomItem(actionVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 7: An exclamatory observation.
+    () => `Even the ${randomItem(adjectives)} ${randomItem(subjects)} couldn't believe it when it ${randomItem(allVerbs)} ${randomItem(objects)}.`,
+    
+    // Template 8: A rumor has it...
+    () => `Rumor has it that ${randomItem(subjects)} now prefers to ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 9: A sudden decision.
+    () => `Out of nowhere, ${randomItem(subjects)} decided to ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`,
+    
+    // Template 10: A world of absurdity (removed "began to" for coherence).
+    () => `In a world of absurdity, ${randomItem(subjects)} who is extremely ${randomItem(adjectives)} ${randomItem(allVerbs)} ${randomItem(objects)} ${randomItem(extras)}.`
+  ];
+
+  // Choose a random template function and execute it.
+  const randomTemplate = randomItem(templates);
+  return randomTemplate();
+}
+
+async function launchCustomTetrisGameTreePlayer(jwtTokens) {
+	if (jwtTokens.len != 3)
+	{
+		console.error("wrong number of JWT tokens for launch custom tetris game two players\n",
+			"two tokens required");
+		return ;
+	}
+    const playerConfigs = [
+		{
+            user: jwtTokens[0], // Token for player 1
+            controls: {
+                left: "a",       // Move left
+                right: "d",      // Move right
+                down: "s",       // Move down
+                rotate: "w"      // Rotate piece
+            },
+            name: "Player 1"
+        },
+        {
+            user: jwtTokens[1], // Token for player 1
+            controls: {
+                left: "j",       // Move left
+                right: "l",      // Move right
+                down: "k",       // Move down
+                rotate: "i"      // Rotate piece
+            },
+            name: "Player 1"
+        },
+        {
+            user: jwtTokens[2], // Token for player 2
+            controls: {
+                left: "ArrowLeft",   // Move left
+                right: "ArrowRight", // Move right
+                down: "ArrowDown",   // Move down
+                rotate: "ArrowUp"    // Rotate piece
+            },
+            name: "Player 2"
+        }
+    ];
+
+    const matchConfig = {
+        ranked: false,
+        tournament: false
+    };
+
+    tetrisActive = true;
+    await launchTetrisGame(playerConfigs, matchConfig, 0);
+}
+
+async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ranked = false, g_id = 0) {
+	if (jwtTokens.len != 2)
+	{
+		console.error("wrong number of JWT tokens for launch custom tetris game two players\n",
+			"two tokens required");
+		return ;
+	}
     const playerConfigs = [
         {
             user: jwtTokens[0], // Token for player 1
@@ -31,7 +195,7 @@ async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ra
     };
 
     tetrisActive = true;
-    await launchTetrisGame(playerConfigs, matchConfig);
+    await launchTetrisGame(playerConfigs, matchConfig, g_id);
 }
 
 // -----------------------------------------------------------------------------
@@ -119,18 +283,26 @@ async function startTetrisGame() {
 // -----------------------------------------------------------------------------
 // Main function to launch a Tetris game for the provided players
 // -----------------------------------------------------------------------------
-async function launchTetrisGame(playerConfigs, matchConfig) {
+async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
+	console.log("LAUNCHING TETRIS GAME");
     GlobalMatchConfig = matchConfig;
-    let game_id = generateGameId();
+    let game_id = g_id;
+	tetrisActive = true;
+	if (game_id == 0)
+	{
+		response = await apiRequest('/get_game_id', 'GET', JWTs, null);
+		game_id = response.game_id;
+	}
     console.log("launchTetrisGame called with:", playerConfigs);
 
     const totalPlayers = playerConfigs.length;
     let playersDeadCount = 0;
     let games = [];
 
-    function generateGameId() {
-        return `${Date.now()}`;
-    }
+    // Expose these variables globally so they are accessible elsewhere.
+    window.currentMatchConfig = matchConfig;
+    window.game_id = game_id;
+    window.games = games;
 
     // Append game styles
     const style = document.createElement('style');
@@ -146,7 +318,7 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
             margin-top: 10px;
             color: black;
         }
-        body {
+		#tetris-main-container {
             text-align: center;
             padding-top: 20px;
         }
@@ -223,20 +395,31 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
         console.log(`Initialized game for ${config.name}`);
     }
 
+    // Build and show the final scoreboard when all players are done.
 	async function showFinalScoreboard() {
-		// Finalize every game board so all tetrominoes become gray (or white where needed)
-		games.forEach(game => game.finalizeLosingBoard());
-
-		// Build the scoreboard UI
 		const sortedPlayers = games.slice().sort((a, b) => b.score - a.score);
+
+		// Tournament mode check: ensure tournament mode is on and there are exactly two players.
+		if (GlobalMatchConfig.tournament) {
+			if (games.length !== 2) {
+				console.error("Tournament game must have exactly two players.");
+			} else {
+				// Assuming sortedPlayers[0] is the winner and sortedPlayers[1] is the loser.
+				await sendTournamentResults(game_id, sortedPlayers[0].user, sortedPlayers[1].user);
+			}
+		}
+
+		// Build the final scoreboard overlay.
 		const scoreboardContainer = document.createElement('div');
 		scoreboardContainer.classList.add('scoreboard-overlay');
 
+		// Title
 		const title = document.createElement('div');
 		title.classList.add('scoreboard-title');
 		title.textContent = 'Game Over! Final Scores';
 		scoreboardContainer.appendChild(title);
-
+		
+		// Scoreboard entries
 		sortedPlayers.forEach((player, rank) => {
 			const entry = document.createElement('div');
 			entry.classList.add('scoreboard-entry');
@@ -244,21 +427,18 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
 			scoreboardContainer.appendChild(entry);
 		});
 		
-		// Create and add a close button
+		// Close button
 		const closeButton = document.createElement('button');
+		closeButton.classList.add('scoreboard-close-button');
 		closeButton.textContent = 'Close';
-		closeButton.style.marginTop = '10px';
-		closeButton.style.padding = '10px 20px';
-		closeButton.style.fontSize = '16px';
 		closeButton.addEventListener('click', () => {
-			// Remove the scoreboard overlay from the document
 			document.body.removeChild(scoreboardContainer);
 		});
 		scoreboardContainer.appendChild(closeButton);
 
 		document.body.appendChild(scoreboardContainer);
 
-		// Send each player's data as a separate API call.
+		// Optionally, send each player's score to the backend.
 		for (const player of sortedPlayers) {
 			const payload = {
 				ranked: GlobalMatchConfig.ranked,
@@ -287,32 +467,32 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
     }
 
     // Global key event listeners for all games.
-    document.addEventListener('keydown', function(e) {
-        if (!tetrisActive) return;
-        games.forEach(game => {
+    document.addEventListener('keydown', async function(e) {
+        if (tetrisActive == false) return;
+        for (const game of games) {
             if (
                 e.key === game.controls.left ||
                 e.key === game.controls.right ||
                 e.key === game.controls.down ||
                 e.key === game.controls.rotate
             ) {
-                game.handleKeyDown(e);
+                await game.handleKeyDown(e);
             }
-        });
+        }
     });
 
-    document.addEventListener('keyup', function(e) {
-        if (!tetrisActive) return;
-        games.forEach(game => {
+    document.addEventListener('keyup', async function(e) {
+        if (tetrisActive == false) return;
+        for (const game of games) {
             if (
                 e.key === game.controls.left ||
                 e.key === game.controls.right ||
                 e.key === game.controls.down ||
                 e.key === game.controls.rotate
             ) {
-                game.handleKeyUp(e);
+                await game.handleKeyUp(e);
             }
-        });
+        }
     });
 }
 
@@ -320,7 +500,7 @@ async function launchTetrisGame(playerConfigs, matchConfig) {
 // TetrisGame class with onGameOver callback support
 // -----------------------------------------------------------------------------
 class TetrisGame {
-    constructor(containerId, controls, name, onGameOver = null) {
+    constructor(containerId, controls, name, onGameOver) {
         console.log(`Initializing TetrisGame for container: ${containerId}`);
         this.container = document.getElementById(containerId);
         this.name = name;
@@ -550,9 +730,10 @@ class TetrisGame {
     }
 
     update(time = 0) {
-		if (!tetrisActive) return;
         if (this.gameOver) return;
 
+		if (tetrisActive == false)
+			return ;
         const deltaTime = time - this.lastTime;
         this.lastTime = time;
         this.dropCounter += deltaTime;
@@ -693,7 +874,7 @@ class TetrisGame {
         if (direction === 'down') this.moveDown();
     }
 
-    handleKeyDown(e) {
+    async handleKeyDown(e) {
         if (this.gameOver || !this.currentTetromino) return;
 
         if (e.key === this.controls.left) {
@@ -723,7 +904,7 @@ class TetrisGame {
         }
     }
 
-    handleKeyUp(e) {
+    async handleKeyUp(e) {
         if (e.key === this.controls.left && this.keysState.left.pressed) {
             this.keysState.left.pressed = false;
             this.stopKeyRepeat('left');
@@ -736,8 +917,8 @@ class TetrisGame {
         }
     }
 
-    finalizeLosingBoard() {
-		if (!tetrisActive) return;
+    async finalizeLosingBoard() {
+        if (tetrisActive == false) return;
         console.log(`Finalizing losing board for player: ${this.name}`);
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {

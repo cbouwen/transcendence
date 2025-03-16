@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'pong',
     'tetris',
+    'tournament',
     'chat',
     'accounts',
     'rest_framework',
@@ -152,6 +153,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'tetris/static'),
     os.path.join(BASE_DIR, 'chat/static'),
     os.path.join(BASE_DIR, 'api/static'),
+    os.path.join(BASE_DIR, 'tournament/static'),
     os.path.join(BASE_DIR, 'accounts/static'),
 ]
 
@@ -185,5 +187,5 @@ REST_FRAMEWORK = {
     ),
 }
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
 }
