@@ -28,6 +28,9 @@ from tetris.models import TetrisPlayer, TetrisScore
 from .serializers import UserSerializer
 from accounts.models import PuppetGrant
 
+import uuid
+from pong.models import PongScore
+
 User = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -149,7 +152,7 @@ class Me(APIView):
         user = request.user
         serializer = UserSerializer(user)
         userdata = serializer.data
-        userdata.pop("totpsecret")
+        userdata.pop("totpsecret") #TODO: Security issues
         userdata.pop("password")
         return Response(userdata)
 
@@ -466,3 +469,32 @@ class get_game_id(APIView):
     def get(self, request):
         game_id = get_game_id_number()  # Call the helper function
         return Response({'game_id': game_id})
+
+class PongScoreView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        me = request.user
+        scores = PongScore.objects.filter(me=me)
+        serializer = PongScoreSerializer(scores, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        me = request.user
+        their_username = request.data.get("their_username")
+        if (their_username == ""):
+            them = None
+        else:
+            them = User.objects.get(username=their_username)
+        my_score = request.data.get("my_score")
+        their_score = request.data.get("their_score")
+
+        pong_score = PongScore.objects.create(
+            gameid=uuid.uuid4(),
+            me=me,
+            them=them,
+            my_score=my_score,
+            their_score=their_score
+        )
+        return Response({'message': 'Score saved'})

@@ -236,30 +236,6 @@ async function awaitingPupperResponse(player2) {
     }
 }
 
-async function searching_for_game_match(gameName) {
-    if (gameName != "tetris" && gameName != "pong") {
-        console.error("wrong game name sent to function searching for game");
-        return;
-    }
-    const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
-    console.log(response);
-    if (response) {
-        console.log(response.player2);
-        console.log(response.player1);
-    }
-    if (!response || !response.player1?.trim() || !response.player2?.trim()) return;
-
-    const puppetToken = await awaitingPupperResponse(response.player2);
-    console.log("PRINTING PUPPET TOKEN", puppetToken);
-    if (puppetToken && puppetToken.status == 401) return;
-    console.log(await apiRequest("/me", "GET", puppetToken.value, null));
-    console.log("LAUNCHING TETRIS GAME ", JWTs, puppetToken.value);
-    if (gameName == "tetris") {
-        await launchCustomTetrisGameTwoPlayer([JWTs, puppetToken.value], false, true);
-    }
-    console.log(puppetToken);
-}
-
 async function startTetrisGame() {
     const matchConfig = {
         tournament: false,

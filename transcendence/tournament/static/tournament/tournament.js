@@ -71,7 +71,7 @@ async function tournament_get_next_match(data) {
     if (game_name === "tetris") {
         await launchCustomTetrisGameTwoPlayer([token1, token2], true, false, gameid);
     } else if (game_name === "pong") {
-        console.log("here is where you launch the pong game");
+        console.log("here is where you launch the pong game"); //TODO: Cedric
     }
 }
 

@@ -60,6 +60,13 @@ async function router()
       }
     },
     {
+      path: "/pong_match",
+      view: async () => {
+        await viewHTML("/static/pong/wrapper.html");
+        searching_for_game_match("pong");
+      }
+    },
+    {
       path: "/tetris",
 	  
       view: async () => { 

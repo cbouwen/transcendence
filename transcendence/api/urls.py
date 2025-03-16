@@ -9,6 +9,7 @@ from .views import tetris_get_next_match
 from .views import tetris_save_tetris_scores
 from .views import tetris_add_player
 from .views import tetris_remove_player
+from .views import PongScoreView
 
 urlpatterns = [
     path('token', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -17,6 +18,8 @@ urlpatterns = [
     path('token/grant', CreatePuppetGrantView.as_view(), name='create_puppet_grant'),
     path('test', Test.as_view(), name='test'),
     path('me', Me.as_view(), name='me'),
+
+    path('pong/score', PongScoreView.as_view(), name='PongScore'),
 
     path('tetris/save_tetris_scores', tetris_save_tetris_scores.as_view(),
          name='save_tetris_scores'),
