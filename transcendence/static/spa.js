@@ -29,6 +29,7 @@ async function router()
 	  });
   GlobalTetrisGames.length = 0;
   tetrisActive = false;
+  tournamentActive = false;
   const routes = [
     {
       path: "/",

@@ -6,7 +6,7 @@ async function pingTournament(gameID) {
     // Instead of waiting 30 seconds at once, break it into 30 one-second intervals
     for (let i = 0; i < 300; i++) {
       // Check if we should stop
-      if (!tetrisActive) {
+      if (tournamentActive == false) {
         console.log("tetrisActive is false. Exiting loop.");
 		payload = {
 			game_id : gameID,
@@ -66,8 +66,8 @@ async function tournament_get_next_match(data) {
     console.log("Tokens:", token1, token2);
     data = await apiRequest("/tournament/get_game", "GET", JWTs, null);
 
-	if (matchConfig.tournament == true)
-		pingTournament(gameid);
+	tournamentActive = true;
+	pingTournament(gameid);
     if (game_name === "tetris") {
         await launchCustomTetrisGameTwoPlayer([token1, token2], true, false, gameid);
     } else if (game_name === "pong") {
