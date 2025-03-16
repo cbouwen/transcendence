@@ -157,6 +157,10 @@ class Me(APIView):
         user = request.user
         serializer = UserSerializer(user, data=request.data, partial=True)
 
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+            user.save()
+
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "User updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)

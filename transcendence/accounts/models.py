@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     totpsecret = models.CharField()
+    avatar = models.ImageField(upload_to='avatars/', default='avatars/default.jpg', blank=True, null=True)
 
     def __str__(self):
         return self.username
