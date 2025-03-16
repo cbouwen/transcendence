@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework import status
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -52,6 +53,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         if token_response.status_code != 200:
             error_data = token_response.json()
             error_data |= { 'type': "intra error" }
+            error_data |= request_data
             raise AuthenticationFailed(error_data)
 
         token_data = token_response.json()

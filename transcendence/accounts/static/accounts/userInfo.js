@@ -28,3 +28,6 @@ async function updateUserInfo() {
         alert("An error occurred while updating user information.");
     }
 };
+
+async function fillInCurrentUserInfo() {
+};
