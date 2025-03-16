@@ -110,10 +110,62 @@ function getRandomSillyString() {
   return randomTemplate();
 }
 
-// -----------------------------------------------------------------------------
-// Function to launch a custom two-player Tetris game
-// -----------------------------------------------------------------------------
+async function launchCustomTetrisGameTreePlayer(jwtTokens) {
+	if (jwtTokens.len != 3)
+	{
+		console.error("wrong number of JWT tokens for launch custom tetris game two players\n",
+			"two tokens required");
+		return ;
+	}
+    const playerConfigs = [
+		{
+            user: jwtTokens[0], // Token for player 1
+            controls: {
+                left: "a",       // Move left
+                right: "d",      // Move right
+                down: "s",       // Move down
+                rotate: "w"      // Rotate piece
+            },
+            name: "Player 1"
+        },
+        {
+            user: jwtTokens[1], // Token for player 1
+            controls: {
+                left: "j",       // Move left
+                right: "l",      // Move right
+                down: "k",       // Move down
+                rotate: "i"      // Rotate piece
+            },
+            name: "Player 1"
+        },
+        {
+            user: jwtTokens[2], // Token for player 2
+            controls: {
+                left: "ArrowLeft",   // Move left
+                right: "ArrowRight", // Move right
+                down: "ArrowDown",   // Move down
+                rotate: "ArrowUp"    // Rotate piece
+            },
+            name: "Player 2"
+        }
+    ];
+
+    const matchConfig = {
+        ranked: false,
+        tournament: false
+    };
+
+    tetrisActive = true;
+    await launchTetrisGame(playerConfigs, matchConfig, 0);
+}
+
 async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ranked = false, g_id = 0) {
+	if (jwtTokens.len != 2)
+	{
+		console.error("wrong number of JWT tokens for launch custom tetris game two players\n",
+			"two tokens required");
+		return ;
+	}
     const playerConfigs = [
         {
             user: jwtTokens[0], // Token for player 1
