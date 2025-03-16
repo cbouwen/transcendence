@@ -318,7 +318,7 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
             margin-top: 10px;
             color: black;
         }
-	#tetris-main-container {
+		#tetris-main-container {
             text-align: center;
             padding-top: 20px;
         }
@@ -409,14 +409,17 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
 			}
 		}
 
-		// Build and show the final scoreboard overlay.
+		// Build the final scoreboard overlay.
 		const scoreboardContainer = document.createElement('div');
 		scoreboardContainer.classList.add('scoreboard-overlay');
+
+		// Title
 		const title = document.createElement('div');
 		title.classList.add('scoreboard-title');
 		title.textContent = 'Game Over! Final Scores';
 		scoreboardContainer.appendChild(title);
 		
+		// Scoreboard entries
 		sortedPlayers.forEach((player, rank) => {
 			const entry = document.createElement('div');
 			entry.classList.add('scoreboard-entry');
@@ -424,6 +427,15 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
 			scoreboardContainer.appendChild(entry);
 		});
 		
+		// Close button
+		const closeButton = document.createElement('button');
+		closeButton.classList.add('scoreboard-close-button');
+		closeButton.textContent = 'Close';
+		closeButton.addEventListener('click', () => {
+			document.body.removeChild(scoreboardContainer);
+		});
+		scoreboardContainer.appendChild(closeButton);
+
 		document.body.appendChild(scoreboardContainer);
 
 		// Optionally, send each player's score to the backend.
@@ -905,7 +917,6 @@ class TetrisGame {
         }
     }
 
-    // Mark finalizeLosingBoard as async so it can await the tournament result processing.
     async finalizeLosingBoard() {
         if (tetrisActive == false) return;
         console.log(`Finalizing losing board for player: ${this.name}`);

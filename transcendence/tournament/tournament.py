@@ -34,6 +34,8 @@ class Tournament:
 
     @tournament_error_only
     def declare_game(self, game_name: str):
+        if self.started:
+            raise TournamentError("alreaddy started")
         if game_name not in ["tetris", "pong"]:
             raise TournamentError("unknown game")
         self.game = game_name
@@ -133,7 +135,7 @@ class Tournament:
     def start_game(self) -> dict:
         """
         Starts the next pending match by generating a unique game ID and initializing its ping.
-        Returns a dict containing the game ID and match info.
+        Returns a dict containing player1, player2, gameid, and game_name.
         """
         if self.init == 0 or not self.started:
             raise TournamentError("Tournament not started or game not setup.")
@@ -141,11 +143,16 @@ class Tournament:
         for match in current_round:
             # Only start matches that have not already been started and are not bye matches.
             if match.get("player2") is not None and match["gameid"] is None:
-                new_gameid = get_game_id_number()  # Changed to always use the internal ID
+                new_gameid = get_game_id_number()  # Assuming this function exists
                 match["gameid"] = new_gameid
                 match["last_ping"] = datetime.datetime.now()
-                return {"gameid": new_gameid, "match": f"{match['player1'].username} vs {match['player2'].username}"}
-        raise TournamentError("No pending match available to start.")
+                return {
+                    "player1": match["player1"].username,
+                    "player2": match["player2"].username,
+                    "gameid": new_gameid,
+                    "game_name": self.game,
+                }
+        return {"status": "no pending match available"}
 
     @tournament_error_only
     def update_match(self, winner: User, loser: User, gameid: str) -> dict:
