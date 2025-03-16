@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     totpsecret = models.CharField()
+    friends = models.CharField()
 
     def __str__(self):
         return self.username

@@ -29,5 +29,14 @@ async function updateUserInfo() {
     }
 };
 
+function accountsPageStart() {
+	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
+        fillInCurrentUserInfo();
+};
+
+
 async function fillInCurrentUserInfo() {
+    const userdata = await apiRequest('/me', 'GET', JWTs, undefined);
+    queryAndReplacePlaceholder("#displayNameInput", userdata.first_name);
+    queryAndReplacePlaceholder("#friendUsername", userdata.first_name);
 };
