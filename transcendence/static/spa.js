@@ -47,10 +47,10 @@ async function router() {
     },
     {
       path: "/tetris",
-	  
+
       view: async () => { 
-		  		  viewHTML("/static/tetris/tetris.html")
-	  }
+        viewHTML("/static/tetris/tetris.html")
+      }
     },
     {
       path: "/tetris_start",
