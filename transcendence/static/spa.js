@@ -41,7 +41,21 @@ async function router() {
       path: "/pong",
       view: async () => {
         await viewHTML("/static/pong/site.html");
+      }
+    },
+    {
+      path: "/pong_single",
+      view: async () => {
+        await viewHTML("/static/pong/wrapper.html");
         const pongGame = new PongGame();
+        pongGame.initialize();
+      }
+    },
+    {
+      path: "/pong_multi",
+      view: async () => {
+        await viewHTML("/static/pong/wrapper.html");
+        const pongGame = new PongGameMultiPlayer();
         pongGame.initialize();
       }
     },
