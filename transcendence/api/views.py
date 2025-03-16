@@ -36,6 +36,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         ft_api_user_login_code = request.data.get("ft_api_user_login_code")
         if not ft_api_user_login_code:
             raise AuthenticationFailed('Please provide ft_api_user_login_code')
+        totp = request.data.get("TOTP")
+        if not totp:
+            raise AuthenticationFailed('Please provide TOTP details')
 
         request_data = {
             'client_id': settings.FT_OAUTH_CLIENT_ID,
@@ -47,7 +50,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         token_response = requests.post(settings.FT_OAUTH_TOKEN_URL, data=request_data)
 
         if token_response.status_code != 200:
-            raise AuthenticationFailed(request_data | token_response.json())
+            error_data = token_response.json()
+            error_data |= { 'type': "intra error" }
+            raise AuthenticationFailed(error_data)
 
         token_data = token_response.json()
         access_token = token_data.get('access_token')
@@ -56,11 +61,13 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             raise AuthenticationFailed("42 OAuth access token is required.")
 
         # Authenticate user using the custom backend
-        user = authenticate(request, token=access_token)
-        if not user:
-            raise AuthenticationFailed("Invalid 42 OAuth access token.")
+        user = authenticate(request, token=access_token, totp=totp)
 
         # Generate JWT tokens
+        if not user:
+            return Response({
+                            'error': str(user)
+            })
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
@@ -141,7 +148,10 @@ class Me(APIView):
     def get(self, request):
         user = request.user
         serializer = UserSerializer(user)
-        return Response(serializer.data)
+        userdata = serializer.data
+        userdata.pop("totpsecret")
+        userdata.pop("password")
+        return Response(userdata)
 
     def post(self, request):
         user = request.user

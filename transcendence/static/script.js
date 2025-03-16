@@ -1,14 +1,12 @@
 (async () => {
-	let code;
-
 	try {
-		code = extractLoginCodeFromURL();
+		intraCode = extractLoginCodeFromURL();
 	} catch (exception) {
 		console.log(exception);
 		redirectToIntra();
 		return;
 	}
-	JWTs = await login(code);
+	await login();
 	console.log(JWTs.access);
 	let response = await apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
 	console.log(response);

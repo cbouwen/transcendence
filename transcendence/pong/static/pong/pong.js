@@ -24,8 +24,8 @@ class PongGame {
 			RIGHT: 4
 		};
 
-		this.rounds = [5, 5, 3, 3, 2];
-		this.colors = ['#1abc9c', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6'];
+		this.rounds = [5];
+		this.colors = ['#2c3e50'];
 
 		// Default game properties
 		this.running = this.over = false;
@@ -41,7 +41,7 @@ class PongGame {
 			y: (this.pongCanvas.height / 2) - 9,
 			moveX: this.DIRECTION.IDLE,
 			moveY: this.DIRECTION.IDLE,
-			speed: incrementedSpeed || 9
+			speed: incrementedSpeed || 10
 		};
 	}
 
@@ -97,8 +97,8 @@ class PongGame {
 		// Draw rounds and text
 		this.context.font = '30px Courier New';
 		this.context.fillText(
-			'Round ' + (this.round + 1), this.pongCanvas.width / 2, 35
-		);
+			'First one who scores 5 wins!' , this.pongCanvas.width / 2, 35
+		);  //change message to play till 5 or something
 		this.context.font = '40px Courier';
 		this.context.fillText(
 			this.rounds[this.round] ? this.rounds[this.round] : this.rounds[this.round - 1], this.pongCanvas.width / 2, 100
@@ -122,6 +122,11 @@ class PongGame {
 		this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
 		this.context.fillStyle = '#ffffff';
 		this.context.fillText(text, this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
+		this.player.score = this.paddle.score = 0;
+		this.running = this.over = false;
+		this.player.y = (this.pongCanvas.height / 2) - 35
+		this.paddle.y = (this.pongCanvas.height / 2) - 35
+		this.listen();
 	}
 
 	update() {
@@ -168,6 +173,7 @@ class PongGame {
 				if (this.ball.y <= this.player.y + this.player.height && this.ball.y + this.ball.height >= this.player.y) {
 					this.ball.x = (this.player.x + this.ball.width);
 					this.ball.moveX = this.DIRECTION.RIGHT;
+					this.ball.speed += 0.2;
 				}
 			}
 
@@ -175,26 +181,19 @@ class PongGame {
 				if (this.ball.y <= this.paddle.y + this.paddle.height && this.ball.y + this.ball.height >= this.paddle.y) {
 					this.ball.x = (this.paddle.x - this.ball.width);
 					this.ball.moveX = this.DIRECTION.LEFT;
+					this.ball.speed += 0.2;
 				}
 			}
 		}
 
 		if (this.player.score === this.rounds[this.round]) {
-			if (!this.rounds[this.round + 1]) {
-				this.over = true;
-				setTimeout(() => { this.endGameMenu('Winner!'); }, 1000);
-			} else {
-				this.color = this._generateRoundColor();
-				this.player.score = this.paddle.score = 0;
-				this.player.speed += 0.5;
-				this.paddle.speed += 1;
-				this.ball.speed += 1;
-				this.round += 1;
-			}
+			this.over = true;
+			setTimeout(() => { this.endGameMenu('Winner! Press any key to play again'); }, 1000);
+		//	this.player.score = this.paddle.score = 0;
 		}
 		else if (this.paddle.score === this.rounds[this.round]) {
 			this.over = true;
-			setTimeout(() => { this.endGameMenu('Game Over!'); }, 1000);
+			setTimeout(() => { this.endGameMenu('You lost! Press any key to play again'); }, 1000);
 		}
 	}
 
@@ -224,7 +223,6 @@ class PongGame {
 		this.player = this.createPaddle('left');
 		this.paddle = this.createPaddle('right');
 		this.ball = this.createBall();
-		this.paddle.speed = 8;
 		this.turn = this.paddle;
 
 		this.menu();
@@ -232,7 +230,7 @@ class PongGame {
 	}
 
 	_resetTurn(victor, loser) {
-		this.ball = this.createBall(this.ball.speed);
+		this.ball = this.createBall();
 		this.turn = loser;
 		this.timer = (new Date()).getTime();
 
