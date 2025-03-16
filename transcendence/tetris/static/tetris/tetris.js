@@ -318,7 +318,7 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
             margin-top: 10px;
             color: black;
         }
-        body {
+	#tetris-main-container {
             text-align: center;
             padding-top: 20px;
         }
@@ -346,12 +346,12 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
             font-size: 28px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: black;
+            color: white;
         }
         .scoreboard-entry {
             font-size: 20px;
             margin: 5px 0;
-            color: black;
+            color: white;
         }
     `;
     document.head.appendChild(style);
@@ -612,6 +612,7 @@ class TetrisGame {
                 }
             }
             this.gameOver = true;
+			this.currentTetromino = null;
             this.losingTetromino = tetromino;
             if (this.onGameOver) this.onGameOver();
             return null;
