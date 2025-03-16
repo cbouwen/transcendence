@@ -111,7 +111,7 @@ function getRandomSillyString() {
 }
 
 async function launchCustomTetrisGameTreePlayer(jwtTokens) {
-	if (jwtTokens.len != 3)
+	if (jwtTokens.length != 3)
 	{
 		console.error("wrong number of JWT tokens for launch custom tetris game two players\n",
 			"two tokens required");
@@ -160,7 +160,7 @@ async function launchCustomTetrisGameTreePlayer(jwtTokens) {
 }
 
 async function launchCustomTetrisGameTwoPlayer(jwtTokens, tournament = false, ranked = false, g_id = 0) {
-	if (jwtTokens.len != 2)
+	if (jwtTokens.length != 2)
 	{
 		console.error("wrong number of JWT tokens for launch custom tetris game two players\n",
 			"two tokens required");
