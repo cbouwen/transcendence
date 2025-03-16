@@ -27,6 +27,8 @@ async function router()
 			  game.destroy();
 		  }
 	  });
+  if (JWTs)
+    console.log(await apiRequest('/tetris/add-player', 'POST', JWTs, undefined));
   GlobalTetrisGames.length = 0;
   tetrisActive = false;
   tournamentActive = false;
