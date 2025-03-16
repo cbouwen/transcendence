@@ -22,7 +22,6 @@ async function pingTournament(gameID) {
 async function tournament_get_next_match(data) {
     console.log("setting up next game", data);
 
-    // Extract player1, player2, and gameid from the message object
     let player1, player2, gameid;
     if (data.Message && typeof data.Message === 'object') {
         player1 = data.Message.player1;
@@ -66,7 +65,9 @@ async function tournament_get_next_match(data) {
     
     console.log("Tokens:", token1, token2);
     data = await apiRequest("/tournament/get_game", "GET", JWTs, null);
-    
+
+	if (matchConfig.tournament == true)
+		pingTournament(gameid);
     if (game_name === "tetris") {
         await launchCustomTetrisGameTwoPlayer([token1, token2], true, false, gameid);
     } else if (game_name === "pong") {
