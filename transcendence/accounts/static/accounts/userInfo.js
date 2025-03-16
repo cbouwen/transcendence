@@ -21,7 +21,7 @@ async function updateUserInfo() {
     
     try {
         const response = await apiRequest("/me", "POST", JWTs, body);
-        if (response) {
+        if (await response) {
             alert("User information updated successfully.");
         } else {
             alert("Failed to update user information.");
@@ -54,7 +54,7 @@ async function uploadAvatar(jwtTokens, avatarFile) {
     formData.append('avatar', avatarFile);
 
     const response = await apiRequest('/me', 'POST', jwtTokens, formData);
-    if (response) {
+    if (await response) {
         alert('Avatar uploaded successfully:', response);
     } else {
         console.log('Failed to upload avatar.');
