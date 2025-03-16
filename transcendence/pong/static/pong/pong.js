@@ -24,8 +24,8 @@ class PongGame {
 			RIGHT: 4
 		};
 
-		this.rounds = [5, 5, 3, 3, 2];
-		this.colors = ['#1abc9c', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6'];
+		this.rounds = [5];
+		this.colors = ['#2c3e50'];
 
 		// Default game properties
 		this.running = this.over = false;
@@ -97,8 +97,8 @@ class PongGame {
 		// Draw rounds and text
 		this.context.font = '30px Courier New';
 		this.context.fillText(
-			'Round ' + (this.round + 1), this.pongCanvas.width / 2, 35
-		);
+			'First one who scores 5 wins!' , this.pongCanvas.width / 2, 35
+		);  //change message to play till 5 or something
 		this.context.font = '40px Courier';
 		this.context.fillText(
 			this.rounds[this.round] ? this.rounds[this.round] : this.rounds[this.round - 1], this.pongCanvas.width / 2, 100
@@ -122,6 +122,11 @@ class PongGame {
 		this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
 		this.context.fillStyle = '#ffffff';
 		this.context.fillText(text, this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
+		this.player.score = this.paddle.score = 0;
+		this.running = this.over = false;
+		this.player.y = (this.pongCanvas.height / 2) - 35
+		this.paddle.y = (this.pongCanvas.height / 2) - 35
+		this.listen();
 	}
 
 	update() {
@@ -182,18 +187,13 @@ class PongGame {
 		}
 
 		if (this.player.score === this.rounds[this.round]) {
-			if (!this.rounds[this.round + 1]) {
-				this.over = true;
-				setTimeout(() => { this.endGameMenu('Winner!'); }, 1000);
-			} else {
-				this.color = this._generateRoundColor();
-				this.player.score = this.paddle.score = 0;
-				this.round += 1;
-			}
+			this.over = true;
+			setTimeout(() => { this.endGameMenu('Winner! Press any key to play again'); }, 1000);
+		//	this.player.score = this.paddle.score = 0;
 		}
 		else if (this.paddle.score === this.rounds[this.round]) {
 			this.over = true;
-			setTimeout(() => { this.endGameMenu('Game Over!'); }, 1000);
+			setTimeout(() => { this.endGameMenu('You lost! Press any key to play again'); }, 1000);
 		}
 	}
 
