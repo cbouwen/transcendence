@@ -15,7 +15,6 @@ async function viewHTML(filePath, jwtTokens) {
 async function navigateTo(url) {
 	history.pushState(null, null, url);
 	await router();
-	fillInFirstNamePlaceholders();
 };
 
 async function router()
@@ -55,8 +54,7 @@ async function router()
       path: "/pong_multi",
       view: async () => {
         await viewHTML("/static/pong/wrapper.html");
-        const pongGame = new PongGameMultiPlayer();
-        pongGame.initialize();
+        await pongMultiStart();
       }
     },
     {
@@ -127,6 +125,7 @@ async function router()
   } else {
     match.route.view();
   }
+  fillInFirstNamePlaceholders();
 }
 
 window.addEventListener("popstate", router);
