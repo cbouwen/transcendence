@@ -87,6 +87,10 @@ async function router()
         accountsPageStart();
       }
     },
+	{
+      path: "/tetris_tournament",
+      view: async () => {}
+    },
     {
       path: "/register",
       view: async () => {

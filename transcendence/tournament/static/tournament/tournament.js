@@ -35,6 +35,8 @@ async function tournament_get_next_match(data) {
         console.log("Unexpected message format", data);
         return;
     }
+	if (player1 == undefined || player2 == undefined || gameid == undefined)
+		return ;
     
     let dominant = await apiRequest("/me", "GET", JWTs, null);
     console.log(dominant);
