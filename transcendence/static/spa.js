@@ -106,6 +106,12 @@ async function router()
       }
     },
     {
+      path: "/stats",
+      view: async () => {
+        await viewHTML("/static/accounts/stats.html");
+      }
+    },
+    {
       path: "/register",
       view: async () => {
         await viewHTML("/static/accounts/register.html");
