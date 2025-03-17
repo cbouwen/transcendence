@@ -482,16 +482,21 @@ class PongScoreView(APIView):
 
     def post(self, request):
         me = request.user
-        their_username = request.data.get("their_username")
-        if (their_username == ""):
-            them = None
-        else:
-            them = User.objects.get(username=their_username)
-        my_score = request.data.get("my_score")
-        their_score = request.data.get("their_score")
+        try:
+            their_username = request.data.get("their_username")
+            my_score = request.data.get("my_score")
+            their_score = request.data.get("their_score")
+        except:
+            raise LookupError("invalid request body")
+        try:
+            if (their_username == ""):
+                them = None
+            else:
+                them = User.objects.get(username=their_username)
+        except:
+            raise LookupError("user doesn't exist")
 
         pong_score = PongScore.objects.create(
-            gameid=uuid.uuid4(),
             me=me,
             them=them,
             my_score=my_score,

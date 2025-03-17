@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 
 class PongScore(models.Model):
-    gameid = models.CharField(max_length=100)
     me = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="games_as_me")
     them = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name="games_as_them")
     my_score = models.IntegerField()
