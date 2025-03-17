@@ -25,7 +25,7 @@ from tournament.tournament import TournamentError, g_tournament, get_game_id_num
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, PongScoreSerializer
 from accounts.models import PuppetGrant
 
 import uuid
@@ -497,4 +497,5 @@ class PongScoreView(APIView):
             my_score=my_score,
             their_score=their_score
         )
-        return Response({'message': 'Score saved'})
+        serializer = PongScoreSerializer(pong_score)
+        return Response(serializer.data)
