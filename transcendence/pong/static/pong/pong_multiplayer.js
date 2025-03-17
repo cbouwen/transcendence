@@ -1,11 +1,12 @@
 async function pongMultiStart() {
-	const opponentJWTs = getPuppetJWTs();
+	const opponentJWTs = await getPuppetJWTs();
 	if (opponentJWTs == null) {
-		window.history.go(-1);
-		await router();
+		navigateTo("/");
+		return ;
 	}
         const pongGame = new PongGameMultiPlayer(opponentJWTs);
         await pongGame.initialize();
+	console.log("pong init finished");
 };
 
 class PongGameMultiPlayer {
@@ -250,6 +251,7 @@ class PongGameMultiPlayer {
 	}
 
 	async initialize() {
+		console.log("starting init of pong");
 		this.myUser = await apiRequest("/me", "GET", JWTs, undefined);
 		this.theirUser = await apiRequest("/me", "GET", opponentJWTs, undefined);
 		this.player = this.createPaddle('left');
