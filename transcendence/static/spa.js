@@ -19,6 +19,7 @@ async function navigateTo(url) {
 
 async function router()
 {
+	console.log("router called");
   GlobalTetrisGames.forEach(game =>
 	  {
 		  if (game.destroy)
@@ -123,7 +124,7 @@ async function router()
   if (!match) {
     navigateTo("/");
   } else {
-    match.route.view();
+    await match.route.view();
   }
   fillInFirstNamePlaceholders();
 }
