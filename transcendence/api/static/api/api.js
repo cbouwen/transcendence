@@ -1,9 +1,7 @@
 async function apiRequest(endpoint, method, jwtTokens, body) {
 	const url = urlRoot + apiPath + endpoint;
 
-	let headers = {
-		'Content-Type': 'application/json',
-	};
+	let headers = {};
 	if (jwtTokens && jwtTokens.access) {
 		headers['Authorization'] = 'Bearer ' + jwtTokens.access
 	}

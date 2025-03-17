@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -168,6 +169,24 @@ class Me(APIView):
             return Response({"message": "User updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class Avatar(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        user = request.user
+        avatar_url = user.avatar.url if user.avatar else None
+        return JsonResponse({"avatar_url": avatar_url})
+
+    def post(self, request):
+        user = request.user
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+            user.save()
+            return Response({"message": "Avatar updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"error": "No avatar file found"}, status=status.HTTP_400_BAD_REQUEST)
 
 class tetris_get_player(APIView):
     authentication_classes = [JWTAuthentication]

@@ -1,11 +1,11 @@
 async function updateUserInfo() {
     let body = {};
-    
+
     const displayName = document.getElementById("displayNameInput").value.trim();
     if (displayName) {
         body.first_name = displayName;
     }
-    
+
     const friendsInput = document.getElementById("friendUsername").value.trim();
     if (friendsInput) {
         body.friends = friendsInput.split(" ").map(friend => friend.trim()).filter(friend => friend);
@@ -13,22 +13,22 @@ async function updateUserInfo() {
 
     const avatarInput = document.getElementById('avatarInput');
     const file = avatarInput.files[0];
-    
+
     if (Object.keys(body).length === 0 && !file) {
         alert("No information to update.");
         return;
     }
-    
+
     try {
         const response = await apiRequest("/me", "POST", JWTs, body);
-        if (await response) {
+        if (response) {
             alert("User information updated successfully.");
         } else {
             alert("Failed to update user information.");
         }
-        
+
         if (file) {
-            uploadAvatar(JWTs, file);
+            await uploadAvatar(JWTs, file);
         }
     } catch (error) {
         console.error("Error updating user info:", error);
@@ -53,7 +53,7 @@ async function uploadAvatar(jwtTokens, avatarFile) {
     const formData = new FormData();
     formData.append('avatar', avatarFile);
 
-    const response = await apiRequest('/me', 'POST', jwtTokens, formData);
+    const response = await apiRequest('/me/avatar', 'POST', jwtTokens, formData);
     if (await response) {
         alert('Avatar uploaded successfully:', response);
     } else {
