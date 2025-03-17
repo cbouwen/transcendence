@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = '__all__'
-        depth = 3
+        depth = 10
 
     def update(self, instance, validated_date):
         for attr, value in validated_data.items():
@@ -20,3 +20,4 @@ class PongScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = PongScore
         fields = '__all__'
+        depth = 10

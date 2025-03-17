@@ -25,7 +25,7 @@ from tournament.tournament import TournamentError, g_tournament, get_game_id_num
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, PongScoreSerializer
 from accounts.models import PuppetGrant
 
 import uuid
@@ -482,19 +482,25 @@ class PongScoreView(APIView):
 
     def post(self, request):
         me = request.user
-        their_username = request.data.get("their_username")
-        if (their_username == ""):
-            them = None
-        else:
-            them = User.objects.get(username=their_username)
-        my_score = request.data.get("my_score")
-        their_score = request.data.get("their_score")
+        try:
+            their_username = request.data.get("their_username")
+            my_score = request.data.get("my_score")
+            their_score = request.data.get("their_score")
+        except:
+            raise LookupError("invalid request body")
+        try:
+            if (their_username == ""):
+                them = None
+            else:
+                them = User.objects.get(username=their_username)
+        except:
+            raise LookupError("user doesn't exist")
 
         pong_score = PongScore.objects.create(
-            gameid=uuid.uuid4(),
             me=me,
             them=them,
             my_score=my_score,
             their_score=their_score
         )
-        return Response({'message': 'Score saved'})
+        serializer = PongScoreSerializer(pong_score)
+        return Response(serializer.data)
