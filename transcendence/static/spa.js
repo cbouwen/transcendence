@@ -158,9 +158,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			const payload = { game_name }; 
             const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
 			console.log(response);
-		} else if (e.target.matches("[data-active-players]")) {
-            const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
-			console.log(response);
 		} else if (e.target.matches("[data-start-tournament]")) {
 			const response = await apiRequest('/tournament/start', 'POST', JWTs, null);
 			console.log(response);

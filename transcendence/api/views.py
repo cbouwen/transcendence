@@ -20,7 +20,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
-from tetris.serializers import TetrisPlayerSerializer
+from tetris.serializers import TetrisPlayerSerializer, TetrisScoreSerializer
 from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
@@ -467,3 +467,25 @@ class get_game_id(APIView):
     def get(self, request):
         game_id = get_game_id_number()  # Call the helper function
         return Response({'game_id': game_id})
+
+class tetris_get_scores(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # 1. Get all game IDs that the authenticated user played
+        user_game_ids = TetrisScore.objects.filter(user=request.user).values_list('gameid', flat=True).distinct()
+        
+        # 2. Using these game IDs, fetch all scores (for all players) in those games
+        scores = TetrisScore.objects.filter(gameid__in=user_game_ids)
+        
+        # 3. Serialize the data
+        serializer = TetrisScoreSerializer(scores, many=True)
+        return Response(serializer.data)
+
+class tournament_get_round(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        Response({'matches', g_tournament.get_current_round_matches})

@@ -1,3 +1,53 @@
+async function updateCurrentRound() {
+  try {
+    // Make sure the user is on the tournament page if needed (like your previous check)
+    if (ontournamentpage === false) return;
+    
+    // Call the tournament round API endpoint
+    const response = await apiRequest('/tournament/get_round', 'GET', JWTs, null);
+    
+    // Expecting a JSON response with a "matches" key holding an array of match strings
+    const roundMatches = response.matches;
+    console.log("Current round matches =", roundMatches);
+    
+    // Find the container for current round info
+    const roundContainer = document.getElementById('screen3-content');
+    if (!roundContainer) {
+      console.error("Element with id 'screen3-content' not found on the page.");
+      return;
+    }
+    
+    // Clear previous content
+    roundContainer.innerHTML = '';
+    
+    if (roundMatches && roundMatches.length > 0) {
+      // Optionally, create an unordered list to hold the match strings
+      const ul = document.createElement('ul');
+      ul.className = 'list-group';
+      
+      roundMatches.forEach(matchStr => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.textContent = matchStr;
+        ul.appendChild(li);
+      });
+      
+      roundContainer.appendChild(ul);
+    } else {
+      // Display a message if no matches are returned
+      roundContainer.textContent = 'No matches for the current round.';
+    }
+  } catch (error) {
+    console.error('Error fetching current round matches:', error);
+  }
+}
+
+// Call the function once the DOM is loaded and update periodically
+window.addEventListener('DOMContentLoaded', () => {
+  updateCurrentRound(); // Initial fetch
+  setInterval(updateCurrentRound, 5000); // Refresh every 5 seconds
+});
+
 async function updateTournamentPlayers() {
   try {
     if (ontournamentpage == false) return;
@@ -30,6 +80,16 @@ window.addEventListener('DOMContentLoaded', () => {
   updateTournamentPlayers(); // Initial fetch
   setInterval(updateTournamentPlayers, 5000);
 });
+
+function clearElement(element) {
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+}
+
+function clearObject(obj) {
+  Object.keys(obj).forEach(key => delete obj[key]);
+}
 
 async function pingTournament(gameID) {
   while (tetrisActive) {
@@ -74,7 +134,7 @@ async function tournament_get_next_match(data) {
     let dominant = await apiRequest("/me", "GET", JWTs, null);
     console.log(dominant);
     let token1, token2;
-    
+
     if (dominant.username !== player1) {
         const response = await awaitingPupperResponse(player1);
         console.log(response);
@@ -100,6 +160,9 @@ async function tournament_get_next_match(data) {
     console.log("Tokens:", token1, token2);
     data = await apiRequest("/tournament/get_game", "GET", JWTs, null);
 
+	clearElement(activePlayersList);
+	clearObject(roundData);
+	ontournamentpage = false;
 	tournamentActive = true;
 	pingTournament(gameid);
     if (game_name === "tetris") {
@@ -107,6 +170,7 @@ async function tournament_get_next_match(data) {
     } else if (game_name === "pong") {
         console.log("here is where you launch the pong game");
     }
+	ontournamentpage = true;
 }
 
 async function sendTournamentResults(gameid, winnerToken, loserToken) {
