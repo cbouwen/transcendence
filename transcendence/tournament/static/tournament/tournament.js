@@ -1,3 +1,36 @@
+async function updateTournamentPlayers() {
+  try {
+    if (ontournamentpage == false) return;
+    const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
+    
+    const tournamentUsers = response.tournament_users;
+    console.log("tournament users =", tournamentUsers);
+    if (!tournamentUsers) {
+      console.error("No tournament_users key found in the API response.");
+      return;
+    }
+    const activePlayersList = document.getElementById('screen2-content');
+    if (!activePlayersList) {
+      console.error("Element with id 'screen2-content' not found on the page.");
+      return;
+    }
+    activePlayersList.innerHTML = '';
+    tournamentUsers.forEach(username => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item';
+      li.textContent = username;
+      activePlayersList.appendChild(li);
+    });
+  } catch (error) {
+    console.error('Error fetching tournament users:', error);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  updateTournamentPlayers(); // Initial fetch
+  setInterval(updateTournamentPlayers, 5000);
+});
+
 async function pingTournament(gameID) {
   while (tetrisActive) {
     // Perform your action here

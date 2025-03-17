@@ -1,11 +1,8 @@
 async function updateActivePlayers() {
   try {
     if (tetrisPageLoaded == false) return;
-    // Make the API call to get active players. 
-    // Assume JWTs is defined in your global scope.
     const response = await apiRequest('/tetris/get_active_players', 'GET', JWTs, null);
     
-    // Extract the active players array from the response.
     const activePlayers = response.active_players;
     console.log("active players=", activePlayers);
     if (!activePlayers) {
@@ -13,17 +10,13 @@ async function updateActivePlayers() {
       return;
     }
     
-    // Get the element where the active players should be pasted
     const activePlayersList = document.getElementById('infoList');
     if (!activePlayersList) {
       console.error("Element with id 'infoList' not found on the page.");
       return;
     }
     
-    // Clear the current list content
     activePlayersList.innerHTML = '';
-
-    // Populate the list with active player usernames
     activePlayers.forEach(username => {
       const li = document.createElement('li');
       li.className = 'list-group-item';
@@ -35,7 +28,6 @@ async function updateActivePlayers() {
   }
 }
 
-// Run updateActivePlayers every 5 seconds once the DOM is loaded
 window.addEventListener('DOMContentLoaded', () => {
   updateActivePlayers(); // Initial fetch
   setInterval(updateActivePlayers, 5000);

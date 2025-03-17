@@ -11,3 +11,4 @@ let GlobalMatchConfig = null;
 let GlobalTetrisGames = [];
 let tournamentActive = false;
 let tetrisPageLoaded = false;
+let ontournamentpage = false;

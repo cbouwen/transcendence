@@ -33,6 +33,7 @@ async function router()
   tetrisActive = false;
   tournamentActive = false;
   tetrisPageLoaded = false;
+  ontournamentpage = false;
   const routes = [
     {
       path: "/",
@@ -67,6 +68,7 @@ async function router()
     {
       path: "/tournament",
       view: async () => {
+		ontournamentpage = true;
         viewHTML("/static/tournament/tournament.html").then(() => {
           console.log("going to tournament");
         });
