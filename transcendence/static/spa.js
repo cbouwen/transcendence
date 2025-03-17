@@ -32,6 +32,7 @@ async function router()
   GlobalTetrisGames.length = 0;
   tetrisActive = false;
   tournamentActive = false;
+  tetrisPageLoaded = false;
   const routes = [
     {
       path: "/",
@@ -48,10 +49,10 @@ async function router()
       }
     },
     {
-      path: "/tetris",
-	  
-      view: async () => { 
-		  		  viewHTML("/static/tetris/tetris.html")
+      path: "/tetris", 
+      view: async () => {
+		  tetrisPageLoaded = true;
+		  viewHTML("/static/tetris/tetris.html")
 	  }
     },
     {
@@ -141,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (e.target.matches("[data-tournament-join]")) {
             const response = await apiRequest('/tournament/add_player', 'POST', JWTs, null);
 			console.log(response);
-			console.log(getRandomSillyString());
 		} else if (e.target.matches("[data-tetris]")) {
 			const game_name = "tetris";
 			const payload = { game_name }; 
@@ -162,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		} else if (e.target.matches("[data-next-match]")) {
 			const response = await apiRequest('/tournament/get_current_match', 'GET', JWTs, null);
 			console.log(response);
-			console.log(getRandomSillyString());
 			await tournament_get_next_match(response);
 		}
     });

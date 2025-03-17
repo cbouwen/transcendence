@@ -416,8 +416,9 @@ class tournament_get_current_match(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
         try:
-            return Response({'Message': g_tournament.start_game()})
+            return Response({'Message': g_tournament.start_game(user)})
         except TournamentError as e:
             return Response({"error": str(e)})
 

@@ -44,7 +44,6 @@ async function tournament_get_next_match(data) {
         const response = await awaitingPupperResponse(player1);
         console.log(response);
         if (!response) {
-            console.log(getRandomSillyString());
             return;
         }
         token1 = response.value;

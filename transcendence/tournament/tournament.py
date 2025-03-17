@@ -132,16 +132,36 @@ class Tournament:
         return {"matches": self.get_current_round_matches_info()}
 
     @tournament_error_only
-    def start_game(self) -> dict:
+    def start_game(self, user=None) -> dict:
         """
         Starts the next pending match by generating a unique game ID and initializing its ping.
+        If a user is provided, first checks if that user has a pending match in the current bracket.
         Returns a dict containing player1, player2, gameid, and game_name.
         """
         if self.init == 0 or not self.started:
             raise TournamentError("Tournament not started or game not setup.")
+        
         current_round = self.rounds[self.current_round_index]
+
+        # If a user is provided, look for a pending match involving that user first.
+        if user is not None:
+            for match in current_round:
+                # Only consider matches that are not bye matches and have not been started.
+                if match.get("player2") is not None and match["gameid"] is None:
+                    if match.get("player1") == user or match.get("player2") == user:
+                        new_gameid = get_game_id_number()  # Assuming this function exists
+                        match["gameid"] = new_gameid
+                        match["last_ping"] = datetime.datetime.now()
+                        return {
+                            "player1": match["player1"].username,
+                            "player2": match["player2"].username,
+                            "gameid": new_gameid,
+                            "game_name": self.game,
+                        }
+        
+        # If no user-specific match was found or no user was provided,
+        # start the next available pending match.
         for match in current_round:
-            # Only start matches that have not already been started and are not bye matches.
             if match.get("player2") is not None and match["gameid"] is None:
                 new_gameid = get_game_id_number()  # Assuming this function exists
                 match["gameid"] = new_gameid
@@ -152,7 +172,9 @@ class Tournament:
                     "gameid": new_gameid,
                     "game_name": self.game,
                 }
+        
         return {"status": "no pending match available"}
+
 
     @tournament_error_only
     def update_match(self, winner: User, loser: User, gameid: str) -> dict:
