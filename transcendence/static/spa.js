@@ -106,9 +106,16 @@ async function router()
       }
     },
     {
-      path: "/stats",
+      path: "/personalStats",
       view: async () => {
-        await viewHTML("/static/accounts/stats.html");
+        await viewHTML("/static/accounts/personalStats.html");
+		statsLoad();
+      }
+    },
+    {
+      path: "/leaderboard",
+      view: async () => {
+        await viewHTML("/static/accounts/leaderboard.html");
       }
     },
     {
