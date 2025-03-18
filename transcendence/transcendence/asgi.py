@@ -1,28 +1,25 @@
-"""
-ASGI config for transcendence project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
-"""
-
 import os
+from pathlib import Path
 from django.core.asgi import get_asgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ChatApp.settings')
-
+from whitenoise import WhiteNoise  # Now available with version 6+
+from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from channels.routing import ProtocolTypeRouter , URLRouter
 from chat import routing
 
-application = ProtocolTypeRouter(
-    {
-        "http" : get_asgi_application() , 
-        "websocket" : AuthMiddlewareStack(
-            URLRouter(
-                routing.websocket_urlpatterns
-            )    
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcendence.settings')
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Get the Django ASGI application
+django_asgi_app = get_asgi_application()
+
+# Wrap with WhiteNoise for serving static files
+django_asgi_app = WhiteNoise(django_asgi_app, root=str(BASE_DIR / 'staticfiles'))
+
+application = ProtocolTypeRouter({
+    "http": django_asgi_app,
+    "websocket": AuthMiddlewareStack(
+        URLRouter(
+            routing.websocket_urlpatterns
         )
-    }
-)
+    ),
+})

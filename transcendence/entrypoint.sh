@@ -11,4 +11,5 @@ if [[ -z "$APPS" ]]; then
 fi
 python manage.py makemigrations $APPS --noinput
 python manage.py migrate --noinput
+python manage.py collectstatic --noinput
 exec "$@"  # Run the CMD from Dockerfile or docker-compose
