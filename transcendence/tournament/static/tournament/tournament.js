@@ -69,7 +69,6 @@ async function updateCurrentRound() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  updateCurrentRound();
   setInterval(updateCurrentRound, 5000);
 });
 
@@ -102,7 +101,6 @@ async function updateTournamentPlayers() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  updateTournamentPlayers();
   setInterval(updateTournamentPlayers, 5000);
 });
 
@@ -140,12 +138,12 @@ async function pingTournament(gameID) {
 async function tournament_get_next_match(data) {
     console.log("setting up next game", data);
 
-    let player1, player2, gameid;
+    let player1, player2, gameid, game_name;
     if (data.Message && typeof data.Message === 'object') {
         player1 = data.Message.player1;
         player2 = data.Message.player2;
         gameid = data.Message.gameid;
-		game_name = data.Message.game_name;
+        game_name = data.Message.game_name;
         console.log("Player 1:", player1);
         console.log("Player 2:", player2);
         console.log("Game ID:", gameid);
@@ -153,8 +151,9 @@ async function tournament_get_next_match(data) {
         console.log("Unexpected message format", data);
         return;
     }
-	if (player1 == undefined || player2 == undefined || gameid == undefined)
-		return ;
+    if (player1 === undefined || player2 === undefined || gameid === undefined) {
+        return;
+    }
     
     let dominant = await apiRequest("/me", "GET", JWTs, null);
     console.log(dominant);
@@ -185,15 +184,27 @@ async function tournament_get_next_match(data) {
     console.log("Tokens:", token1, token2);
     data = await apiRequest("/tournament/get_game", "GET", JWTs, null);
 
-	ontournamentpage = false;
-	tournamentActive = true;
-	pingTournament(gameid);
+    ontournamentpage = false;
+    tournamentActive = true;
+
+    const screen2 = document.getElementById("screen2-content");
+    const screen3 = document.getElementById("screen3-content");
+    const screen4 = document.getElementById("screen4-content");
+
+    if (screen2) screen2.style.display = "none";
+    if (screen3) screen3.style.display = "none";
+    if (screen4) screen4.style.display = "none";
+
+    pingTournament(gameid);
     if (game_name === "tetris") {
         await launchCustomTetrisGameTwoPlayer([token1, token2], true, false, gameid);
+        if (screen2) screen2.style.display = "block";
+        if (screen3) screen3.style.display = "block";
+        if (screen4) screen4.style.display = "block";
     } else if (game_name === "pong") {
         console.log("here is where you launch the pong game");
     }
-	ontournamentpage = true;
+    ontournamentpage = true;
 }
 
 async function sendTournamentResults(gameid, winnerToken, loserToken) {
