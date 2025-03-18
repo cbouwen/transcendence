@@ -69,8 +69,11 @@ async function router()
       path: "/tournament",
       view: async () => {
 		ontournamentpage = true;
-        viewHTML("/static/tournament/tournament.html").then(() => {
-          console.log("going to tournament");
+        viewHTML("/static/tournament/tournament.html").then( async () => {
+    		console.log("going to tournament");
+			response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+			console.log("TOURNAMENT");
+			console.log("printing tournament game", response);
         });
       }
     },
@@ -151,11 +154,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		} else if (e.target.matches("[data-tetris]")) {
 			const game_name = "tetris";
 			const payload = { game_name }; 
+			updateGameName("tetris");
             const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
 			console.log(response);
 		} else if (e.target.matches("[data-pong]")) {
 			const game_name = "pong";
-			const payload = { game_name }; 
+			const payload = { game_name };
+			updateGameName("pong");
             const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
 			console.log(response);
 		} else if (e.target.matches("[data-start-tournament]")) {

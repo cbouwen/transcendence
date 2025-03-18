@@ -488,4 +488,5 @@ class tournament_get_round(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        Response({'matches', g_tournament.get_current_round_matches})
+        matches = g_tournament.get_current_round_matches_info()
+        return (Response({"matches": matches}))

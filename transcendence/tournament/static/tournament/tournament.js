@@ -1,3 +1,29 @@
+let activePlayersList;
+let roundData = {};
+
+async function updateGameName(gameName) {
+  try {
+	if (gameName != "tetris" && gameName != "pong")
+	{
+		console.error("invalid game name");
+		return ;
+	}
+    if (ontournamentpage === false) return;
+    
+    // Get the element where the game name should be displayed
+    const gameNameContainer = document.getElementById('screen4-content');
+    if (!gameNameContainer) {
+      console.error("Element with id 'screen4-content' not found.");
+      return;
+    }
+    
+    // Set the game name as the text content of the element
+    gameNameContainer.textContent = gameName;
+  } catch (error) {
+    console.error('Error updating game name:', error);
+  }
+}
+
 async function updateCurrentRound() {
   try {
     // Make sure the user is on the tournament page if needed (like your previous check)
@@ -42,10 +68,9 @@ async function updateCurrentRound() {
   }
 }
 
-// Call the function once the DOM is loaded and update periodically
 window.addEventListener('DOMContentLoaded', () => {
-  updateCurrentRound(); // Initial fetch
-  setInterval(updateCurrentRound, 5000); // Refresh every 5 seconds
+  updateCurrentRound();
+  setInterval(updateCurrentRound, 5000);
 });
 
 async function updateTournamentPlayers() {
@@ -59,7 +84,7 @@ async function updateTournamentPlayers() {
       console.error("No tournament_users key found in the API response.");
       return;
     }
-    const activePlayersList = document.getElementById('screen2-content');
+    activePlayersList = document.getElementById('screen2-content');
     if (!activePlayersList) {
       console.error("Element with id 'screen2-content' not found on the page.");
       return;
@@ -77,7 +102,7 @@ async function updateTournamentPlayers() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  updateTournamentPlayers(); // Initial fetch
+  updateTournamentPlayers();
   setInterval(updateTournamentPlayers, 5000);
 });
 
@@ -160,8 +185,6 @@ async function tournament_get_next_match(data) {
     console.log("Tokens:", token1, token2);
     data = await apiRequest("/tournament/get_game", "GET", JWTs, null);
 
-	clearElement(activePlayersList);
-	clearObject(roundData);
 	ontournamentpage = false;
 	tournamentActive = true;
 	pingTournament(gameid);
