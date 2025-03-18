@@ -70,10 +70,11 @@ async function router()
       view: async () => {
 		ontournamentpage = true;
         viewHTML("/static/tournament/tournament.html").then( async () => {
-    		console.log("going to tournament");
 			response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
-			console.log("TOURNAMENT");
-			console.log("printing tournament game", response);
+			if (response && (response == "tetris" || response == "pong"))
+			{
+				updateGameName(response);
+			}
         });
       }
     },
@@ -154,15 +155,19 @@ document.addEventListener("DOMContentLoaded", () => {
 		} else if (e.target.matches("[data-tetris]")) {
 			const game_name = "tetris";
 			const payload = { game_name }; 
-			updateGameName("tetris");
-            const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
-			console.log(response);
+			const response2 = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+			const response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+			if (response == "tetris" || response == "pong")
+				updateGameName(response);
+			console.log(response2);
 		} else if (e.target.matches("[data-pong]")) {
 			const game_name = "pong";
 			const payload = { game_name };
-			updateGameName("pong");
-            const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
-			console.log(response);
+            const response2 = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+			const response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+			if (response == "tetris" || response == "pong")
+				updateGameName(response);
+			console.log(response2);
 		} else if (e.target.matches("[data-start-tournament]")) {
 			const response = await apiRequest('/tournament/start', 'POST', JWTs, null);
 			console.log(response);
