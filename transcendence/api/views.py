@@ -20,10 +20,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
-from tetris.serializers import TetrisPlayerSerializer, TetrisScoreSerializer
+from tetris.serializers import BlockedUserSerializer, ChatMessageSerializer, TetrisPlayerSerializer, TetrisScoreSerializer
 from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
-from tetris.models import TetrisPlayer, TetrisScore
+from tetris.models import ChatMessage, TetrisPlayer, TetrisScore
 
 from .serializers import UserSerializer
 from accounts.models import PuppetGrant
@@ -490,3 +490,47 @@ class tournament_get_round(APIView):
     def get(self, request):
         matches = g_tournament.get_current_round_matches_info()
         return (Response({"matches": matches}))
+
+class ChatSendView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Copy data from the request.
+        data = request.data.copy()
+        # The sender is always the current authenticated user.
+        data['sender'] = request.user.username
+        serializer = ChatMessageSerializer(data=data)
+        if serializer.is_valid():
+            # Save the message instance with the current user as sender.
+            message_instance = serializer.save(sender=request.user)
+            # (The save method on the model adds the sender as a recipient.)
+            return Response(ChatMessageSerializer(message_instance).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChatMessagesView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve messages where the current user is among the recipients.
+        # Order by most recent and limit to the last 100 messages.
+        messages = ChatMessage.objects.filter(recipients=request.user).order_by('-timestamp')[:100]
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data)
+
+class ChatBlockView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data.copy()
+        serializer = BlockedUserSerializer(data=data)
+        if serializer.is_valid():
+            # Check if the user is trying to block themselves.
+            if serializer.validated_data['blocked'] == request.user:
+                return Response({"error": "You cannot block yourself."}, status=status.HTTP_400_BAD_REQUEST)
+            # Save with the current user as the blocker.
+            blocked_instance = serializer.save(blocker=request.user)
+            return Response(BlockedUserSerializer(blocked_instance).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
