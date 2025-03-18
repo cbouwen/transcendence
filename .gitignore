@@ -1,4 +1,5 @@
 transcendence/*/migrations/
+transcendence/*.pem
 data
 .Idea
 .DS_Store

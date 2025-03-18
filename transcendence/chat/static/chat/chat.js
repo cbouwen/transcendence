@@ -71,10 +71,7 @@ async function chatStart() {
 
   document.querySelector("#id_chat_item_container").insertBefore(buttonsContainer, document.querySelector("#id_message_send_input"));
 
-  const userdata = await apiRequest('/me', 'GET', JWTs, null);
-  console.log(userdata);  // print the data
-
-  const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+  const chatSocket = new WebSocket("wss://" + window.location.host + "/");
   chatSocket.onopen = function (e) {
     console.log("The connection was setup successfully !");
   };
@@ -88,6 +85,9 @@ async function chatStart() {
     }
   };
 
+  const userdata = await apiRequest('/me', 'GET', JWTs, null);
+  console.log(userdata);  // Now it will print the actual data
+  
   document.querySelector("#id_message_send_button").onclick = async function (e) {
     var messageInput = document.querySelector("#id_message_send_input").value.trim();
 
@@ -103,6 +103,9 @@ async function chatStart() {
         target: targetUsername
       };
 
+      console.log("Target username:", targetUsername); // Log the target username
+      console.log("Message target", messageData.target); // Log the target field in the receive
+
       chatSocket.send(JSON.stringify(messageData));
 
       // Display the sent message locally
@@ -115,6 +118,12 @@ async function chatStart() {
 
   chatSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);
+
+    console.log("Received message:", data); // Log the received message
+    console.log("username", userdata.username);
+    console.log("Target username:", targetUsername); // Log the target username
+    console.log("Message target", data.target); // Log the target field in the received messa
+
     if (data.target === userdata.username) {
       displayMessage(data);
     }

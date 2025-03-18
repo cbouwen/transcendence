@@ -23,12 +23,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
 from tetris.serializers import TetrisPlayerSerializer
-from tetris.tournament import g_tournament
+from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, PongScoreSerializer
 from accounts.models import PuppetGrant
+
+import uuid
+from pong.models import PongScore
 
 User = get_user_model()
 
@@ -151,7 +154,7 @@ class Me(APIView):
         user = request.user
         serializer = UserSerializer(user)
         userdata = serializer.data
-        userdata.pop("totpsecret")
+        userdata.pop("totpsecret") #TODO: Security issues
         userdata.pop("password")
         return Response(userdata)
 
@@ -260,77 +263,179 @@ class tetris_save_tetris_scores(APIView):
         )
         return Response({'Message': 'Score processed successfully.'}, status=200)
 
+# Endpoint to return active player manager users
+class tetris_get_active_players(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # active_player_manager.active_players is a dict where each value is a dict 
+        # with a "player" key that has a user attribute.
+        usernames = [
+            active_player["player"].user.username 
+            for active_player in active_player_manager.active_players.values()
+        ]
+        return Response({"active_players": usernames}, status=200)
+
+class tournament_get_participants(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Assuming g_tournament.players is a list of Django User objects
+            usernames = [user.username for user in g_tournament.players]
+            return Response({"tournament_users": usernames}, status=200)
+        except TournamentError as e:
+            return Response({"error": str(e)})
+
 class tournament_add_player(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
-        g_tournament.add_player(user)
-        return Response({'Player added': user})
+        try:
+            user = request.user
+            g_tournament.add_player(user)
+            # Ensure user is serializable or return a meaningful identifier.
+            return Response({'Player added': str(user)})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_remove_player(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        user = request.user
-        g_tournament.remove_player(user)
-        return Response({'Player removed': user})
+        try:
+            user = request.user
+            g_tournament.remove_player(user)
+            return Response({'Player removed': str(user)})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_start(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        g_tournament.start_tournament()
-        return Response({'Message': 'tournament started'})
+        try:
+            g_tournament.start_tournament()
+            return Response({'Message': 'tournament started'})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_generate_round(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        g_tournament.generate_round(g_tournament.players)
-        return Response({'Message': 'Round generated'})
+        try:
+            g_tournament.generate_round(g_tournament.players)
+            return Response({'Message': 'Round generated'})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_update_match(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        players_data = request.data.get('players', [])
-        
-        for player in players_data:
-            TetrisScore.objects.create(
-                gameid=player.get('gameid'),
-                user=player.get('user'),
-                score=player.get('score'),
-                lines_cleared=player.get('lines_cleared'),
-                level=player.get('level')
-            )
-        if (players_data[0].get('score') > players_data[1].get('score')):
-            g_tournament.update_match(players_data[0].get('user'), players_data[1].get('user'))
-            return Response ({'Message': 'tournament match updated'})
-        if (players_data[0].get('score') < players_data[1].get('score')):
-            g_tournament.update_match(players_data[1].get('user'), players_data[0].get('user'))
-            return Response ({'Message': 'tournament match updated'})
-        return Response({'Message': 'match ended in a draw'})
+        try:
+            # Extract and validate required fields from the request payload.
+            status_value = request.data.get('status')  # expected to be "winner" or "loser"
+            gameid = request.data.get('gameid')
+            packetnumber = request.data.get('packetnumber')
+            packetamount = request.data.get('packetamount')
+
+            if not all([status_value, gameid, packetnumber, packetamount]):
+                return Response(
+                    {'error': 'status, gameid, packetnumber, and packetamount are required fields.'},
+                    status=400
+                )
+
+            # Ensure packetamount is exactly 2 and packetnumber is either 1 or 2.
+            try:
+                packetamount = int(packetamount)
+                packetnumber = int(packetnumber)
+            except ValueError:
+                return Response({'error': 'packetnumber and packetamount must be integers.'}, status=400)
+
+            if packetamount != 2:
+                return Response({'error': 'Invalid packet amount. Must be 2.'}, status=400)
+            if packetnumber not in [1, 2]:
+                return Response({'error': 'Invalid packet number. Must be 1 or 2.'}, status=400)
+
+            # Verify that the status is either "winner" or "loser".
+            if status_value not in ["winner", "loser"]:
+                return Response({'error': 'Invalid status. Must be either "winner" or "loser".'}, status=400)
+
+            # Build a package record; we use the authenticated user's id to determine who sent it.
+            package = {
+                "status": status_value,
+                "user_id": request.user.id,
+                "packetnumber": packetnumber,
+            }
+
+            # Use the gameid as the key to temporarily store packages.
+            cache_key = f"tournament_result_{gameid}"
+            packages = cache.get(cache_key)
+
+            if packages:
+                # Prevent duplicate submission from the same status.
+                if any(pkg['status'] == status_value for pkg in packages):
+                    return Response({'error': 'Duplicate package received.'}, status=400)
+                packages.append(package)
+                # If both packages have been received, process the tournament result.
+                if len(packages) == 2:
+                    # By using the gameid as our cache key, we ensure both packages refer to the same game.
+                    winner_pkg = next((pkg for pkg in packages if pkg['status'] == "winner"), None)
+                    loser_pkg = next((pkg for pkg in packages if pkg['status'] == "loser"), None)
+                    if not winner_pkg or not loser_pkg:
+                        return Response({'error': 'Both winner and loser packages are required.'}, status=400)
+
+                    # Retrieve the User objects corresponding to each package.
+                    winner = User.objects.get(id=winner_pkg['user_id'])
+                    loser = User.objects.get(id=loser_pkg['user_id'])
+
+                    # Call your tournament update_match method.
+                    result = g_tournament.update_match(winner=winner, loser=loser, gameid=gameid)
+                    # Clear the cached packages now that we have processed the result.
+                    cache.delete(cache_key)
+                    return Response(result)
+                else:
+                    # Only one package received so far; update the cache and wait.
+                    cache.set(cache_key, packages, timeout=60)  # expires in 1 minutes
+                    return Response({'message': 'Package received. Waiting for the other package.'})
+            else:
+                # No package has been received yet for this gameid; store this package.
+                cache.set(cache_key, [package], timeout=60)  # expires in 1 minutes
+                return Response({'message': 'Package received. Waiting for the other package.'})
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 class tournament_get_current_match(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({'Message': g_tournament.get_current_match()})
+        try:
+            return Response({'Message': g_tournament.start_game()})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_cancel_tournament(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        g_tournament.cancel_tournament()
-        return Response({'Message': 'tournament canceled'})
+        try:
+            g_tournament.cancel_tournament()
+            return Response({'Message': 'tournament canceled'})
+        except TournamentError as e:
+            return Response({"error": str(e)})
 
 class tournament_declare_game(APIView):
     authentication_classes = [JWTAuthentication]
@@ -354,3 +459,68 @@ def block_user(request):
         return JsonResponse({'status': 'error', 'message': 'User not found.'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
+    def post(self, request):
+        try:
+            game_name = request.data.get('game_name')
+            g_tournament.declare_game(game_name)
+            return JsonResponse({'Message': 'game name declared'})
+        except TournamentError as e:
+            return JsonResponse({"error": str(e)})
+
+class tournament_get_game(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(g_tournament.game)
+
+class tournament_ping(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        game_id = request.data.get('game_id')
+        g_tournament.ping_game(game_id)
+
+class get_game_id(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        game_id = get_game_id_number()  # Call the helper function
+        return Response({'game_id': game_id})
+
+class PongScoreView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        me = request.user
+        scores = PongScore.objects.filter(me=me)
+        serializer = PongScoreSerializer(scores, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        me = request.user
+        try:
+            their_username = request.data.get("their_username")
+            my_score = request.data.get("my_score")
+            their_score = request.data.get("their_score")
+        except:
+            raise LookupError("invalid request body")
+        try:
+            if (their_username == ""):
+                them = None
+            else:
+                them = User.objects.get(username=their_username)
+        except:
+            raise LookupError("user doesn't exist")
+
+        pong_score = PongScore.objects.create(
+            me=me,
+            them=them,
+            my_score=my_score,
+            their_score=their_score
+        )
+        serializer = PongScoreSerializer(pong_score)
+        return Response(serializer.data)

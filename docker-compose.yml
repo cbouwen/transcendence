@@ -24,7 +24,7 @@ services:
       - .env
     environment:
       - HOSTNAME=${HOSTNAME}
-    command: ./entrypoint.sh python manage.py runserver 0.0.0.0:8000
+    command: ./entrypoint.sh python manage.py runserver_plus --cert-file /app/cert.pem --key-file /app/key.pem 0.0.0.0:8000
     depends_on:
       db:
         condition: service_healthy
