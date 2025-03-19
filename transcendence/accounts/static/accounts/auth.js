@@ -192,10 +192,6 @@ function getTOTPToken(promptext) {
 	}
 };
 
-function accountsPageStart() {
-	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
-};
-
 function registerPageStart() {
 	document.getElementById("TOTPTokenSubmit").addEventListener("click", TOTPTokenSubmitButtonHandler); 
 	promptTOTPSetUp();
