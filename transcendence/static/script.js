@@ -1,4 +1,4 @@
-(async () => {
+async function start() {
 	try {
 		intraCode = extractLoginCodeFromURL();
 	} catch (exception) {
@@ -16,4 +16,6 @@
 	console.log(response);
 
 	fillInFirstNamePlaceholders();
-})();
+};
+
+start();

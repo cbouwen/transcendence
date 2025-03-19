@@ -41,22 +41,23 @@ async function updateOnlineFriends() {
         const activePlayersResponse = await apiRequest('/tetris/get_active_players', 'GET', JWTs);
         const onlinePlayers = activePlayersResponse.active_players || [];
         
-        // Find which friends are online
-        const onlineFriends = friends.filter(friend => onlinePlayers.includes(friend.username));
-        
         // Update the display
         const onlineFriendsList = document.getElementById('onlineFriendsList');
         onlineFriendsList.innerHTML = ''; // Clear current list
         
-        if (onlineFriends.length === 0) {
-            onlineFriendsList.innerHTML = '<div class="list-group-item">No friends online</div>';
+        if (friends.length === 0) {
+            onlineFriendsList.innerHTML = '<div class="list-group-item">No friends added yet</div>';
             return;
         }
         
-        onlineFriends.forEach(friend => {
+        friends.forEach(friend => {
             const friendElement = document.createElement('div');
             friendElement.className = 'list-group-item';
-            friendElement.innerHTML = `<span class="badge badge-success">Online</span> ${friend.username}`;
+            const isOnline = onlinePlayers.includes(friend.username);
+            const statusBadge = isOnline ? 
+                '<span class="badge badge-success">Online</span>' : 
+                '<span class="badge badge-secondary">Offline</span>';
+            friendElement.innerHTML = `${statusBadge} ${friend.username}`;
             onlineFriendsList.appendChild(friendElement);
         });
     } catch (error) {
@@ -104,11 +105,33 @@ async function removeFriend() {
     }
 }
 
+async function logout() {
+    try {
+        // Remove player from active players
+        await apiRequest("/tetris/remove-player", "DELETE", JWTs);
+        
+        // Clear any stored tokens
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        
+        // Clear the JWTs variable
+        JWTs = null;
+        
+        // Navigate to home page
+        navigateTo('/');
+        start();
+    } catch (error) {
+        console.error("Error during logout:", error);
+        alert("An error occurred during logout. Please try again.");
+    }
+}
+
 function accountsPageStart() {
     fillInCurrentUserInfo();
     document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler);
     document.getElementById("addFriendButton").addEventListener("click", addFriend);
     document.getElementById("removeFriendButton").addEventListener("click", removeFriend);
+    document.getElementById("logoutButton").addEventListener("click", logout);
     
     // Initial update of online friends
     updateOnlineFriends();
