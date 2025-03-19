@@ -27,9 +27,13 @@ async function router()
 			  game.destroy();
 		  }
 	  });
+  if (JWTs)
+    console.log(await apiRequest('/tetris/add-player', 'POST', JWTs, undefined));
   GlobalTetrisGames.length = 0;
   tetrisActive = false;
   tournamentActive = false;
+  tetrisPageLoaded = false;
+  ontournamentpage = false;
   const routes = [
     {
       path: "/",
@@ -67,9 +71,9 @@ async function router()
     },
     {
       path: "/tetris",
-
-      view: async () => { 
-        viewHTML("/static/tetris/tetris.html")
+      view: async () => {
+        tetrisPageLoaded = true;
+        await viewHTML("/static/tetris/tetris.html");
       }
     },
     {
@@ -84,8 +88,13 @@ async function router()
     {
       path: "/tournament",
       view: async () => {
-        viewHTML("/static/tournament/tournament.html").then(() => {
-          console.log("going to tournament");
+		ontournamentpage = true;
+        viewHTML("/static/tournament/tournament.html").then( async () => {
+			response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+			if (response && (response == "tetris" || response == "pong"))
+			{
+				updateGameName(response);
+			}
         });
       }
     },
@@ -103,6 +112,10 @@ async function router()
         await viewHTML("/static/accounts/account.html");
         accountsPageStart();
       }
+    },
+	{
+      path: "/tetris_tournament",
+      view: async () => {}
     },
     {
       path: "/register",
@@ -157,27 +170,34 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (e.target.matches("[data-tetris]")) {
       const game_name = "tetris";
       const payload = { game_name };
-      const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
-      console.log(response);
+      const response2 = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+      const response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+      if (response == "tetris" || response == "pong")
+        updateGameName(response);
+      console.log(response2);
     } else if (e.target.matches("[data-pong]")) {
       const game_name = "pong";
       const payload = { game_name };
-      const response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
-      console.log(response);
+      const response2 = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+      const response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+      if (response == "tetris" || response == "pong")
+        updateGameName(response);
+      console.log(response2);
     } else if (e.target.matches("[data-active-players]")) {
       const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
       console.log(response);
     } else if (e.target.matches("[data-start-tournament]")) {
       const response = await apiRequest('/tournament/start', 'POST', JWTs, null);
       console.log(response);
+      console.log("WORK HARDER Matisse");
     } else if (e.target.matches("[data-next-match]")) {
       const response = await apiRequest('/tournament/get_current_match', 'GET', JWTs, null);
       console.log(response);
       await tournament_get_next_match(response);
     } else if (e.target.matches("#saveUserInfo")) {
       updateUserInfo();
-      fillInCurrentUserInfo();   
+      fillInCurrentUserInfo();
     }
-    // Removed duplicate conditions and the router() call that was causing page reloads
   });
+  router();
 });

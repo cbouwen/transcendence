@@ -3,7 +3,7 @@ from api.views import CustomTokenObtainPairView, CustomTokenObtainPuppetPairView
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import Test, get_game_id, tetris_get_active_players, tetris_get_player, tournament_add_player, tournament_cancel_tournament, tournament_declare_game, tournament_generate_round, tournament_get_current_match, tournament_get_game, tournament_get_participants, tournament_ping, tournament_remove_player, tournament_start, tournament_update_match
+from .views import ChatBlockView, ChatMessagesView, ChatSendView, Test, get_game_id, tetris_get_active_players, tetris_get_player, tetris_get_scores, tournament_add_player, tournament_cancel_tournament, tournament_declare_game, tournament_generate_round, tournament_get_current_match, tournament_get_game, tournament_get_participants, tournament_get_round, tournament_ping, tournament_remove_player, tournament_start, tournament_update_match
 from .views import Me
 from .views import Avatar 
 from .views import tetris_get_next_match
@@ -33,6 +33,7 @@ urlpatterns = [
     path('tetris/get_active_players', tetris_get_active_players.as_view(),
          name='tetris_get_active_players'),
     path('get_game_id', get_game_id.as_view(), name='get_game_id'),
+    path('tetris/get_scores', tetris_get_scores.as_view(), name='tetris_get_scores'),
 
     path('tournament/add_player', tournament_add_player.as_view(), name='to_add_player'),
     path('tournament/remove_player', tournament_remove_player.as_view(), name='to_remove_player'),
@@ -49,4 +50,9 @@ urlpatterns = [
          name='to_get_participants'),
     path('tournament/get_game', tournament_get_game.as_view(), name='to_get_game'),
     path('tournament/ping', tournament_ping.as_view(), name='tournament_ping'),
+    path('tournament/get_round', tournament_get_round.as_view(), name='tournament_get_round'),
+
+    path('chat/send/', ChatSendView.as_view(), name='chat_send'),
+    path('chat/messages/',ChatMessagesView.as_view(), name='chat_messages'),
+    path('chat/block/', ChatBlockView.as_view(), name='chat_block'),
 ]
