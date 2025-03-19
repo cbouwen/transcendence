@@ -173,6 +173,37 @@ class Me(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request):
+        user = request.user
+        friend_username = request.data.get("friend_username")
+        
+        if not friend_username:
+            return Response({"error": "Friend username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            friend = User.objects.get(username=friend_username)
+            if friend == user:
+                return Response({"error": "Cannot add yourself as a friend"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.friends.add(friend)
+            return Response({"message": f"Added {friend_username} as friend"}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "Friend not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request):
+        user = request.user
+        friend_username = request.data.get("friend_username")
+        
+        if not friend_username:
+            return Response({"error": "Friend username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            friend = User.objects.get(username=friend_username)
+            user.friends.remove(friend)
+            return Response({"message": f"Removed {friend_username} from friends"}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "Friend not found"}, status=status.HTTP_404_NOT_FOUND)
+
 class Avatar(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

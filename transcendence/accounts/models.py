@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     totpsecret = models.CharField(max_length=255)
-    friends = models.CharField(max_length=255)
+    friends = models.ManyToManyField('self', symmetrical=True, blank=True)
 
     def avatar_upload_path(instance, filename):
         # Define the upload path and filename
