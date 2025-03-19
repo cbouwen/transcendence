@@ -161,8 +161,12 @@ async function TOTPTokenSubmitButtonHandler() {
 			console.log("Logged in as " + me.first_name);
 			await navigateTo("/");
 		}
+		document.querySelectorAll("nav").forEach(navElement => {
+			navElement.removeEventListener("click", TOTPTokenSubmitButtonHandler);
+		});
 	} else {
 		alert("The code you put in is not valid. Please try again");
+		navigateTo("/register");
 	}
 };
 
@@ -194,5 +198,8 @@ function getTOTPToken(promptext) {
 
 function registerPageStart() {
 	document.getElementById("TOTPTokenSubmit").addEventListener("click", TOTPTokenSubmitButtonHandler); 
+	document.querySelectorAll("nav").forEach(navElement => {
+		navElement.addEventListener("click", TOTPTokenSubmitButtonHandler);
+	});
 	promptTOTPSetUp();
 };
