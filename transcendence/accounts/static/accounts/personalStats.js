@@ -51,11 +51,9 @@ async function generateTable(navTab, tableHeaders, game) {
 	let tbody = document.createElement("tbody");
 
 	if (game === "pong")
-	{
 		parsePongScores(tbody);
-	}
 	else
-		parseTetrisScores();
+		parseTetrisScores(tbody);
 
 	table.appendChild(tbody);
 	navTab.appendChild(table);
@@ -90,6 +88,29 @@ async function parsePongScores(tableBody)
 	})
 }
 
+async function parseTetrisScores(tableBody) {
+	let scoreObject = await apiRequest("/tetris/get_scores", "GET", JWTs, null);
+
+	scoreObject.forEach(scoreData => {
+		let game = formatTimestamp(scoreData.timestamp);
+		let level = scoreData.level;
+		let linesCleared = scoreData.lines_cleared;
+		let score = scoreData.score;
+
+		let row = document.createElement("tr");
+
+		[game, level, linesCleared, score].forEach(value => {
+            let cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+		tableBody.appendChild(row);
+
+		console.log(scoreData.gameid);
+	})
+}
+
 function formatTimestamp(timestamp) {
     let date = new Date(timestamp);
     
@@ -102,5 +123,3 @@ function formatTimestamp(timestamp) {
 
     return `${day}/${month}/${year} - ${hours}:${minutes}`;
 }
-
-await apiRequest("/tetris/get_scores", "GET", JWTs, null);
