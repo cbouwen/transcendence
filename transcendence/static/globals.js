@@ -9,3 +9,4 @@ let TOTPSetup;
 let tetrisActive = false;
 let GlobalMatchConfig = null;
 let GlobalTetrisGames = [];
+let tournamentActive = false;
