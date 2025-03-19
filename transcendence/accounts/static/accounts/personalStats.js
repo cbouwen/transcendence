@@ -1,5 +1,5 @@
 function statsLoad() {
-	generateTable(document.getElementById("tab"), ["game", "opponent", "your score", "their score"], ["1", "ik", "19", "19"])
+	generateTable(document.getElementById("tab"), ["game", "opponent", "your score", "their score"], "pong")
 	document.getElementById("pongStats").addEventListener("click", (event) => pongStatsHandler(event));
 	document.getElementById("tetrisStats").addEventListener("click", (event) => tetrisStatsHandler(event));
 };
@@ -17,7 +17,7 @@ function pongStatsHandler(event) {
 	pongNav = document.getElementById("pongStats")
 	setActiveNav(tetrisNav, pongNav);
 
-	generateTable(document.getElementById("tab"), ["game", "opponent", "your score", "their score"], ["1", "ik", "19", "19"]);
+	generateTable(document.getElementById("tab"), ["game", "opponent", "your score", "their score"], "pong");
 }
 
 function tetrisStatsHandler(event) {
@@ -26,10 +26,10 @@ function tetrisStatsHandler(event) {
 	pongNav = document.getElementById("pongStats")
 	setActiveNav(pongNav, tetrisNav);
 
-	generateTable(document.getElementById("tab"), ["game", "level", "lines cleared", "score"], ["1", "12", "123", "1234"])
+	generateTable(document.getElementById("tab"), ["game", "level", "lines cleared", "score"], "tetris")
 }
 
-function generateTable(navTab, tableHeaders, gameData) {
+async function generateTable(navTab, tableHeaders, game) {
 	destroyTable();
 
 	let table = document.createElement("table");
@@ -50,22 +50,12 @@ function generateTable(navTab, tableHeaders, gameData) {
 
 	let tbody = document.createElement("tbody");
 
-	let sampleData =
-		[
-			{ rank: 1, player: "Bert", score: 5, oppScore: 4},
-			{ rank: 2, player: "Bart", score: 3, oppScore: 5},
-			{ rank: 3, player: "Ward", score: 2, oppScore: 5}
-		];
-
-	sampleData.forEach((data) => {
-		let row = document.createElement("tr");
-		Object.values(data).forEach(value => {
-			let td = document.createElement("td");
-			td.textContent = value;
-			row.appendChild(td);
-		});
-		tbody.appendChild(row);
-	});
+	if (game === "pong")
+	{
+		parsePongScores(tbody);
+	}
+	else
+		parseTetrisScores();
 
 	table.appendChild(tbody);
 	navTab.appendChild(table);
@@ -77,3 +67,40 @@ function destroyTable() {
 		existingTable.remove();
 	}
 }
+
+async function parsePongScores(tableBody)
+{
+	let scoreObject = await apiRequest("/pong/score", "GET", JWTs, undefined);
+
+	scoreObject.forEach(scoreData => {
+		let game = formatTimestamp(scoreData.timestamp);
+		let opponent = scoreData.them ?? "AI opponent";
+		let myScore = scoreData.my_score;
+		let theirScore = scoreData.their_score;
+
+		let row = document.createElement("tr");
+
+		[game, opponent, myScore, theirScore].forEach(value => {
+            let cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+		tableBody.appendChild(row);
+	})
+}
+
+function formatTimestamp(timestamp) {
+    let date = new Date(timestamp);
+    
+    let day = String(date.getDate()).padStart(2, '0');
+    let month = String(date.getMonth() + 1).padStart(2, '0');
+    let year = date.getFullYear();
+    
+    let hours = String(date.getHours()).padStart(2, '0');
+    let minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year} - ${hours}:${minutes}`;
+}
+
+await apiRequest("/tetris/get_scores", "GET", JWTs, null);
