@@ -4,7 +4,7 @@ async function loginAsRecurringUser(promptext) {
 		return false;
 	}
 	try {
-		JWTs = await apiRequest("/token", 'POST', undefined, {
+		JWTs = await apiRequest("/token", 'POST', 'no auth', {
 			ft_api_user_login_code: intraCode,
 			TOTP: {
 				type: "token",
@@ -23,7 +23,7 @@ async function loginAsRecurringUser(promptext) {
 
 async function loginFirstTime() {
 	try {
-		JWTs = await apiRequest("/token", 'POST', undefined, {
+		JWTs = await apiRequest("/token", 'POST', 'no auth', {
 			ft_api_user_login_code: intraCode,
 			TOTP: {
 				type: "setup",
@@ -45,7 +45,7 @@ async function login() {
 		if (await loginAsRecurringUser("Please enter your OTP code or type SETUP if you don't have one already") == false) {
 			redirectToIntra();
 		} else {
-			let me = await apiRequest('/me', 'GET', JWTs, undefined);
+			let me = await apiRequest('/me', 'GET', JWTs);
 			console.log("Logged in as " + me.first_name);
 		}
 	} catch (exception) {
@@ -157,7 +157,7 @@ async function TOTPTokenSubmitButtonHandler() {
 			alert("Couldn't login. Did you already set 2FA?");
 			redirectToIntra();
 		} else {
-			me = apiRequest('/me', 'GET', JWTs, undefined);
+			me = apiRequest('/me', 'GET', JWTs);
 			console.log("Logged in as " + me.first_name);
 			await navigateTo("/");
 		}

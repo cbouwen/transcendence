@@ -37,8 +37,8 @@ async function updateUserInfo() {
 };
 
 function accountsPageStart() {
+    fillInCurrentUserInfo();
 	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
-        fillInCurrentUserInfo();
 };
 
 
@@ -51,7 +51,7 @@ async function fillInCurrentUserInfo() {
 
 async function updateUserAvatar() {
     try {
-        const response = await apiRequest('/me/avatar', 'GET', JWTs, undefined);
+        const response = await apiRequest('/me/avatar', 'GET', JWTs);
         if (response && response.avatar_url) {
             const avatarImg = document.querySelector('#avatarImg');
             if (avatarImg) {

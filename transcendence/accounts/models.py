@@ -9,7 +9,7 @@ class CustomUser(AbstractUser):
         # Define the upload path and filename
         return f'avatar/{instance.username}.png'
 
-    avatar = models.ImageField(upload_to=avatar_upload_path, default='avatar/default/default.png', blank=True, null=True)
+    avatar = models.ImageField(upload_to=avatar_upload_path, default='avatar_default.png', blank=True, null=True)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

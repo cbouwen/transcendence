@@ -9,7 +9,12 @@ async function viewHTML(filePath, jwtTokens) {
 	};
 	const response = await fetch(urlRoot + filePath, request);
 	const content = await response.text();
-	document.getElementById("content").innerHTML = content;
+	const contentElement = document.getElementById("content");
+	if (contentElement) {
+		contentElement.innerHTML = content;
+	} else {
+		console.warn("Element with id 'content' not found. Cannot update innerHTML.");
+	}
 };
 
 async function navigateTo(url) {
