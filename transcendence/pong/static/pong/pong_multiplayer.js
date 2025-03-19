@@ -222,6 +222,11 @@ class PongGameMultiPlayer {
 		body["my_score"] = my_score;
 		body["their_score"] = their_score;
 		let response = await apiRequest('/pong/score', 'POST', token, body);
+		if (response) {
+			console.log("Score published successfully", response);
+		} else {
+			console.log("Failed to publish score");
+		}
 	}
 
 	loop() {
@@ -252,8 +257,16 @@ class PongGameMultiPlayer {
 	async initialize() {
 		console.log("starting init of pong");
 		this.myUser = await apiRequest("/me", "GET", JWTs, undefined);
+		if (!this.myUser) {
+			console.log("Failed to get my user");
+			return;
+		}
 		console.log("this.myUser", this.myUser);
 		this.theirUser = await apiRequest("/me", "GET", this.opponentJWTs.value, undefined);
+		if (!this.theirUser) {
+			console.log("Failed to get their user");
+			return;
+		}
 		console.log("this.theirUser", this.theirUser);
 		this.player = this.createPaddle('left');
 		this.opponent = this.createPaddle('right');

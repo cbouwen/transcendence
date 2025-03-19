@@ -46,6 +46,9 @@ async function login() {
 			redirectToIntra();
 		} else {
 			let me = await apiRequest('/me', 'GET', JWTs);
+			if (!me) {
+				return null;
+			};
 			console.log("Logged in as " + me.first_name);
 		}
 	} catch (exception) {
@@ -157,7 +160,10 @@ async function TOTPTokenSubmitButtonHandler() {
 			alert("Couldn't login. Did you already set 2FA?");
 			redirectToIntra();
 		} else {
-			me = apiRequest('/me', 'GET', JWTs);
+			me = await apiRequest('/me', 'GET', JWTs);
+			if (!me) {
+				return null;
+			};
 			console.log("Logged in as " + me.first_name);
 			await navigateTo("/");
 		}

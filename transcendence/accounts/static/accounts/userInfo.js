@@ -20,6 +20,7 @@ async function updateUserInfo() {
             alert("User information updated successfully.");
         } else {
             alert("Failed to update user information.");
+            return null;
         }
 
         if (file) {
@@ -108,16 +109,8 @@ async function removeFriend() {
 async function logout() {
     try {
         // Remove player from active players
-        await apiRequest("/tetris/remove-player", "DELETE", JWTs);
-        
-        // Clear any stored tokens
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        
-        // Clear the JWTs variable
+        const response = await apiRequest("/tetris/remove-player", "DELETE", JWTs);
         JWTs = null;
-        
-        // Navigate to home page
         navigateTo('/');
         start();
     } catch (error) {
@@ -142,6 +135,7 @@ function accountsPageStart() {
 
 async function fillInCurrentUserInfo() {
     const userdata = await apiRequest('/me', 'GET', JWTs, undefined);
+    if (!userdata) return;
     queryAndReplacePlaceholder("#displayNameInput", userdata.first_name);
     updateUserAvatar();
 }

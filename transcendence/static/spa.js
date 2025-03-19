@@ -32,8 +32,14 @@ async function router()
 			  game.destroy();
 		  }
 	  });
-  if (JWTs)
-    console.log(await apiRequest('/tetris/add-player', 'POST', JWTs, undefined));
+  if (JWTs) {
+    const response = await apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
+    if (response) {
+      console.log(response);
+    } else {
+      console.log("Failed to add player");
+    }
+  }
   GlobalTetrisGames.length = 0;
   tetrisActive = false;
   tournamentActive = false;
@@ -95,11 +101,11 @@ async function router()
       view: async () => {
 		ontournamentpage = true;
         viewHTML("/static/tournament/tournament.html").then( async () => {
-			response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
-			if (response && (response == "tetris" || response == "pong"))
-			{
-				updateGameName(response);
-			}
+            response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+            if (!response) return;
+            if (response && (response == "tetris" || response == "pong")) {
+                updateGameName(response);
+            }
         });
       }
     },
@@ -168,15 +174,19 @@ document.addEventListener("DOMContentLoaded", () => {
       searching_for_game_match("tetris");
     } else if (e.target.matches("[get-active-players]")) {
       const response = await apiRequest('/tetris/get_active_players', 'GET', JWTs, null);
+      if (!response) return;
       console.log(response);
     } else if (e.target.matches("[data-tournament-join]")) {
       const response = await apiRequest('/tournament/add_player', 'POST', JWTs, null);
+      if (!response) return;
       console.log(response);
     } else if (e.target.matches("[data-tetris]")) {
       const game_name = "tetris";
       const payload = { game_name };
       const response2 = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+      if (!response2) return;
       const response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+      if (!response) return;
       if (response == "tetris" || response == "pong")
         updateGameName(response);
       console.log(response2);
@@ -184,19 +194,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const game_name = "pong";
       const payload = { game_name };
       const response2 = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+      if (!response2) return;
       const response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
+      if (!response) return;
       if (response == "tetris" || response == "pong")
         updateGameName(response);
       console.log(response2);
     } else if (e.target.matches("[data-active-players]")) {
       const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
+      if (!response) return;
       console.log(response);
     } else if (e.target.matches("[data-start-tournament]")) {
       const response = await apiRequest('/tournament/start', 'POST', JWTs, null);
+      if (!response) return;
       console.log(response);
       console.log("WORK HARDER Matisse");
     } else if (e.target.matches("[data-next-match]")) {
       const response = await apiRequest('/tournament/get_current_match', 'GET', JWTs, null);
+      if (!response) return;
       console.log(response);
       await tournament_get_next_match(response);
     } else if (e.target.matches("#saveUserInfo")) {

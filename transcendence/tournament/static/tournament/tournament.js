@@ -31,6 +31,7 @@ async function updateCurrentRound() {
     
     // Call the tournament round API endpoint
     const response = await apiRequest('/tournament/get_round', 'GET', JWTs, null);
+    if (!response) return;
     
     // Expecting a JSON response with a "matches" key holding an array of match strings
     const roundMatches = response.matches;
@@ -76,6 +77,7 @@ async function updateTournamentPlayers() {
   try {
     if (ontournamentpage == false) return;
     const response = await apiRequest('/tournament/get_participants', 'GET', JWTs, null);
+    if (!response) return;
     
     const tournamentUsers = response.tournament_users;
     console.log("tournament users =", tournamentUsers);
@@ -128,7 +130,7 @@ async function pingTournament(gameID) {
 			game_id : gameID,
 		}
 		response = await apiRequest('/tournament/ping', 'PATCH', JWTs, payload);
-        return;
+        if (!response) return;
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -156,7 +158,7 @@ async function tournament_get_next_match(data) {
     }
     
     let dominant = await apiRequest("/me", "GET", JWTs, null);
-    console.log(dominant);
+    if (!dominant) return;
     let token1, token2;
 
     if (dominant.username !== player1) {
@@ -183,6 +185,7 @@ async function tournament_get_next_match(data) {
     
     console.log("Tokens:", token1, token2);
     data = await apiRequest("/tournament/get_game", "GET", JWTs, null);
+    if (!data) return;
 
     ontournamentpage = false;
     tournamentActive = true;
@@ -223,16 +226,16 @@ async function sendTournamentResults(gameid, winnerToken, loserToken) {
     };
 
     try {
-        const responseWinner = await apiRequest('/tournament/update_match', 'POST',
-			winnerToken, payloadWinner);
+        const responseWinner = await apiRequest('/tournament/update_match', 'POST', winnerToken, payloadWinner);
+        if (!responseWinner) return;
         if (responseWinner.error) {
             console.error("Error updating tournament for winner:", responseWinner.error);
         } else {
             console.log("Tournament match updated successfully for winner:", responseWinner);
         }
 
-        const responseLoser = await apiRequest('/tournament/update_match', 'POST',
-			loserToken, payloadLoser);
+        const responseLoser = await apiRequest('/tournament/update_match', 'POST', loserToken, payloadLoser);
+        if (!responseLoser) return;
         if (responseLoser.error) {
             console.error("Error updating tournament for loser:", responseLoser.error);
         } else {

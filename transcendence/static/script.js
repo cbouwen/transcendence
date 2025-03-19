@@ -13,7 +13,9 @@ async function start() {
 		console.log("Obtained JWTs", JWTs);
 	}
 	let response = await apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
-	console.log(response);
+	if (response) {
+		console.log(response);
+	}
 
 	fillInFirstNamePlaceholders();
 };
