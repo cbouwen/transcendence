@@ -1,6 +1,16 @@
+async function pongMultiStart() {
+	const opponentJWTs = await getPuppetJWTs();
+	if (opponentJWTs == null) {
+		navigateTo("/");
+		return ;
+	}
+        let pongGame = new PongGameMultiPlayer(opponentJWTs);
+        await pongGame.initialize();
+	console.log("pong init finished");
+};
 
 class PongGameMultiPlayer {
-	constructor() {
+	constructor(opponentJWTs) {
 		// Initialize container and canvas
 		this.pongContainer = document.getElementById('pong-wrapper');
 		this.pongContainer = document.getElementById('pong-wrapper');
@@ -31,6 +41,9 @@ class PongGameMultiPlayer {
 		this.running = this.over = false;
 		this.timer = this.round = 0;
 		this.color = '#2c3e50';
+
+		this.opponentJWTs = opponentJWTs;
+		console.log("this.opponentJWTs", this.opponentJWTs);
 	}
 
 	createBall(incrementedSpeed) {
@@ -81,7 +94,6 @@ class PongGameMultiPlayer {
 		this.context.lineWidth = 10;
 		this.context.strokeStyle = '#ffffff';
 		this.context.stroke();
-
 		// Set the default canvas font and align it to the center
 		this.context.font = '100px Courier New';
 		this.context.textAlign = 'center';
@@ -97,7 +109,7 @@ class PongGameMultiPlayer {
 		// Draw rounds and text
 		this.context.font = '30px Courier New';
 		this.context.fillText(
-			'First one who scores 5 wins!' , this.pongCanvas.width / 2, 35
+			this.myUser.first_name + ' VS ' + this.theirUser.first_name, this.pongCanvas.width / 2, 35
 		);  //change message to play till 5 or something
 		this.context.font = '40px Courier';
 		this.context.fillText(
@@ -191,12 +203,29 @@ class PongGameMultiPlayer {
 
 		if (this.player.score === this.rounds[this.round]) {
 			this.over = true;
-			setTimeout(() => { this.endGameMenu('Player 1 wins! Press any key to play again'); }, 1000);
+			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+			setTimeout(() => { this.endGameMenu(this.myUser.first_name + ' wins! Press any key to play again'); }, 1000);
 		//	this.player.score = this.paddle.score = 0;
 		}
 		else if (this.opponent.score === this.rounds[this.round]) {
 			this.over = true;
-			setTimeout(() => { this.endGameMenu('Player 2 wins! Press any key to play again'); }, 1000);
+			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+			setTimeout(() => { this.endGameMenu(this.theirUser.first_name + ' wins! Press any key to play again'); }, 1000);
+		}
+	}
+
+	async publishScore(token, their_username, my_score, their_score) {
+		let body = {};
+		body["their_username"] = their_username;
+		body["my_score"] = my_score;
+		body["their_score"] = their_score;
+		let response = await apiRequest('/pong/score', 'POST', token, body);
+		if (response) {
+			console.log("Score published successfully", response);
+		} else {
+			console.log("Failed to publish score");
 		}
 	}
 
@@ -225,7 +254,20 @@ class PongGameMultiPlayer {
 		});
 	}
 
-	initialize() {
+	async initialize() {
+		console.log("starting init of pong");
+		this.myUser = await apiRequest("/me", "GET", JWTs, undefined);
+		if (!this.myUser) {
+			console.log("Failed to get my user");
+			return;
+		}
+		console.log("this.myUser", this.myUser);
+		this.theirUser = await apiRequest("/me", "GET", this.opponentJWTs.value, undefined);
+		if (!this.theirUser) {
+			console.log("Failed to get their user");
+			return;
+		}
+		console.log("this.theirUser", this.theirUser);
 		this.player = this.createPaddle('left');
 		this.opponent = this.createPaddle('right');
 		this.ball = this.createBall();

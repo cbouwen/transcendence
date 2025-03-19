@@ -1,24 +1,28 @@
 async function apiRequest(endpoint, method, jwtTokens, body) {
+	if (!jwtTokens) {
+		console.warn("JWT tokens are not set. Aborting API request.");
+		return undefined;
+	}
+
 	const url = urlRoot + apiPath + endpoint;
 
 	let headers = {
-		'Content-Type': 'application/json',
+		'Authorization': 'Bearer ' + jwtTokens.access
 	};
-	if (jwtTokens && jwtTokens.access) {
-		headers['Authorization'] = 'Bearer ' + jwtTokens.access
-	}
 
 	let request;
-	if (body) {
+	if (body instanceof FormData) {
 		request = {
 			method: method,
 			headers: headers,
-			body: JSON.stringify(body)
+			body: body
 		};
 	} else {
+		headers['Content-Type'] = 'application/json';
 		request = {
 			method: method,
 			headers: headers,
+			body: body ? JSON.stringify(body) : null
 		};
 	}
 
@@ -33,4 +37,3 @@ async function apiRequest(endpoint, method, jwtTokens, body) {
 	}
 	return responseData;
 };
-

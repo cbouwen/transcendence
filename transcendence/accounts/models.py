@@ -1,13 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-
 class CustomUser(AbstractUser):
-    totpsecret = models.CharField()
+    totpsecret = models.CharField(max_length=255)
+    friends = models.ManyToManyField('self', symmetrical=True, blank=True)
+
+    def avatar_upload_path(instance, filename):
+        # Define the upload path and filename
+        return f'avatar/{instance.username}.png'
+
+    avatar = models.ImageField(upload_to=avatar_upload_path, default='avatar_default.png', blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
-
 
 from django.contrib.auth import get_user_model
 User = get_user_model()

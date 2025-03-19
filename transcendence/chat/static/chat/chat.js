@@ -22,6 +22,9 @@ async function chatStart() {
   };
 
   const userdata = await apiRequest('/me', 'GET', JWTs, null);
+  if (!userdata) {
+    return;
+  }
   console.log(userdata);  // Now it will print the actual data
   
   document.querySelector("#id_message_send_button").onclick = async function (e) {

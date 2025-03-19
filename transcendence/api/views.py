@@ -14,16 +14,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
-from tetris.serializers import TetrisPlayerSerializer
+from tetris.serializers import BlockedUserSerializer, ChatMessageSerializer, TetrisPlayerSerializer, TetrisScoreSerializer
 from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
-from tetris.models import TetrisPlayer, TetrisScore
+from tetris.models import ChatMessage, TetrisPlayer, TetrisScore
 
 from .serializers import UserSerializer, PongScoreSerializer
 from accounts.models import PuppetGrant
@@ -55,6 +57,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         if token_response.status_code != 200:
             error_data = token_response.json()
             error_data |= { 'type': "intra error" }
+            error_data |= request_data
             raise AuthenticationFailed(error_data)
 
         token_data = token_response.json()
@@ -160,11 +163,69 @@ class Me(APIView):
         user = request.user
         serializer = UserSerializer(user, data=request.data, partial=True)
 
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+            user.save()
+
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "User updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request):
+        user = request.user
+        friend_username = request.data.get("friend_username")
+        
+        if not friend_username:
+            return Response({"error": "Friend username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            friend = User.objects.get(username=friend_username)
+            if friend == user:
+                return Response({"error": "Cannot add yourself as a friend"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.friends.add(friend)
+            return Response({"message": f"Added {friend_username} as friend"}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "Friend not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request):
+        user = request.user
+        friend_username = request.data.get("friend_username")
+        
+        if not friend_username:
+            return Response({"error": "Friend username is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            friend = User.objects.get(username=friend_username)
+            user.friends.remove(friend)
+            return Response({"message": f"Removed {friend_username} from friends"}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "Friend not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class Avatar(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        user = request.user
+        avatar_url = user.avatar.url if user.avatar else None
+        return JsonResponse({"avatar_url": avatar_url})
+
+    def post(self, request):
+        user = request.user
+        if 'avatar' in request.FILES:
+            avatar_file = request.FILES['avatar']
+            # Check if the file is a PNG or JPG
+            if not avatar_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                return Response({"error": "Only PNG and JPG files are allowed"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.avatar = avatar_file
+            user.save()
+            return Response({"message": "Avatar updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"error": "No avatar file found"}, status=status.HTTP_400_BAD_REQUEST)
 
 class tetris_get_player(APIView):
     authentication_classes = [JWTAuthentication]
@@ -419,8 +480,9 @@ class tournament_get_current_match(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
         try:
-            return Response({'Message': g_tournament.start_game()})
+            return Response({'Message': g_tournament.start_game(user)})
         except TournamentError as e:
             return Response({"error": str(e)})
 
@@ -470,6 +532,21 @@ class get_game_id(APIView):
         game_id = get_game_id_number()  # Call the helper function
         return Response({'game_id': game_id})
 
+class tetris_get_scores(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # 1. Get all game IDs that the authenticated user played
+        user_game_ids = TetrisScore.objects.filter(user=request.user).values_list('gameid', flat=True).distinct()
+        
+        # 2. Using these game IDs, fetch all scores (for all players) in those games
+        scores = TetrisScore.objects.filter(gameid__in=user_game_ids)
+        
+        # 3. Serialize the data
+        serializer = TetrisScoreSerializer(scores, many=True)
+        return Response(serializer.data)
+
 class PongScoreView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -504,3 +581,55 @@ class PongScoreView(APIView):
         )
         serializer = PongScoreSerializer(pong_score)
         return Response(serializer.data)
+
+class tournament_get_round(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        matches = g_tournament.get_current_round_matches_info()
+        return (Response({"matches": matches}))
+
+class ChatSendView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Copy data from the request.
+        data = request.data.copy()
+        # The sender is always the current authenticated user.
+        data['sender'] = request.user.username
+        serializer = ChatMessageSerializer(data=data)
+        if serializer.is_valid():
+            # Save the message instance with the current user as sender.
+            message_instance = serializer.save(sender=request.user)
+            # (The save method on the model adds the sender as a recipient.)
+            return Response(ChatMessageSerializer(message_instance).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChatMessagesView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve messages where the current user is among the recipients.
+        # Order by most recent and limit to the last 100 messages.
+        messages = ChatMessage.objects.filter(recipients=request.user).order_by('-timestamp')[:100]
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data)
+
+class ChatBlockView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data.copy()
+        serializer = BlockedUserSerializer(data=data)
+        if serializer.is_valid():
+            # Check if the user is trying to block themselves.
+            if serializer.validated_data['blocked'] == request.user:
+                return Response({"error": "You cannot block yourself."}, status=status.HTTP_400_BAD_REQUEST)
+            # Save with the current user as the blocker.
+            blocked_instance = serializer.save(blocker=request.user)
+            return Response(BlockedUserSerializer(blocked_instance).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
