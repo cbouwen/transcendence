@@ -9,14 +9,9 @@ class CustomUser(AbstractUser):
         # Define the upload path and filename
         return f'avatar/{instance.username}.png'
 
-    avatar = models.ImageField(upload_to=avatar_upload_path, default='avatar/default.png', blank=True, null=True)
+    avatar = models.ImageField(upload_to=avatar_upload_path, default='avatar/default/default.png', blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        # Delete the old avatar file before saving the new one
-        if self.pk:
-            existing_user = CustomUser.objects.get(pk=self.pk)
-            if existing_user.avatar and existing_user.avatar != self.avatar:
-                existing_user.avatar.delete(save=False)
         super().save(*args, **kwargs)
 
     def __str__(self):

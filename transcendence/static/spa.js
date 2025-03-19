@@ -121,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			searching_for_game_match("tetris");
         } else if (e.target.matches("#saveUserInfo")) {
           updateUserInfo();
+          fillInCurrentUserInfo();
         }
         
     });

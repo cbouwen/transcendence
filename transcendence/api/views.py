@@ -183,7 +183,12 @@ class Avatar(APIView):
     def post(self, request):
         user = request.user
         if 'avatar' in request.FILES:
-            user.avatar = request.FILES['avatar']
+            avatar_file = request.FILES['avatar']
+            # Check if the file is a PNG or JPG
+            if not avatar_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                return Response({"error": "Only PNG and JPG files are allowed"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.avatar = avatar_file
             user.save()
             return Response({"message": "Avatar updated successfully"}, status=status.HTTP_200_OK)
         return Response({"error": "No avatar file found"}, status=status.HTTP_400_BAD_REQUEST)

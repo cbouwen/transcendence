@@ -46,6 +46,21 @@ async function fillInCurrentUserInfo() {
     const userdata = await apiRequest('/me', 'GET', JWTs, undefined);
     queryAndReplacePlaceholder("#displayNameInput", userdata.first_name);
     queryAndReplacePlaceholder("#friendUsername", userdata.first_name);
+    updateUserAvatar();
+}
+
+async function updateUserAvatar() {
+    try {
+        const response = await apiRequest('/me/avatar', 'GET', JWTs, undefined);
+        if (response && response.avatar_url) {
+            const avatarImg = document.querySelector('#avatarImg');
+            if (avatarImg) {
+                avatarImg.src = response.avatar_url;
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching user avatar:", error);
+    }
 };
 
 
