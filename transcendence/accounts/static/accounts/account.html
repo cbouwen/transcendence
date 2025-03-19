@@ -1,11 +1,53 @@
 <div class="container">
+	<h1>User Settings</h1>
+
+	<!-- Display Name -->
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="displayNameInput">Display Name:</label>
+		<div class="col-sm-10">
+			<input id="displayNameInput" class="form-control" type="text" placeholder="***Your name here***">
+		</div>
+	</div>
+
+	<!-- Avatar Upload -->
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="avatarInput">Upload Avatar:</label>
+		<div class="col-sm-10">
+			<input id="avatarInput" class="form-control" type="file" accept="image/*">
+		</div>
+	</div>
+	<img id="avatarImg" src="/media/avatar/default/default.png" alt="Your user avatar" width="500" height="500"> 
+
+	<!-- Add Friend -->
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="friendUsername">Define Friends (give usernames seperated by space):</label>
+		<div class="col-sm-10">
+			<input id="friendUsername" class="form-control" type="text" placeholder="***your friends here***">
+		</div>
+	</div>
+
+	<!-- Save Button -->
+	<button type="submit" class="btn btn-primary" id="saveUserInfo">Save</button>
+</div>
+
+<!-- Match Stats Section -->
+<div class="container match-stats">
+	<h2>Match Stats</h2>
+	<div class="stats-box">
+		<p><strong>Wins:</strong> <span id="winsCount">0</span></p>
+		<p><strong>Losses:</strong> <span id="lossesCount">0</span></p>
+	</div>
+</div>
+
+<!-- Puppet Grant Section -->
+<div class="container puppet-grant">
 	<h2>Create Puppet Grant</h2>
 	<div class="form-group">
 		<label class="col-sm-2 control-label" for="puppetGrantInput">Puppeteer Username:</label>
 		<div class="col-sm-10">
-			<input id="puppetGrantInput" class="form-control" id="focusedInput" type="text"
-				placeholder="Enter puppeteer username">
+			<input id="puppetGrantInput" class="form-control" type="text" placeholder="Enter puppeteer username">
 		</div>
 	</div>
 	<button type="submit" class="btn btn-default" id="puppetGrantSubmitButton">Create Grant</button>
 </div>
+

@@ -14,6 +14,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -25,8 +27,11 @@ from tournament.tournament import TournamentError, g_tournament, get_game_id_num
 from tetris.active_player_manager import active_player_manager
 from tetris.models import ChatMessage, TetrisPlayer, TetrisScore
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, PongScoreSerializer
 from accounts.models import PuppetGrant
+
+import uuid
+from pong.models import PongScore
 
 User = get_user_model()
 
@@ -52,6 +57,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         if token_response.status_code != 200:
             error_data = token_response.json()
             error_data |= { 'type': "intra error" }
+            error_data |= request_data
             raise AuthenticationFailed(error_data)
 
         token_data = token_response.json()
@@ -149,7 +155,7 @@ class Me(APIView):
         user = request.user
         serializer = UserSerializer(user)
         userdata = serializer.data
-        userdata.pop("totpsecret")
+        userdata.pop("totpsecret") #TODO: Security issues
         userdata.pop("password")
         return Response(userdata)
 
@@ -157,11 +163,38 @@ class Me(APIView):
         user = request.user
         serializer = UserSerializer(user, data=request.data, partial=True)
 
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+            user.save()
+
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "User updated successfully", "user": serializer.data}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class Avatar(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        user = request.user
+        avatar_url = user.avatar.url if user.avatar else None
+        return JsonResponse({"avatar_url": avatar_url})
+
+    def post(self, request):
+        user = request.user
+        if 'avatar' in request.FILES:
+            avatar_file = request.FILES['avatar']
+            # Check if the file is a PNG or JPG
+            if not avatar_file.name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                return Response({"error": "Only PNG and JPG files are allowed"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.avatar = avatar_file
+            user.save()
+            return Response({"message": "Avatar updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"error": "No avatar file found"}, status=status.HTTP_400_BAD_REQUEST)
 
 class tetris_get_player(APIView):
     authentication_classes = [JWTAuthentication]
@@ -481,6 +514,41 @@ class tetris_get_scores(APIView):
         
         # 3. Serialize the data
         serializer = TetrisScoreSerializer(scores, many=True)
+        return Response(serializer.data)
+
+class PongScoreView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        me = request.user
+        scores = PongScore.objects.filter(me=me)
+        serializer = PongScoreSerializer(scores, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        me = request.user
+        try:
+            their_username = request.data.get("their_username")
+            my_score = request.data.get("my_score")
+            their_score = request.data.get("their_score")
+        except:
+            raise LookupError("invalid request body")
+        try:
+            if (their_username == ""):
+                them = None
+            else:
+                them = User.objects.get(username=their_username)
+        except:
+            raise LookupError("user doesn't exist")
+
+        pong_score = PongScore.objects.create(
+            me=me,
+            them=them,
+            my_score=my_score,
+            their_score=their_score
+        )
+        serializer = PongScoreSerializer(pong_score)
         return Response(serializer.data)
 
 class tournament_get_round(APIView):

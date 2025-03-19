@@ -202,7 +202,7 @@ async function tournament_get_next_match(data) {
         if (screen3) screen3.style.display = "block";
         if (screen4) screen4.style.display = "block";
     } else if (game_name === "pong") {
-        console.log("here is where you launch the pong game");
+        console.log("here is where you launch the pong game"); //TODO: Cedric
     }
     ontournamentpage = true;
 }

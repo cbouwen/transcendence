@@ -1,6 +1,16 @@
+async function pongMultiStart() {
+	const opponentJWTs = await getPuppetJWTs();
+	if (opponentJWTs == null) {
+		navigateTo("/");
+		return ;
+	}
+        let pongGame = new PongGameMultiPlayer(opponentJWTs);
+        await pongGame.initialize();
+	console.log("pong init finished");
+};
 
-class PongGame {
-	constructor() {
+class PongGameMultiPlayer {
+	constructor(opponentJWTs) {
 		// Initialize container and canvas
 		this.pongContainer = document.getElementById('pong-wrapper');
 		this.pongContainer = document.getElementById('pong-wrapper');
@@ -31,6 +41,9 @@ class PongGame {
 		this.running = this.over = false;
 		this.timer = this.round = 0;
 		this.color = '#2c3e50';
+
+		this.opponentJWTs = opponentJWTs;
+		console.log("this.opponentJWTs", this.opponentJWTs);
 	}
 
 	createBall(incrementedSpeed) {
@@ -70,7 +83,7 @@ class PongGame {
 
 		// Draw paddles and ball with checks
 		if (this.player) this.context.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-		if (this.paddle) this.context.fillRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height);
+		if (this.opponent) this.context.fillRect(this.opponent.x, this.opponent.y, this.opponent.width, this.opponent.height);
 		if (this.ball && this._turnDelayIsOver()) this.context.fillRect(this.ball.x, this.ball.y, this.ball.width, this.ball.height);
 
 		// Draw the net (Line in the middle)
@@ -81,7 +94,6 @@ class PongGame {
 		this.context.lineWidth = 10;
 		this.context.strokeStyle = '#ffffff';
 		this.context.stroke();
-
 		// Set the default canvas font and align it to the center
 		this.context.font = '100px Courier New';
 		this.context.textAlign = 'center';
@@ -91,13 +103,13 @@ class PongGame {
 			this.player.score.toString(), (this.pongCanvas.width / 2) - 300, 200
 		);
 		this.context.fillText(
-			this.paddle.score.toString(), (this.pongCanvas.width / 2) + 300, 200
+			this.opponent.score.toString(), (this.pongCanvas.width / 2) + 300, 200
 		);
 
 		// Draw rounds and text
 		this.context.font = '30px Courier New';
 		this.context.fillText(
-			'First one who scores 5 wins!' , this.pongCanvas.width / 2, 35
+			this.myUser.first_name + ' VS ' + this.theirUser.first_name, this.pongCanvas.width / 2, 35
 		);  //change message to play till 5 or something
 		this.context.font = '40px Courier';
 		this.context.fillText(
@@ -122,10 +134,10 @@ class PongGame {
 		this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
 		this.context.fillStyle = '#ffffff';
 		this.context.fillText(text, this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
-		this.player.score = this.paddle.score = 0;
+		this.player.score = this.opponent.score = 0;
 		this.running = this.over = false;
 		this.player.y = (this.pongCanvas.height / 2) - 35
-		this.paddle.y = (this.pongCanvas.height / 2) - 35
+		this.opponent.y = (this.pongCanvas.height / 2) - 35
 		this.listen();
 	}
 
@@ -133,14 +145,17 @@ class PongGame {
 		// Update game state
 		if (!this.over) {
 			// Update the ball's position and check for collisions
-			if (this.ball.x <= 0) this._resetTurn(this.paddle, this.player);
-			if (this.ball.x >= this.pongCanvas.width - this.ball.width) this._resetTurn(this.player, this.paddle);
+			if (this.ball.x <= 0) this._resetTurn(this.opponent, this.player);
+			if (this.ball.x >= this.pongCanvas.width - this.ball.width) this._resetTurn(this.player, this.opponent);
 
 			if (this.ball.y <= 0) this.ball.moveY = this.DIRECTION.DOWN;
 			if (this.ball.y >= this.pongCanvas.height - this.ball.height) this.ball.moveY = this.DIRECTION.UP;
 
 			if (this.player.move === this.DIRECTION.UP) this.player.y -= this.player.speed;
 			else if (this.player.move === this.DIRECTION.DOWN) this.player.y += this.player.speed;
+
+			if (this.opponent.move === this.DIRECTION.UP) this.opponent.y -= this.opponent.speed;
+			else if (this.opponent.move === this.DIRECTION.DOWN) this.opponent.y += this.opponent.speed;
 
 			if (this._turnDelayIsOver() && this.turn) {
 				this.ball.moveX = this.turn === this.player ? this.DIRECTION.LEFT : this.DIRECTION.RIGHT;
@@ -157,17 +172,17 @@ class PongGame {
 			if (this.ball.moveX === this.DIRECTION.LEFT) this.ball.x -= this.ball.speed;
 			else if (this.ball.moveX === this.DIRECTION.RIGHT) this.ball.x += this.ball.speed;
 
-			if (this.paddle.y > this.ball.y - (this.paddle.height / 2)) {
-				if (this.ball.moveX === this.DIRECTION.RIGHT) this.paddle.y -= this.paddle.speed / 1.5;
-				else this.paddle.y -= this.paddle.speed / 4;
+		/*	if (this.opponent.y > this.ball.y - (this.opponent.height / 2)) {
+				if (this.ball.moveX === this.DIRECTION.RIGHT) this.opponent.y -= this.opponent.speed / 1.5;
+				else this.opponent.y -= this.opponent.speed / 4;
 			}
-			if (this.paddle.y < this.ball.y - (this.paddle.height / 2)) {
-				if (this.ball.moveX === this.DIRECTION.RIGHT) this.paddle.y += this.paddle.speed / 1.5;
-				else this.paddle.y += this.paddle.speed / 4;
+			if (this.opponent.y < this.ball.y - (this.opponent.height / 2)) {
+				if (this.ball.moveX === this.DIRECTION.RIGHT) this.opponent.y += this.opponent.speed / 1.5;
+				else this.opponent.y += this.opponent.speed / 4;
 			}
-
-			if (this.paddle.y >= this.pongCanvas.height - this.paddle.height) this.paddle.y = this.pongCanvas.height - this.paddle.height;
-			else if (this.paddle.y <= 0) this.paddle.y = 0;
+*/
+			if (this.opponent.y >= this.pongCanvas.height - this.opponent.height) this.opponent.y = this.pongCanvas.height - this.opponent.height;
+			else if (this.opponent.y <= 0) this.opponent.y = 0;
 
 			if (this.ball.x - this.ball.width <= this.player.x && this.ball.x >= this.player.x - this.player.width) {
 				if (this.ball.y <= this.player.y + this.player.height && this.ball.y + this.ball.height >= this.player.y) {
@@ -177,9 +192,9 @@ class PongGame {
 				}
 			}
 
-			if (this.ball.x - this.ball.width <= this.paddle.x && this.ball.x >= this.paddle.x - this.paddle.width) {
-				if (this.ball.y <= this.paddle.y + this.paddle.height && this.ball.y + this.ball.height >= this.paddle.y) {
-					this.ball.x = (this.paddle.x - this.ball.width);
+			if (this.ball.x - this.ball.width <= this.opponent.x && this.ball.x >= this.opponent.x - this.opponent.width) {
+				if (this.ball.y <= this.opponent.y + this.opponent.height && this.ball.y + this.ball.height >= this.opponent.y) {
+					this.ball.x = (this.opponent.x - this.ball.width);
 					this.ball.moveX = this.DIRECTION.LEFT;
 					this.ball.speed += 0.2;
 				}
@@ -188,24 +203,25 @@ class PongGame {
 
 		if (this.player.score === this.rounds[this.round]) {
 			this.over = true;
-			this.publishScore();
-			setTimeout(() => { this.endGameMenu('Winner! Press any key to play again'); }, 1000);
+			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+			setTimeout(() => { this.endGameMenu(this.myUser.first_name + ' wins! Press any key to play again'); }, 1000);
 		//	this.player.score = this.paddle.score = 0;
 		}
-		else if (this.paddle.score === this.rounds[this.round]) {
+		else if (this.opponent.score === this.rounds[this.round]) {
 			this.over = true;
-			this.publishScore();
-			setTimeout(() => { this.endGameMenu('You lost! Press any key to play again'); }, 1000);
+			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+			setTimeout(() => { this.endGameMenu(this.theirUser.first_name + ' wins! Press any key to play again'); }, 1000);
 		}
 	}
 
-	async publishScore() {
+	async publishScore(token, their_username, my_score, their_score) {
 		let body = {};
-		body["their_username"] = "";
-		body["my_score"] = this.player.score;
-		body["their_score"] = this.paddle.score;
-		let response = await apiRequest('/pong/score', 'POST', JWTs, body);
-		console.log("score published", response);
+		body["their_username"] = their_username;
+		body["my_score"] = my_score;
+		body["their_score"] = their_score;
+		let response = await apiRequest('/pong/score', 'POST', token, body);
 	}
 
 	loop() {
@@ -221,20 +237,28 @@ class PongGame {
 				this.running = true;
 				window.requestAnimationFrame(() => this.loop());
 			}
-			if (event.keyCode === 38 || event.keyCode === 87) this.player.move = this.DIRECTION.UP;
-			if (event.keyCode === 40 || event.keyCode === 83) this.player.move = this.DIRECTION.DOWN;
+			if (event.keyCode === 87) this.player.move = this.DIRECTION.UP;
+			if (event.keyCode === 83) this.player.move = this.DIRECTION.DOWN;
+			if (event.keyCode === 38) this.opponent.move = this.DIRECTION.UP;
+			if (event.keyCode === 40) this.opponent.move = this.DIRECTION.DOWN;
 		});
 
 		document.addEventListener('keyup', (event) => {
 			this.player.move = this.DIRECTION.IDLE;
+			this.opponent.move = this.DIRECTION.IDLE;
 		});
 	}
 
-	initialize() {
+	async initialize() {
+		console.log("starting init of pong");
+		this.myUser = await apiRequest("/me", "GET", JWTs, undefined);
+		console.log("this.myUser", this.myUser);
+		this.theirUser = await apiRequest("/me", "GET", this.opponentJWTs.value, undefined);
+		console.log("this.theirUser", this.theirUser);
 		this.player = this.createPaddle('left');
-		this.paddle = this.createPaddle('right');
+		this.opponent = this.createPaddle('right');
 		this.ball = this.createBall();
-		this.turn = this.paddle;
+		this.turn = this.opponent;
 
 		this.menu();
 		this.listen();

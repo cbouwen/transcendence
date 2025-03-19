@@ -53,6 +53,26 @@ async function login() {
 	};
 };
 
+async function getPuppetJWTs() {
+	const username = prompt("Give the username of your opponent");
+	if (username == null || username == "") {
+		console.warning("No username given by user");
+		return null;
+	}
+	const payload = {
+		username: username,
+	};
+	const response = await apiRequest("/token/puppet", "POST", JWTs, payload);
+	if (!response) {
+		alert("You don't have the permission to log in" + username);
+		console.warning("Unexpected error when doing apiRequest to /token/puppet");
+		return null;
+	}
+	else {
+		return (response);
+	}
+};
+
 function redirectToIntra() {
 	console.log("Redirecting to intra login page to retreive code...");
 	window.location.replace(intraLoginUrl);
@@ -170,10 +190,6 @@ function getTOTPToken(promptext) {
 	} else {
 		throw "TOTP set-up needed";
 	}
-};
-
-function accountsPageStart() {
-	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
 };
 
 function registerPageStart() {

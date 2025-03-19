@@ -1,5 +1,6 @@
 transcendence/*/migrations/
 transcendence/*.pem
+transcencence/media/avatar/
 data
 .Idea
 .DS_Store

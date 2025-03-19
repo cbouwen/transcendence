@@ -1,24 +1,24 @@
 async function apiRequest(endpoint, method, jwtTokens, body) {
 	const url = urlRoot + apiPath + endpoint;
 
-	let headers = {
-		'Content-Type': 'application/json',
-	};
+	let headers = {};
 	if (jwtTokens && jwtTokens.access) {
 		headers['Authorization'] = 'Bearer ' + jwtTokens.access
 	}
 
 	let request;
-	if (body) {
+	if (body instanceof FormData) {
 		request = {
 			method: method,
 			headers: headers,
-			body: JSON.stringify(body)
+			body: body
 		};
 	} else {
+		headers['Content-Type'] = 'application/json';
 		request = {
 			method: method,
 			headers: headers,
+			body: body ? JSON.stringify(body) : null
 		};
 	}
 
