@@ -174,18 +174,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await apiRequest('/tournament/get_current_match', 'GET', JWTs, null);
       console.log(response);
       await tournament_get_next_match(response);
-    } else if (e.target.matches("[data-link]")) {
-      e.preventDefault();
-      navigateTo(e.target.href);
-    } else if (e.target.matches("[data-tetris-start-button]")) {
-      history.pushState(null, null, "/tetris_start");
-      router();
-    } else if (e.target.matches("[find-match]")) {
-			searching_for_game_match("tetris");
     } else if (e.target.matches("#saveUserInfo")) {
       updateUserInfo();
       fillInCurrentUserInfo();   
-    };
-    router();
+    }
+    // Removed duplicate conditions and the router() call that was causing page reloads
   });
 });
