@@ -609,27 +609,6 @@ class tournament_get_round(APIView):
         matches = g_tournament.get_current_round_matches_info()
         return (Response({"matches": matches}))
 
-class ChatSendView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        # Simple message creation without complex serialization
-        message = request.data.get('message', '')
-        if not message:
-            return Response({"error": "Message is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        return Response({
-            'message': 'Message sent successfully'
-        }, status=status.HTTP_201_CREATED)
-
-class ChatMessagesView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        # Return empty list for now since we're not using chat2
-        return Response([])
 
 class AllUsersView(APIView):
     authentication_classes = [JWTAuthentication]

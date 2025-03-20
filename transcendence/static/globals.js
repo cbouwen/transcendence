@@ -13,3 +13,4 @@ let tournamentActive = false;
 let tetrisPageLoaded = false;
 let ontournamentpage = false;
 let chatPageLoaded = false;
+let chatIntervalTimer;
