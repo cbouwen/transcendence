@@ -38,6 +38,7 @@ async function router() {
     }
   }
   GlobalTetrisGames.length = 0;
+  chatPageLoaded = false;
   tetrisActive = false;
   tournamentActive = false;
   tetrisPageLoaded = false;
@@ -111,6 +112,14 @@ async function router() {
       view: () => {
         viewHTML("/static/chat/chatPage.html", JWTs).then(() => {
           chatStart();
+        });
+      }
+    },
+    {
+      path: "/chat2",
+      view: () => {
+        viewHTML("/static/chat2/chat2.html", JWTs).then(() => {
+			chatPageLoaded = true;
         });
       }
     },
