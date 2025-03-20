@@ -17,9 +17,19 @@
 			<ul class="nav navbar-nav">
 				<li><a href="/pong" data-link>Pong</a></li>
 				<li><a href="/tetris" data-link>Tetris</a></li>
+				<li><a href="/tournament" data-link>Tournament</a></li>
 				<li><a href="/chat" data-link>Chat</a></li>
+				<li><a href="/chat2" data-link>Chat 2</a></li>
 			  </ul>
 			  <ul class="nav navbar-nav navbar-right">
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-stats"></span> Stats <span class="caret"></span></a>
+					<ul class="dropdown-menu">
+					  <li><a href="/personalStats" data-link>Personal stats</a></li>
+					  <!-- <li role="separator" class="divider"></li>
+					  <li><a href="/leaderboard" data-link>Global leaderboard</a></li> -->
+					</ul>
+				  </li>
 				<li><a href="/account" data-link><span class="glyphicon glyphicon-user"></span> Account</a></li>
 			  </ul>
 		</div>
@@ -29,14 +39,20 @@
 	<script src="{% static 'globals.js' %}"></script>
 	<script src="{% static 'utils.js' %}"></script>
 	<script src="{% static 'pong/pong.js' %}"></script>
+	<script src="{% static 'pong/pong_multiplayer.js' %}"></script>
+	<script src="{% static 'pong/pong_matchmaker.js' %}"></script>
 	<script src="{% static 'api/api.js' %}"></script>
 	<script src="{% static 'matchmaking.js' %}"></script>
 	<script src="{% static 'tetris/tetris.js' %}"></script>
 	<script src="{% static 'chat/chat.js' %}"></script>
+	<script src="{% static 'chat2/chat2.js' %}"></script>
 	<script src="{% static 'accounts/auth.js' %}"></script>
+	<script src="{% static 'accounts/userInfo.js' %}"></script>
 	<script src="{% static 'spa.js' %}"></script>
-	<script src="{% static 'puppetTest.js' %}"></script>
+	<script src="{% static 'puppet.js' %}"></script>
 	<script src="{% static 'script.js' %}"></script>
+	<script src="{% static 'tournament/tournament.js' %}"></script>
+	<script src="{% static 'accounts/personalStats.js' %}"></script>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>

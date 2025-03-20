@@ -1,0 +1,45 @@
+<div id="personal-stats-wrapper">
+	<div class="row">
+		<div class="col-md-1"></div>
+		<div class="col-md-10">
+			<div class="container mt-3">
+				<ul class="nav nav-tabs">
+					<li role="presentation" class="active" id="pongStats"><a href="#">Pong</a></li>
+					<li role="presentation" id="tetrisStats"><a href="#">Tetris</a></li>
+				</ul>
+				<div class="tab-content mt-3" id="tab">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-1"></div>
+</div>
+</div>
+
+<!-- INLINE THIS, NO PLAIN CSS IN THE PAGE DUM DUM -->
+<style>
+.table {
+	table-layout: fixed;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+    padding: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.table td, .table th {
+    max-width: 150px;
+}
+
+
+.table tbody tr {
+    height: 50px;
+}
+
+.table td:first-child {
+    max-width: 200px;
+}
+</style>

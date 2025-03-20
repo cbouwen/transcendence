@@ -1,4 +1,5 @@
 import random
+import time
 from typing import Optional, Tuple
 from collections import defaultdict
 from .models import TetrisScore
@@ -8,9 +9,18 @@ class ActivePlayerManagerError(Exception):
     pass
 
 class ActivePlayerManager:
+    INACTIVITY_THRESHOLD = 300  # In seconds, 5 minutes.
+
     def __init__(self):
         # The keys in active_players will be the user’s id.
         self.active_players = {}
+
+    def _cleanup_inactive_players(self):
+        """Remove players not seen within the inactivity threshold."""
+        current_time = time.time()
+        for key in list(self.active_players.keys()):
+            if current_time - self.active_players[key]['last_seen'] > self.INACTIVITY_THRESHOLD:
+                del self.active_players[key]
 
     def add_player(self, player):
         if player is None:
@@ -18,7 +28,10 @@ class ActivePlayerManager:
 
         # Use the user id from the player's related user as key.
         key = player.user.id
+        current_time = time.time()
         if key in self.active_players:
+            # Update last seen online timestamp
+            self.active_players[key]['last_seen'] = current_time
             return "already active"
 
         try:
@@ -30,7 +43,8 @@ class ActivePlayerManager:
 
         self.active_players[key] = {
             "player": player,
-            "times_matched_with": match_history
+            "times_matched_with": match_history,
+            "last_seen": current_time  # Set the last seen timestamp on add.
         }
         return "player added"
 
@@ -62,16 +76,24 @@ class ActivePlayerManager:
             ) from e
 
     def refresh_all_players_match_histories(self):
+        current_time = time.time()
         for user_id in list(self.active_players.keys()):
-            try:
-                new_history = self.fetch_match_history_from_db(user_id)
-                self.active_players[user_id]["times_matched_with"] = new_history
-            except Exception as e:
-                raise ActivePlayerManagerError(
-                    f"Failed to refresh match history for user ID '{user_id}': {str(e)}"
-                ) from e
+            # Remove player if inactive for longer than the threshold.
+            if current_time - self.active_players[user_id]['last_seen'] > self.INACTIVITY_THRESHOLD:
+                del self.active_players[user_id]
+            else:
+                try:
+                    new_history = self.fetch_match_history_from_db(user_id)
+                    self.active_players[user_id]["times_matched_with"] = new_history
+                except Exception as e:
+                    raise ActivePlayerManagerError(
+                        f"Failed to refresh match history for user ID '{user_id}': {str(e)}"
+                    ) from e
 
     def find_next_match(self, user=None) -> Tuple[str, str]:
+        # Remove inactive players before proceeding.
+        self._cleanup_inactive_players()
+
         players_list = list(self.active_players.values())
         n = len(players_list)
         if n < 2:
@@ -80,7 +102,6 @@ class ActivePlayerManager:
         if user is not None:
             user_id = user.id
             specific_player_data = None
-            # Now we compare against player.user.id
             for pdata in players_list:
                 if pdata["player"].user.id == user_id:
                     specific_player_data = pdata
@@ -97,7 +118,6 @@ class ActivePlayerManager:
                 p1 = specific_player_data["player"]
                 p2 = pdata["player"]
 
-                # Use the user field for lookup in times_matched_with
                 times_faced = specific_player_data["times_matched_with"].get(p2.user.id, 0)
                 mmr_diff = abs(p1.matchmaking_rating - p2.matchmaking_rating)
                 base_score = 1.0 / (1.0 + mmr_diff)

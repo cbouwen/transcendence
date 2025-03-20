@@ -1,4 +1,7 @@
 transcendence/*/migrations/
+transcendence/*.pem
+transcencence/media/avatar/
+transcendence/staticfiles
 data
 .Idea
 .DS_Store
@@ -8,3 +11,4 @@ __pycache__/
 .env.*
 */*/__pycache__/*
 */*/__pycache__/*/*
+run.sh

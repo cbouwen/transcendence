@@ -4,7 +4,7 @@ async function loginAsRecurringUser(promptext) {
 		return false;
 	}
 	try {
-		JWTs = await apiRequest("/token", 'POST', undefined, {
+		JWTs = await apiRequest("/token", 'POST', 'no auth', {
 			ft_api_user_login_code: intraCode,
 			TOTP: {
 				type: "token",
@@ -23,7 +23,7 @@ async function loginAsRecurringUser(promptext) {
 
 async function loginFirstTime() {
 	try {
-		JWTs = await apiRequest("/token", 'POST', undefined, {
+		JWTs = await apiRequest("/token", 'POST', 'no auth', {
 			ft_api_user_login_code: intraCode,
 			TOTP: {
 				type: "setup",
@@ -45,12 +45,35 @@ async function login() {
 		if (await loginAsRecurringUser("Please enter your OTP code or type SETUP if you don't have one already") == false) {
 			redirectToIntra();
 		} else {
-			let me = await apiRequest('/me', 'GET', JWTs, undefined);
+			let me = await apiRequest('/me', 'GET', JWTs);
+			if (!me) {
+				return null;
+			};
 			console.log("Logged in as " + me.first_name);
 		}
 	} catch (exception) {
 		await navigateTo("/register");
 	};
+};
+
+async function getPuppetJWTs() {
+	const username = prompt("Give the username of your opponent");
+	if (username == null || username == "") {
+		console.warning("No username given by user");
+		return null;
+	}
+	const payload = {
+		username: username,
+	};
+	const response = await apiRequest("/token/puppet", "POST", JWTs, payload);
+	if (!response) {
+		alert("You don't have the permission to log in" + username);
+		console.warning("Unexpected error when doing apiRequest to /token/puppet");
+		return null;
+	}
+	else {
+		return (response);
+	}
 };
 
 function redirectToIntra() {
@@ -73,17 +96,23 @@ function extractLoginCodeFromURL() {
 };
 
 async function createPuppetGrant(jwtTokens, puppeteerUsername) {
-    // Build the request body with the puppeteer username
-    const body = { puppeteer: puppeteerUsername };
+    const totpCode = prompt(`Please enter your TOTP code to authorize ${puppeteerUsername} access to your account`);
+    if (!totpCode) {
+        console.log("Operation canceled by user.");
+        return;
+    }
 
-    // Call the "grant" endpoint via the apiRequest helper function.
-    // Adjust "grant" below if your endpoint path is different.
+    const body = {
+        puppeteer: puppeteerUsername,
+        totp: totpCode
+    };
+
     const response = await apiRequest("/token/grant", "POST", jwtTokens, body);
 
     if (response) {
         console.log("Puppet grant created successfully:", response);
     } else {
-        console.error("Failed to create puppet grant.");
+        console.error("Failed to create puppet grant. Did you enter the correct TOTP code?");
     }
 };
 
@@ -135,12 +164,19 @@ async function TOTPTokenSubmitButtonHandler() {
 			alert("Couldn't login. Did you already set 2FA?");
 			redirectToIntra();
 		} else {
-			me = apiRequest('/me', 'GET', JWTs, undefined);
+			me = await apiRequest('/me', 'GET', JWTs);
+			if (!me) {
+				return null;
+			};
 			console.log("Logged in as " + me.first_name);
 			await navigateTo("/");
 		}
+		document.querySelectorAll("nav").forEach(navElement => {
+			navElement.removeEventListener("click", TOTPTokenSubmitButtonHandler);
+		});
 	} else {
 		alert("The code you put in is not valid. Please try again");
+		navigateTo("/register");
 	}
 };
 
@@ -170,11 +206,10 @@ function getTOTPToken(promptext) {
 	}
 };
 
-function accountsPageStart() {
-	document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler); 
-};
-
 function registerPageStart() {
 	document.getElementById("TOTPTokenSubmit").addEventListener("click", TOTPTokenSubmitButtonHandler); 
+	document.querySelectorAll("nav").forEach(navElement => {
+		navElement.addEventListener("click", TOTPTokenSubmitButtonHandler);
+	});
 	promptTOTPSetUp();
 };

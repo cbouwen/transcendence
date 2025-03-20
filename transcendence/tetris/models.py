@@ -25,3 +25,7 @@ class TetrisPlayer(models.Model):
 
     def __str__(self):
         return f"Player {self.matchmaking_rating}"
+
+
+    def __str__(self):
+        return f"SystemMessage for {self.recipient} at {self.timestamp}"

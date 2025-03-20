@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]', os.getenv("HOSTNAME")]
+ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]', '159.223.7.81', os.getenv("HOSTNAME")]
 
 
 # Application definition
@@ -44,11 +44,14 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'pong',
     'tetris',
+    'tournament',
     'chat',
+    'chat2',
     'accounts',
     'rest_framework',
     'rest_framework_simplejwt',
-    'api'
+    'api',
+    'django_extensions'
 ]
 
 CHANNEL_LAYERS = {
@@ -150,12 +153,17 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'pong/static'),
     os.path.join(BASE_DIR, 'tetris/static'),
     os.path.join(BASE_DIR, 'chat/static'),
+    os.path.join(BASE_DIR, 'chat2/static'),
     os.path.join(BASE_DIR, 'api/static'),
+    os.path.join(BASE_DIR, 'tournament/static'),
     os.path.join(BASE_DIR, 'accounts/static'),
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -184,5 +192,5 @@ REST_FRAMEWORK = {
     ),
 }
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
 }
