@@ -108,19 +108,11 @@ async function router() {
         });
       }
     },
+  
     {
       path: "/chat",
       view: () => {
-        viewHTML("/static/chat/chatPage.html", JWTs).then(() => {
-          chatStart();
-        });
-      }
-    },
-    {
-      path: "/chat2",
-      view: () => {
-        viewHTML("/static/chat2/chat2.html", JWTs).then(() => {
-			chatPageLoaded = true;
+        viewHTML("/static/chat/chat.html").then(() => {
 			chatStart();
         });
       }
