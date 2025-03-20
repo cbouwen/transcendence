@@ -1,6 +1,6 @@
 transcendence/*/migrations/
 transcendence/*.pem
-transcencence/media/avatar/
+transcendence/media/avatar/
 transcendence/staticfiles
 data
 .Idea

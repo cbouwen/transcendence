@@ -47,7 +47,7 @@ async function loadMessages() {
                             ${acceptButton}
                         </div>
                         <small class="${isMyMessage ? 'text-white' : 'text-muted'}">
-                            ${isMyMessage ? 'You' : msg.sender} to ${isMyMessage ? msg.recipient : 'you'} - ${timestamp}
+                            ${isMyMessage ? 'You' : `<a href="/profile?username=${msg.sender}" class="${isMyMessage ? 'text-white' : 'text-muted'}" data-link>${msg.sender}</a>`} to ${isMyMessage ? `<a href="/profile?username=${msg.recipient}" class="text-white" data-link>${msg.recipient}</a>` : 'you'} - ${timestamp}
                         </small>
                     </div>
                 </div>

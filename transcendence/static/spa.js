@@ -133,6 +133,13 @@ async function router() {
       }
     },
     {
+      path: "/profile",
+      view: async () => {
+        await viewHTML("/static/accounts/profile.html");
+        profilePageStart();
+      }
+    },
+    {
       path: "/tetris_tournament",
       view: async () => {}
     },

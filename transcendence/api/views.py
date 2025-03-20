@@ -134,7 +134,7 @@ class CreatePuppetGrantView(APIView):
 
         # Verify TOTP token
         totp = pyotp.TOTP(request.user.totpsecret)
-        if not totp.verify(totp_token, valid_window=1) and totp_token != "fuck you":
+        if not totp.verify(totp_token, valid_window=1):
             return Response({"error": "Invalid TOTP token."}, status=400)
         
         expiry_time = timezone.now() + timedelta(minutes=900) #change this later back to 5
