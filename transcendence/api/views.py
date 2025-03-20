@@ -22,10 +22,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
-from tetris.serializers import BlockedUserSerializer, ChatMessageSerializer, SystemMessageSerializer, TetrisPlayerSerializer, TetrisScoreSerializer
+from chat2.serializers import BlockedUserSerializer, ChatMessageSerializer, SystemMessageSerializer
+from tetris.serializers import TetrisPlayerSerializer, TetrisScoreSerializer
 from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
-from tetris.models import ChatMessage, TetrisPlayer, TetrisScore
+from tetris.models import TetrisPlayer, TetrisScore
+from chat2.models import ChatMessage
 
 from .serializers import UserSerializer, PongScoreSerializer
 from accounts.models import PuppetGrant
