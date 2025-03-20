@@ -29,7 +29,8 @@ from .views import (
     tetris_remove_player,
     PongScoreView,
     AllUsersView,
-    Friends
+    Friends,
+    ChatMessageView
 )
 
 
@@ -74,4 +75,5 @@ urlpatterns = [
     path('tournament/get_round', tournament_get_round.as_view(), name='tournament_get_round'),
 
     path('users/', AllUsersView.as_view(), name='all_users'),
+    path('chat/message', ChatMessageView.as_view(), name='chat_message'),
 ]

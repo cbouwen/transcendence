@@ -33,6 +33,9 @@ from accounts.models import PuppetGrant
 import uuid
 from pong.models import PongScore
 
+from chat2.models import ChatMessage
+from django.db import models
+
 User = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -647,4 +650,62 @@ class AllUsersView(APIView):
             user_data.append(user_copy)
             
         return Response(user_data)
+
+class ChatMessageView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Get all messages where user is either sender or recipient
+        messages = ChatMessage.objects.filter(
+            models.Q(sender=user) | models.Q(recipient=user)
+        ).order_by('-timestamp')
+
+        # Format messages for response
+        message_list = [{
+            'sender': msg.sender.username,
+            'recipient': msg.recipient.username,
+            'message': msg.message,  # Include the message text
+            'timestamp': msg.timestamp,
+        } for msg in messages]
+
+        return Response(message_list)
+
+    def post(self, request):
+        sender = request.user
+        recipient_username = request.data.get('recipient')
+        message_text = request.data.get('message')
+
+        if not recipient_username or not message_text:
+            return Response({
+                "error": "Both recipient and message are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            recipient = User.objects.get(username=recipient_username)
+        except User.DoesNotExist:
+            return Response({
+                "error": "Recipient user not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if recipient has blocked the sender
+        if sender in recipient.blocked.all():
+            return Response({
+                "error": "Cannot send message to this user"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Create the message with the message text
+        message = ChatMessage.objects.create(
+            sender=sender,
+            recipient=recipient,
+            message=message_text  # Save the message text
+        )
+
+        return Response({
+            'sender': sender.username,
+            'recipient': recipient.username,
+            'message': message.message,  # Include the message text in response
+            'timestamp': message.timestamp,
+        }, status=status.HTTP_201_CREATED)
 
