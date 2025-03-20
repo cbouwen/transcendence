@@ -4,7 +4,7 @@ async function sendMessage(messageText, recipients) {
     recipients: recipients
   };
 
-  const response = await apiRequest('/chat/send', 'POST', JWTs, body);
+  const response = await apiRequest('/chat/send/', 'POST', JWTs, body);
   if (response) {
     console.log("Message sent:", response);
     loadMessages();
@@ -12,7 +12,7 @@ async function sendMessage(messageText, recipients) {
 }
 
 async function loadMessages() {
-  const response = await apiRequest('/chat/messages', 'GET', JWTs);
+  const response = await apiRequest('/chat/messages/', 'GET', JWTs);
   if (response) {
     console.log("Messages loaded:", response);
     const chatWindow = document.getElementById('chatWindow');
@@ -28,8 +28,8 @@ async function loadMessages() {
   }
 }
 
-document.getElementById('messageForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+async function ClickSendMessage() {
+  console.log("sending message");
   const messageInput = document.getElementById('messageInput');
   const recipientsInput = document.getElementById('recipientsInput');
 
@@ -43,7 +43,7 @@ document.getElementById('messageForm').addEventListener('submit', async (e) => {
     await sendMessage(messageText, recipients);
     messageInput.value = '';
   }
-});
+};
 
 async function updateActivePlayers() {
   try {

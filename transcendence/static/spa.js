@@ -159,7 +159,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (e.target.matches("[data-tetris-start-button]")) {
       history.pushState(null, null, "/tetris_start");
       router();
-    } else if (e.target.matches("[find-match]")) {
+    } else if (e.target.matches("[data-send-chat-message]")) {
+		ClickSendMessage();
+	} else if (e.target.matches("[find-match]")) {
       searching_for_game_match("tetris");
     } else if (e.target.matches("[get-active-players]")) {
       const response = await apiRequest('/tetris/get_active_players', 'GET', JWTs, null);
