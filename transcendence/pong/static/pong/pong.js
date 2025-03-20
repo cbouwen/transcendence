@@ -205,7 +205,11 @@ class PongGame {
 		body["my_score"] = this.player.score;
 		body["their_score"] = this.paddle.score;
 		let response = await apiRequest('/pong/score', 'POST', JWTs, body);
-		console.log("score published", response);
+		if (response) {
+			console.log("score published", response);
+		} else {
+			console.log("failed to publish score");
+		}
 	}
 
 	loop() {

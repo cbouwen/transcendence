@@ -186,6 +186,7 @@ async function searching_for_game_match(gameName) {
     return;
   }
   const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
+  if (!response) return;
   console.log(response);
   if (response) {
     console.log(response.player2);
@@ -197,6 +198,9 @@ async function searching_for_game_match(gameName) {
   console.log("PRINTING PUPPET TOKEN", puppetToken);
   if (puppetToken && puppetToken.status == 401) return;
   console.log(await apiRequest("/me", "GET", puppetToken.value, null));
+  if (!puppetToken) return;
+  console.log("PRINTING PUPPET TOKEN", puppetToken);
+  if (puppetToken && puppetToken.status == 401) return;
   console.log("LAUNCHING TETRIS GAME ", JWTs, puppetToken.value);
   if (gameName == "tetris") {
     await launchCustomTetrisGameTwoPlayer([JWTs, puppetToken.value], false, true);
@@ -227,6 +231,7 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
   tetrisActive = true;
   if (game_id == 0) {
     response = await apiRequest('/get_game_id', 'GET', JWTs, null);
+    if (!response) return;
     game_id = response.game_id;
   }
   console.log("launchTetrisGame called with:", playerConfigs);
@@ -323,6 +328,7 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
     const playerNameEl = document.createElement('div');
     console.log("printing the token off ", config.user);
     const data = await apiRequest("/me", "GET", config.user, null);
+    if (!data) return;
     console.log(data);
     playerNameEl.classList.add('player-name');
     playerNameEl.textContent = data.username;
@@ -400,6 +406,7 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
       console.log(playerData);
       console.log("sending data");
       const data = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
+      if (!data) return;
       if (data.error) {
         throw new Error(`Server error: ${data.error}`);
       }

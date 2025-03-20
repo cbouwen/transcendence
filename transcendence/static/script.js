@@ -1,4 +1,4 @@
-(async () => {
+async function start() {
 	try {
 		intraCode = extractLoginCodeFromURL();
 	} catch (exception) {
@@ -7,9 +7,17 @@
 		return;
 	}
 	await login();
-	console.log(JWTs.access);
+	if (JWTs == null) {
+		console.warn("JWTs not set.");
+	} else {
+		console.log("Obtained JWTs", JWTs);
+	}
 	let response = await apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
-	console.log(response);
+	if (response) {
+		console.log(response);
+	}
 
 	fillInFirstNamePlaceholders();
-})();
+};
+
+start();

@@ -13,6 +13,7 @@ class TetrisScoreSerializer(serializers.ModelSerializer):
         model = TetrisScore
         depth = 10
         fields = ('gameid', 'user', 'score', 'lines_cleared', 'level')
+        fields = '__all__'
 
 class TetrisPlayerSerializer(serializers.ModelSerializer):
     class Meta:

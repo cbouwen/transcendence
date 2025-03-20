@@ -20,9 +20,25 @@
 
 	<!-- Add Friend -->
 	<div class="form-group">
-		<label class="col-sm-2 control-label" for="friendUsername">Define Friends (give usernames seperated by space):</label>
+		<label class="col-sm-2 control-label" for="friendUsername">Friend Username:</label>
 		<div class="col-sm-10">
-			<input id="friendUsername" class="form-control" type="text" placeholder="***your friends here***">
+			<input id="friendUsername" class="form-control" type="text" placeholder="Enter friend's username">
+		</div>
+	</div>
+	<div class="form-group">
+		<div class="col-sm-offset-2 col-sm-10">
+			<button type="button" class="btn btn-success" id="addFriendButton">Add Friend</button>
+			<button type="button" class="btn btn-danger" id="removeFriendButton">Remove Friend</button>
+		</div>
+	</div>
+
+	<!-- Online Friends List -->
+	<div class="form-group">
+		<label class="col-sm-2 control-label">Online Friends:</label>
+		<div class="col-sm-10">
+			<div id="onlineFriendsList" class="list-group">
+				<!-- Online friends will be displayed here -->
+			</div>
 		</div>
 	</div>
 
@@ -49,5 +65,14 @@
 		</div>
 	</div>
 	<button type="submit" class="btn btn-default" id="puppetGrantSubmitButton">Create Grant</button>
+</div>
+
+<!-- Logout Button -->
+<div class="container">
+	<div class="form-group">
+		<div class="col-sm-offset-2 col-sm-10">
+			<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
+		</div>
+	</div>
 </div>
 

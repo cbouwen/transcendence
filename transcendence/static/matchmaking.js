@@ -86,7 +86,6 @@ async function searching_for_game_match(gameName) {
 		return ;
 	}
     const response = await apiRequest('/tetris/next-match', 'GET', JWTs, null);
-    console.log("hello");
 	if (!response)
 		return ;
     console.log(response);
@@ -102,9 +101,11 @@ async function searching_for_game_match(gameName) {
 	}
     console.log("hello world");
     const puppetToken = await awaitingPupperResponse(response.player2);
+    if (puppetToken && puppetToken.status == 401 || !puppetToken) return;
+    const userInfo = await apiRequest("/me", "GET", puppetToken.value, null);
+    if (!userInfo) return;
     console.log("PRINTING PUPPET TOKEN", puppetToken);
-    if (puppetToken && puppetToken.status == 401) return;
-    console.log(await apiRequest("/me", "GET", puppetToken.value, null));
+    console.log(userInfo);
     console.log("LAUNCHING TETRIS GAME ", JWTs, puppetToken.value);
 	if (gameName == "tetris") {
     	await launchCustomTetrisGameTwoPlayer([JWTs, puppetToken.value], false, true);
