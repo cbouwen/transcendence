@@ -33,7 +33,7 @@ from accounts.models import PuppetGrant
 import uuid
 from pong.models import PongScore
 
-from chat2.models import ChatMessage
+from chat.models import ChatMessage
 from django.db import models
 import pyotp
 User = get_user_model()

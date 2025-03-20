@@ -1,104 +1,122 @@
+let lastMessageTimestamp = null;
+let currentUser = null;
+
+async function getCurrentUser() {
+    try {
+        currentUser = await apiRequest('/me', 'GET', JWTs);
+    } catch (error) {
+        console.error('Error fetching current user:', error);
+    }
+}
+
+async function loadMessages() {
+    try {
+        if (!currentUser) {
+            await getCurrentUser();
+        }
+        
+        const messages = await apiRequest('/chat/message', 'GET', JWTs);
+        const chatMessages = document.getElementById('chatMessages');
+        
+        // Clear existing messages
+        chatMessages.innerHTML = '';
+        
+        // Sort messages by timestamp (newest first)
+        messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        messages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'mb-3';
+            
+            // Different styling for sent vs received messages
+            const isMyMessage = msg.sender === currentUser.username;
+            messageDiv.className = `message p-2 mb-2 ${isMyMessage ? 'text-end' : 'text-start'}`;
+            
+            // Format timestamp
+            const timestamp = new Date(msg.timestamp).toLocaleString();
+            
+            // Create accept button if message has pong invite
+            const acceptButton = msg.pongInvite && !isMyMessage ? 
+                `<button class="btn btn-success btn-sm ms-2" onclick="createPuppetGrant(JWTs, '${msg.sender}')">Accept invite</button>` : '';
+            
+            messageDiv.innerHTML = `
+                <div class="card ${isMyMessage ? 'bg-primary text-white float-end' : 'bg-light float-start'}" style="max-width: 70%;">
+                    <div class="card-body p-2">
+                        <div class="d-flex align-items-center">
+                            <span class="card-text">${msg.message}</span>
+                            ${acceptButton}
+                        </div>
+                        <small class="${isMyMessage ? 'text-white' : 'text-muted'}">
+                            ${isMyMessage ? 'You' : `<a href="/profile?username=${msg.sender}" class="${isMyMessage ? 'text-white' : 'text-muted'}" data-link>${msg.sender}</a>`} to ${isMyMessage ? `<a href="/profile?username=${msg.recipient}" class="text-white" data-link>${msg.recipient}</a>` : 'you'} - ${timestamp}
+                        </small>
+                    </div>
+                </div>
+                <div class="clearfix"></div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+        });
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+    } catch (error) {
+        console.error('Error loading messages:', error);
+    }
+}
+
+async function sendMessage(event) {
+    event.preventDefault();
+    
+    const recipientInput = document.getElementById('recipient');
+    const messageInput = document.getElementById('message');
+    const pongInviteCheckbox = document.getElementById('pongInvite');
+    
+    const recipient = recipientInput.value.trim();
+    const message = messageInput.value.trim();
+    const pongInvite = pongInviteCheckbox.checked;
+    
+    if (!recipient || !message) {
+        alert('Please fill in both recipient and message fields');
+        return;
+    }
+    
+    try {
+        const response = await apiRequest('/chat/message', 'POST', JWTs, {
+            recipient: recipient,
+            message: message,
+            pongInvite: pongInvite
+        });
+        
+        // Clear the form and uncheck the checkbox
+        messageInput.value = '';
+        pongInviteCheckbox.checked = false;
+        
+        // Reload messages immediately
+        await loadMessages();
+        
+    } catch (error) {
+        console.error('Error sending message:', error);
+        alert('Failed to send message. Please try again.');
+    }
+}
 
 async function chatStart() {
-  const targetUsername = prompt("Enter the username of the person you want to chat with:");
+    // Get current user first
+    await getCurrentUser();
+    
+    // Initial load of messages
+    await loadMessages();
+    
+    // Set up form submission
+    const messageForm = document.getElementById('messageForm');
+    const sendButton = messageForm.querySelector('button[type="submit"]');
+    sendButton.addEventListener('click', sendMessage);
+    
+    // Set up periodic refresh
+    chatIntervalTimer = setInterval(loadMessages, 5000);
+}
 
-  if (!targetUsername) {
-    alert("You must enter a username to start a private chat.");
-    return;
-  }
-
-  const chatSocket = new WebSocket("ws://" + window.location.host + "/");
-  chatSocket.onopen = function (e) {
-    console.log("The connection was setup successfully !");
-  };
-  chatSocket.onclose = function (e) {
-    console.log("Something unexpected happened !");
-  };
-  document.querySelector("#id_message_send_input").focus();
-  document.querySelector("#id_message_send_input").onkeyup = function (e) {
-    if (e.keyCode == 13) {
-      document.querySelector("#id_message_send_button").click();
-    }
-  };
-
-  const userdata = await apiRequest('/me', 'GET', JWTs, null);
-  if (!userdata) {
-    return;
-  }
-  console.log(userdata);  // Now it will print the actual data
-  
-  document.querySelector("#id_message_send_button").onclick = async function (e) {
-    var messageInput = document.querySelector("#id_message_send_input").value.trim();
-
-    if (messageInput === "") {
-      alert("You cannot send an empty message.");
-      return;
-    }
-
-    try {
-
-      const messageData = {
-        message: messageInput,
-        username: userdata.username || "Unknown User",
-        target: targetUsername
-      };
-
-      console.log("Target username:", targetUsername); // Log the target username
-      console.log("Message target", messageData.target); // Log the target field in the receive
-
-      chatSocket.send(JSON.stringify(messageData));
-
-      // Display the sent message locally
-      displayMessage(messageData);
-
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  };
-
-  chatSocket.onmessage = function (e) {
-    const data = JSON.parse(e.data);
-
-    console.log("Received message:", data); // Log the received message
-    console.log("username", userdata.username);
-    console.log("Target username:", targetUsername); // Log the target username
-    console.log("Message target", data.target); // Log the target field in the received messa
-
-    if (data.target === userdata.username) {
-      displayMessage(data);
-    }
-  };
-
-  function displayMessage(data) {
-    var div = document.createElement("div");
-
-    // Create buttons
-    var button1 = document.createElement("button");
-    button1.innerHTML = "profile";
-    button1.style.fontSize = "8px";
-    button1.onclick = function() {
-      window.location.href = `/profile/${data.username}`;
-    };
-
-    var button2 = document.createElement("button");
-    button2.innerHTML = "invite";
-    button2.style.fontSize = "8px";
-    button2.onclick = function() {
-      window.location.href = `/invite/${data.username}`;
-    };
-
-    // Create a span for the username and buttons
-    var userSpan = document.createElement("span");
-    userSpan.innerHTML = data.username + " ";
-    userSpan.appendChild(button1);
-    userSpan.appendChild(button2);
-    userSpan.appendChild(document.createTextNode(" : "));
-
-    // Append the username span and message to the div
-    div.appendChild(userSpan);
-    div.appendChild(document.createTextNode(data.message));
-
-    document.querySelector("#id_message_send_input").value = "";
-    document.querySelector("#id_chat_item_container").appendChild(div);
-  }
+function stopChat() {
+    clearInterval(chatIntervalTimer);
 }
