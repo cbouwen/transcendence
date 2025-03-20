@@ -1,4 +1,20 @@
 async function loadSystemMessages() {
+	if (tetrisPageLoaded == false)
+		return ;
+	const response = await apiRequest('/system/messages', 'GET', JWTs);
+	if (response) {
+    console.log("Messages loaded:", response);
+    const chatWindow = document.getElementById('systemMessages');
+    chatWindow.innerHTML = '';
+
+    response.forEach(msg => {
+      const messageElement = document.createElement('div');
+      const time = new Date(msg.timestamp).toLocaleTimeString();
+      messageElement.textContent = `[${time}] ${msg.sender}: ${msg.message}`;
+      chatWindow.appendChild(messageElement);
+    });
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
 }
 
 async function sendMessage(messageText, recipients) {
@@ -83,6 +99,7 @@ async function updateActivePlayers() {
 window.addEventListener('DOMContentLoaded', () => {
   setInterval(updateActivePlayers, 5000);
   setInterval(loadMessages, 5000);
+  setInterval(loadSystemMessages, 5000);
 });
 
 async function launchCustomTetrisGameTreePlayer(jwtTokens) {
