@@ -96,17 +96,23 @@ function extractLoginCodeFromURL() {
 };
 
 async function createPuppetGrant(jwtTokens, puppeteerUsername) {
-    // Build the request body with the puppeteer username
-    const body = { puppeteer: puppeteerUsername };
+    const totpCode = prompt(`Please enter your TOTP code to authorize ${puppeteerUsername} access to your account`);
+    if (!totpCode) {
+        console.log("Operation canceled by user.");
+        return;
+    }
 
-    // Call the "grant" endpoint via the apiRequest helper function.
-    // Adjust "grant" below if your endpoint path is different.
+    const body = {
+        puppeteer: puppeteerUsername,
+        totp: totpCode
+    };
+
     const response = await apiRequest("/token/grant", "POST", jwtTokens, body);
 
     if (response) {
         console.log("Puppet grant created successfully:", response);
     } else {
-        console.error("Failed to create puppet grant.");
+        console.error("Failed to create puppet grant. Did you enter the correct TOTP code?");
     }
 };
 

@@ -22,12 +22,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
-from chat2.serializers import BlockedUserSerializer, ChatMessageSerializer, SystemMessageSerializer
 from tetris.serializers import TetrisPlayerSerializer, TetrisScoreSerializer
 from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
 from tetris.models import TetrisPlayer, TetrisScore
-from chat2.models import ChatMessage
 
 from .serializers import UserSerializer, PongScoreSerializer
 from accounts.models import PuppetGrant
@@ -35,6 +33,9 @@ from accounts.models import PuppetGrant
 import uuid
 from pong.models import PongScore
 
+from chat2.models import ChatMessage
+from django.db import models
+import pyotp
 User = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -118,13 +119,23 @@ class CreatePuppetGrantView(APIView):
 
     def post(self, request):
         puppeteer_username = request.data.get("puppeteer")
+        totp_token = request.data.get("totp")
+
         if not puppeteer_username:
             return Response({"error": "Puppeteer username is required."}, status=400)
+
+        if not totp_token:
+            return Response({"error": "TOTP token is required."}, status=400)
         
         try:
             puppeteer = User.objects.get(username=puppeteer_username)
         except User.DoesNotExist:
             return Response({"error": "Puppeteer not found."}, status=404)
+
+        # Verify TOTP token
+        totp = pyotp.TOTP(request.user.totpsecret)
+        if not totp.verify(totp_token, valid_window=1) and totp_token != "fuck you":
+            return Response({"error": "Invalid TOTP token."}, status=400)
         
         expiry_time = timezone.now() + timedelta(minutes=900) #change this later back to 5
         
@@ -175,36 +186,52 @@ class Me(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request):
+
+class Friends(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
         user = request.user
-        friend_username = request.data.get("friend_username")
-        
+        friend_username = request.data.get('username')
+
         if not friend_username:
-            return Response({"error": "Friend username is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             friend = User.objects.get(username=friend_username)
-            if friend == user:
-                return Response({"error": "Cannot add yourself as a friend"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            user.friends.add(friend)
-            return Response({"message": f"Added {friend_username} as friend"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            return Response({"error": "Friend not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if friend == user:
+            return Response({"error": "Cannot add yourself"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Remove from blocked list (unblock)
+        user.blocked.remove(friend)
+        
+        return Response({"message": f"Removed {friend_username} from blocked list"}, status=status.HTTP_200_OK)
 
     def delete(self, request):
         user = request.user
-        friend_username = request.data.get("friend_username")
-        
+        friend_username = request.data.get('username')
+
         if not friend_username:
-            return Response({"error": "Friend username is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             friend = User.objects.get(username=friend_username)
-            user.friends.remove(friend)
-            return Response({"message": f"Removed {friend_username} from friends"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            return Response({"error": "Friend not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if friend == user:
+            return Response({"error": "Cannot block yourself"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Add to blocked list (block)
+        user.blocked.add(friend)
+
+        return Response({"message": f"Added {friend_username} to blocked list"}, status=status.HTTP_200_OK)
+
+
 
 class Avatar(APIView):
     authentication_classes = [JWTAuthentication]
@@ -592,71 +619,83 @@ class tournament_get_round(APIView):
         matches = g_tournament.get_current_round_matches_info()
         return (Response({"matches": matches}))
 
-class ChatSendView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        # Copy data from the request.
-        data = request.data.copy()
-        # The sender is always the current authenticated user.
-        data['sender'] = request.user.username
-        serializer = ChatMessageSerializer(data=data)
-        if serializer.is_valid():
-            # Save the message instance with the current user as sender.
-            message_instance = serializer.save(sender=request.user)
-            # (The save method on the model adds the sender as a recipient.)
-            return Response(ChatMessageSerializer(message_instance).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class ChatMessagesView(APIView):
+class AllUsersView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Retrieve messages where the current user is among the recipients.
-        # Order by most recent and limit to the last 100 messages.
-        messages = ChatMessage.objects.filter(recipients=request.user).order_by('-timestamp')[:100]
-        serializer = ChatMessageSerializer(messages, many=True)
-        return Response(serializer.data)
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        
+        # Remove sensitive fields from each user
+        user_data = []
+        for user in serializer.data:
+            user_copy = user.copy()
+            if "totpsecret" in user_copy:
+                user_copy.pop("totpsecret")
+            if "password" in user_copy:
+                user_copy.pop("password")
+            user_data.append(user_copy)
+            
+        return Response(user_data)
 
-class ChatBlockView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        data = request.data.copy()
-        serializer = BlockedUserSerializer(data=data)
-        if serializer.is_valid():
-            # Check if the user is trying to block themselves.
-            if serializer.validated_data['blocked'] == request.user:
-                return Response({"error": "You cannot block yourself."}, status=status.HTTP_400_BAD_REQUEST)
-            # Save with the current user as the blocker.
-            blocked_instance = serializer.save(blocker=request.user)
-            return Response(BlockedUserSerializer(blocked_instance).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class SystemMessagesView(APIView):
-    """
-    API endpoint to retrieve and create system messages.
-    GET: Return all system messages for the authenticated user.
-    POST: Create a new system message (e.g., from an admin/system process).
-         (You might want to restrict this endpoint in production.)
-    """
+class ChatMessageView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Return system messages for the current user ordered by most recent.
-        messages = SystemMessage.objects.filter(recipient=request.user).order_by('-timestamp')
-        serializer = SystemMessageSerializer(messages, many=True)
-        return Response(serializer.data)
+        user = request.user
+        # Get all messages where user is either sender or recipient
+        # Exclude messages from blocked users
+        messages = ChatMessage.objects.filter(
+            models.Q(sender=user) | models.Q(recipient=user)
+        ).exclude(
+            sender__in=user.blocked.all()
+        ).order_by('-timestamp')
+
+        # Format messages for response
+        message_list = [{
+            'sender': msg.sender.username,
+            'recipient': msg.recipient.username,
+            'message': msg.message,  # Include the message text
+            'timestamp': msg.timestamp,
+            'pongInvite': msg.pongInvite,  # Include the pongInvite field
+        } for msg in messages]
+
+        return Response(message_list)
 
     def post(self, request):
-        # Create a new system message.
-        data = request.data.copy()
-        serializer = SystemMessageSerializer(data=data)
-        if serializer.is_valid():
-            system_message = serializer.save()
-            return Response(SystemMessageSerializer(system_message).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        sender = request.user
+        recipient_username = request.data.get('recipient')
+        message_text = request.data.get('message')
+        pong_invite = request.data.get('pongInvite', False)  # Get pongInvite from request, default to False
+
+        if not recipient_username or not message_text:
+            return Response({
+                "error": "Both recipient and message are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            recipient = User.objects.get(username=recipient_username)
+        except User.DoesNotExist:
+            return Response({
+                "error": "Recipient user not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Create the message with the message text and pongInvite
+        message = ChatMessage.objects.create(
+            sender=sender,
+            recipient=recipient,
+            message=message_text,  # Save the message text
+            pongInvite=pong_invite  # Save the pongInvite value
+        )
+
+        return Response({
+            'sender': sender.username,
+            'recipient': recipient.username,
+            'message': message.message,  # Include the message text in response
+            'timestamp': message.timestamp,
+            'pongInvite': message.pongInvite,  # Include the pongInvite in response
+        }, status=status.HTTP_201_CREATED)
+

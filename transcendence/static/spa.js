@@ -43,6 +43,7 @@ async function router() {
   tournamentActive = false;
   tetrisPageLoaded = false;
   ontournamentpage = false;
+  clearInterval(chatIntervalTimer);
   const routes = [
     {
       path: "/",
@@ -120,6 +121,7 @@ async function router() {
       view: () => {
         viewHTML("/static/chat2/chat2.html", JWTs).then(() => {
 			chatPageLoaded = true;
+			chatStart();
         });
       }
     },
