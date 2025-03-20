@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import BlockedUser, ChatMessage, TetrisPlayer, TetrisScore
+from .models import BlockedUser, ChatMessage, SystemMessage, TetrisPlayer, TetrisScore
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -12,6 +12,7 @@ class TetrisScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = TetrisScore
         depth = 10
+        fields = ('gameid', 'user', 'score', 'lines_cleared', 'level')
         fields = '__all__'
 
 class TetrisPlayerSerializer(serializers.ModelSerializer):
@@ -44,3 +45,14 @@ class BlockedUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlockedUser
         fields = ['id', 'blocker', 'blocked']
+
+class SystemMessageSerializer(serializers.ModelSerializer):
+    # Allow recipient to be set by username when creating a message.
+    recipient = serializers.SlugRelatedField(
+        slug_field='username',
+        queryset=User.objects.all()
+    )
+
+    class Meta:
+        model = SystemMessage
+        fields = ['id', 'recipient', 'message_type', 'content', 'timestamp', 'is_read']

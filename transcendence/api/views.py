@@ -22,7 +22,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 import tetris.calculate_mmr
-from tetris.serializers import BlockedUserSerializer, ChatMessageSerializer, TetrisPlayerSerializer, TetrisScoreSerializer
+from tetris.serializers import BlockedUserSerializer, ChatMessageSerializer, SystemMessageSerializer, TetrisPlayerSerializer, TetrisScoreSerializer
 from tournament.tournament import TournamentError, g_tournament, get_game_id_number
 from tetris.active_player_manager import active_player_manager
 from tetris.models import ChatMessage, TetrisPlayer, TetrisScore
@@ -632,4 +632,29 @@ class ChatBlockView(APIView):
             # Save with the current user as the blocker.
             blocked_instance = serializer.save(blocker=request.user)
             return Response(BlockedUserSerializer(blocked_instance).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SystemMessagesView(APIView):
+    """
+    API endpoint to retrieve and create system messages.
+    GET: Return all system messages for the authenticated user.
+    POST: Create a new system message (e.g., from an admin/system process).
+         (You might want to restrict this endpoint in production.)
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Return system messages for the current user ordered by most recent.
+        messages = SystemMessage.objects.filter(recipient=request.user).order_by('-timestamp')
+        serializer = SystemMessageSerializer(messages, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        # Create a new system message.
+        data = request.data.copy()
+        serializer = SystemMessageSerializer(data=data)
+        if serializer.is_valid():
+            system_message = serializer.save()
+            return Response(SystemMessageSerializer(system_message).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

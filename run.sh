@@ -1,3 +1,3 @@
 #!/bin/bash
-export HOSTNAME=banaan
+export HOSTNAME=$(hostname)
 docker compose up $@

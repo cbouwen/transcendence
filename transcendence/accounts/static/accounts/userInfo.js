@@ -142,17 +142,36 @@ async function fillInCurrentUserInfo() {
 
 async function updateUserAvatar() {
     try {
-        const response = await apiRequest('/me/avatar', 'GET', JWTs);
+        const response = await apiRequest('/me/avatar', 'GET', JWTs, undefined);
+        console.log('Avatar API response:', response);
         if (response && response.avatar_url) {
             const avatarImg = document.querySelector('#avatarImg');
             if (avatarImg) {
+                console.log('Setting avatar URL:', response.avatar_url);
                 avatarImg.src = response.avatar_url;
+                // Add error handler for image loading
+                avatarImg.onerror = function() {
+                    console.error('Failed to load avatar image');
+                    this.src = '/media/avatar_default.png';
+                };
+            } else {
+                console.error('Avatar image element not found');
+            }
+        } else {
+            console.log('No avatar URL in response, using default');
+            const avatarImg = document.querySelector('#avatarImg');
+            if (avatarImg) {
+                avatarImg.src = '/media/avatar_default.png';
             }
         }
     } catch (error) {
         console.error("Error fetching user avatar:", error);
+        const avatarImg = document.querySelector('#avatarImg');
+        if (avatarImg) {
+            avatarImg.src = '/media/avatar_default.png';
+        }
     }
-};
+}
 
 async function uploadAvatar(jwtTokens, avatarFile) {
     const formData = new FormData();
