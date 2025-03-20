@@ -637,8 +637,11 @@ class ChatMessageView(APIView):
     def get(self, request):
         user = request.user
         # Get all messages where user is either sender or recipient
+        # Exclude messages from blocked users
         messages = ChatMessage.objects.filter(
             models.Q(sender=user) | models.Q(recipient=user)
+        ).exclude(
+            sender__in=user.blocked.all()
         ).order_by('-timestamp')
 
         # Format messages for response
@@ -667,12 +670,6 @@ class ChatMessageView(APIView):
             return Response({
                 "error": "Recipient user not found"
             }, status=status.HTTP_404_NOT_FOUND)
-
-        # Check if recipient has blocked the sender
-        if sender in recipient.blocked.all():
-            return Response({
-                "error": "Cannot send message to this user"
-            }, status=status.HTTP_403_FORBIDDEN)
 
         # Create the message with the message text
         message = ChatMessage.objects.create(
