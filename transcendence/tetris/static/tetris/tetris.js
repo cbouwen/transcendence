@@ -1,3 +1,6 @@
+async function loadSystemMessages() {
+}
+
 async function sendMessage(messageText, recipients) {
   const body = {
     message: messageText,
@@ -12,6 +15,8 @@ async function sendMessage(messageText, recipients) {
 }
 
 async function loadMessages() {
+  if (tetrisPageLoaded == false)
+	return ;
   const response = await apiRequest('/chat/messages/', 'GET', JWTs);
   if (response) {
     console.log("Messages loaded:", response);
@@ -76,8 +81,8 @@ async function updateActivePlayers() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  updateActivePlayers(); // Initial fetch
   setInterval(updateActivePlayers, 5000);
+  setInterval(loadMessages, 5000);
 });
 
 async function launchCustomTetrisGameTreePlayer(jwtTokens) {
