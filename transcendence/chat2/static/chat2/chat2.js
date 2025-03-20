@@ -35,10 +35,17 @@ async function loadMessages() {
             // Format timestamp
             const timestamp = new Date(msg.timestamp).toLocaleString();
             
+            // Create accept button if message has pong invite
+            const acceptButton = msg.pongInvite && !isMyMessage ? 
+                `<button class="btn btn-success btn-sm ms-2" onclick="createPuppetGrant(JWTs, '${msg.sender}')">Accept invite</button>` : '';
+            
             messageDiv.innerHTML = `
                 <div class="card ${isMyMessage ? 'bg-primary text-white float-end' : 'bg-light float-start'}" style="max-width: 70%;">
                     <div class="card-body p-2">
-                        <p class="card-text">${msg.message}</p>
+                        <div class="d-flex align-items-center">
+                            <span class="card-text">${msg.message}</span>
+                            ${acceptButton}
+                        </div>
                         <small class="${isMyMessage ? 'text-white' : 'text-muted'}">
                             ${isMyMessage ? 'You' : msg.sender} to ${isMyMessage ? msg.recipient : 'you'} - ${timestamp}
                         </small>
@@ -63,9 +70,11 @@ async function sendMessage(event) {
     
     const recipientInput = document.getElementById('recipient');
     const messageInput = document.getElementById('message');
+    const pongInviteCheckbox = document.getElementById('pongInvite');
     
     const recipient = recipientInput.value.trim();
     const message = messageInput.value.trim();
+    const pongInvite = pongInviteCheckbox.checked;
     
     if (!recipient || !message) {
         alert('Please fill in both recipient and message fields');
@@ -75,11 +84,13 @@ async function sendMessage(event) {
     try {
         const response = await apiRequest('/chat/message', 'POST', JWTs, {
             recipient: recipient,
-            message: message
+            message: message,
+            pongInvite: pongInvite
         });
         
-        // Clear the form
+        // Clear the form and uncheck the checkbox
         messageInput.value = '';
+        pongInviteCheckbox.checked = false;
         
         // Reload messages immediately
         await loadMessages();

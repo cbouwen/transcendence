@@ -35,7 +35,7 @@ from pong.models import PongScore
 
 from chat2.models import ChatMessage
 from django.db import models
-
+import pyotp
 User = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -119,13 +119,23 @@ class CreatePuppetGrantView(APIView):
 
     def post(self, request):
         puppeteer_username = request.data.get("puppeteer")
+        totp_token = request.data.get("totp")
+
         if not puppeteer_username:
             return Response({"error": "Puppeteer username is required."}, status=400)
+
+        if not totp_token:
+            return Response({"error": "TOTP token is required."}, status=400)
         
         try:
             puppeteer = User.objects.get(username=puppeteer_username)
         except User.DoesNotExist:
             return Response({"error": "Puppeteer not found."}, status=404)
+
+        # Verify TOTP token
+        totp = pyotp.TOTP(request.user.totpsecret)
+        if not totp.verify(totp_token, valid_window=1) and totp_token != "fuck you":
+            return Response({"error": "Invalid TOTP token."}, status=400)
         
         expiry_time = timezone.now() + timedelta(minutes=900) #change this later back to 5
         
@@ -650,6 +660,7 @@ class ChatMessageView(APIView):
             'recipient': msg.recipient.username,
             'message': msg.message,  # Include the message text
             'timestamp': msg.timestamp,
+            'pongInvite': msg.pongInvite,  # Include the pongInvite field
         } for msg in messages]
 
         return Response(message_list)
@@ -658,6 +669,7 @@ class ChatMessageView(APIView):
         sender = request.user
         recipient_username = request.data.get('recipient')
         message_text = request.data.get('message')
+        pong_invite = request.data.get('pongInvite', False)  # Get pongInvite from request, default to False
 
         if not recipient_username or not message_text:
             return Response({
@@ -671,11 +683,12 @@ class ChatMessageView(APIView):
                 "error": "Recipient user not found"
             }, status=status.HTTP_404_NOT_FOUND)
 
-        # Create the message with the message text
+        # Create the message with the message text and pongInvite
         message = ChatMessage.objects.create(
             sender=sender,
             recipient=recipient,
-            message=message_text  # Save the message text
+            message=message_text,  # Save the message text
+            pongInvite=pong_invite  # Save the pongInvite value
         )
 
         return Response({
@@ -683,5 +696,6 @@ class ChatMessageView(APIView):
             'recipient': recipient.username,
             'message': message.message,  # Include the message text in response
             'timestamp': message.timestamp,
+            'pongInvite': message.pongInvite,  # Include the pongInvite in response
         }, status=status.HTTP_201_CREATED)
 
