@@ -34,16 +34,42 @@ async function updateUserInfo() {
 
 async function updateOnlineFriends() {
     try {
-        // Get current user's friends
-        const userData = await apiRequest('/me', 'GET', JWTs);
-        const friends = userData.friends || [];
+        // Get all users and current user's blocked list
+        const [allUsersResponse, userData, activePlayersResponse] = await Promise.all([
+            apiRequest('/users', 'GET', JWTs),
+            apiRequest('/me', 'GET', JWTs),
+            apiRequest('/tetris/get_active_players', 'GET', JWTs)
+        ]);
+        // Log API responses for debugging
+        console.log("All Users Response:", allUsersResponse);
+        console.log("User Data Response:", userData); 
+        console.log("Active Players Response:", activePlayersResponse);
+
+        // Add null checks and proper data access
+        if (!allUsersResponse || !userData || !activePlayersResponse) {
+            console.log("One or more API responses were null");
+            return;
+        }
+
+        const allUsers = Array.isArray(allUsersResponse) ? allUsersResponse : [];
+        const blockedUsers = Array.isArray(userData.blocked) ? userData.blocked : [];
+        const onlinePlayers = Array.isArray(activePlayersResponse.active_players) ? 
+            activePlayersResponse.active_players : [];
         
-        // Get all online players
-        const activePlayersResponse = await apiRequest('/tetris/get_active_players', 'GET', JWTs);
-        const onlinePlayers = activePlayersResponse.active_players || [];
+        // Filter out blocked users to get friends list
+        const friends = allUsers.filter(user => 
+            user && user.username && // Check if user object is valid
+            !blockedUsers.some(blocked => blocked && blocked.username === user.username) && 
+            user.username !== userData.username // Also filter out current user
+        );
         
         // Update the display
         const onlineFriendsList = document.getElementById('onlineFriendsList');
+        if (!onlineFriendsList) {
+            console.log("Could not find onlineFriendsList element");
+            return;
+        }
+        
         onlineFriendsList.innerHTML = ''; // Clear current list
         
         if (friends.length === 0) {
@@ -62,7 +88,7 @@ async function updateOnlineFriends() {
             onlineFriendsList.appendChild(friendElement);
         });
     } catch (error) {
-        console.error("Error updating online friends:", error);
+        console.log("Error updating online friends:", error);
     }
 }
 
@@ -74,7 +100,11 @@ async function addFriend() {
     }
 
     try {
-        const response = await apiRequest("/me", "PUT", JWTs, { friend_username: friendUsername });
+        // Use the Friends API endpoint to unblock (add friend)
+        const response = await apiRequest("/me/friends", "POST", JWTs, { 
+            username: friendUsername 
+        });
+        
         if (response) {
             alert("Friend added successfully");
             document.getElementById("friendUsername").value = ""; // Clear input
@@ -94,7 +124,11 @@ async function removeFriend() {
     }
 
     try {
-        const response = await apiRequest("/me", "DELETE", JWTs, { friend_username: friendUsername });
+        // Use the Friends API endpoint to block (remove friend)
+        const response = await apiRequest("/me/friends", "DELETE", JWTs, { 
+            username: friendUsername 
+        });
+        
         if (response) {
             alert("Friend removed successfully");
             document.getElementById("friendUsername").value = ""; // Clear input
@@ -126,10 +160,8 @@ function accountsPageStart() {
     document.getElementById("removeFriendButton").addEventListener("click", removeFriend);
     document.getElementById("logoutButton").addEventListener("click", logout);
     
-    // Initial update of online friends
     updateOnlineFriends();
     
-    // Update online friends list every 30 seconds
     setInterval(updateOnlineFriends, 30000);
 }
 
