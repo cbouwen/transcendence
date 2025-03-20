@@ -190,6 +190,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		router();
 	  } else if (e.target.matches("[data-send-chat-message]")) {
 		ClickSendMessage();
+	  } else if (e.target.matches("[data-three-player]")) {
+		launchCustomTetrisGameTreePlayer([JWTs, null, null]);
 	  } else if (e.target.matches("[find-match]")) {
 		searching_for_game_match("tetris");
 	  } else if (e.target.matches("[get-active-players]")) {

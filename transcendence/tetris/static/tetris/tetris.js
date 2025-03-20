@@ -274,12 +274,21 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
 
     const playerNameEl = document.createElement('div');
     console.log("printing the token off ", config.user);
-    const data = await apiRequest("/me", "GET", config.user, null);
-    if (!data) return;
-    console.log(data);
-    playerNameEl.classList.add('player-name');
-    playerNameEl.textContent = data.username;
-    container.appendChild(playerNameEl);
+	if (config.user != null)
+	{
+    	const data = await apiRequest("/me", "GET", config.user, null);
+    	if (!data) return;
+    	console.log(data);
+    	playerNameEl.classList.add('player-name');
+    	playerNameEl.textContent = data.username;
+    	container.appendChild(playerNameEl);
+	}
+	else
+	{
+		playerNameEl.classList.add('player-name');
+		playerNameEl.textContent = "unknown player";
+		container.appendChild(playerNameEl);
+	}
 
     mainContainer.appendChild(container);
 
@@ -350,6 +359,8 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
 
   async function sendGameDataToBackend(playerData, playerJWT) {
     try {
+	  if (playerJWT == null || playerJWT == undefined)
+		return ;
       console.log(playerData);
       console.log("sending data");
       const data = await apiRequest("/tetris/save_tetris_scores", "POST", playerJWT, playerData);
