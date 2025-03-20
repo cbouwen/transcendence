@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'tetris',
     'tournament',
     'chat',
+    'chat2',
     'accounts',
     'rest_framework',
     'rest_framework_simplejwt',
