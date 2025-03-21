@@ -135,7 +135,6 @@ class PongGameTournament {
 	}
 
 	endGameMenu(text) {
-		// End game screen
 		this.context.font = '50px Courier New';
 		this.context.fillStyle = this.color;
 		this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
@@ -143,9 +142,30 @@ class PongGameTournament {
 		this.context.fillText(text, this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
 		this.player.score = this.opponent.score = 0;
 		this.running = this.over = false;
-		this.player.y = (this.pongCanvas.height / 2) - 35
-		this.opponent.y = (this.pongCanvas.height / 2) - 35
-		this.listen();
+		this.player.y = (this.pongCanvas.height / 2) - 35;
+		this.opponent.y = (this.pongCanvas.height / 2) - 35;
+
+		// Use promises to handle score publishing
+		const publishPlayerScore = new Promise((resolve) => {
+			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+			resolve();
+		});
+
+		const publishOpponentScore = new Promise((resolve) => {
+			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+			resolve();
+		});
+
+		Promise.all([publishPlayerScore, publishOpponentScore]).then(() => {
+			// Add event listener for key press to trigger cleanup
+			const keyPressGameEnd = () => {
+				this.cleanup();
+				document.removeEventListener('keydown', keyPressGameEnd);
+			};
+			document.addEventListener('keydown', keyPressGameEnd);
+			document.removeEventListener('keydown', this.keyUpHandler);
+			document.removeEventListener('keydown', this.keyDownHandler);
+		});
 	}
 
 	update() {
@@ -210,16 +230,15 @@ class PongGameTournament {
 
 		if (this.player.score === this.rounds[this.round]) {
 			this.over = true;
-			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
-			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
-			setTimeout(() => { this.endGameMenu(this.myUser.first_name + ' wins! Press any key to play again'); }, 1000);
-		//	this.player.score = this.paddle.score = 0;
+			setTimeout(() => { 
+				this.endGameMenu(this.myUser.first_name + ' wins! Press any key to continue'); 
+			}, 1000);
 		}
 		else if (this.opponent.score === this.rounds[this.round]) {
 			this.over = true;
-			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
-			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
-			setTimeout(() => { this.endGameMenu(this.theirUser.first_name + ' wins! Press any key to play again'); }, 1000);
+			setTimeout(() => { 
+				this.endGameMenu(this.theirUser.first_name + ' wins! Press any key to continue'); 
+			}, 1000);
 		}
 	}
 
