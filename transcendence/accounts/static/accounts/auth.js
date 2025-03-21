@@ -56,11 +56,13 @@ async function login() {
 	};
 };
 
-async function getPuppetJWTs() {
-	const username = prompt("Give the username of your opponent");
-	if (username == null || username == "") {
-		console.warning("No username given by user");
-		return null;
+async function getPuppetJWTs(username = null) {
+	if (!username) {
+		username = prompt("Give the username of your opponent");
+		if (username == null || username == "") {
+			console.warning("No username given by user");
+			return null;
+		}
 	}
 	const payload = {
 		username: username,

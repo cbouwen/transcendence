@@ -79,7 +79,7 @@ async function router() {
     {
       path: "/pong_tournament",
       view: async () => {
-        await viewHTML("/static/pong/wrapper.html");
+        await viewHTML("/static/pong/tournament.html");
         await pongTournamentStart();
       }
     },
