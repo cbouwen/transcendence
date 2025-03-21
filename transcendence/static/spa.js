@@ -29,6 +29,10 @@ async function router() {
       game.destroy();
     }
   });
+  // Clean up Pong game if it exists
+  if (window.currentPongGame && window.currentPongGame.cleanup) {
+    window.currentPongGame.cleanup();
+  }
   if (JWTs) {
     const response = await apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
     if (response) {
