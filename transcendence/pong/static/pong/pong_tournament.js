@@ -1,6 +1,16 @@
+async function pongTournamentStart() {
+	const opponentJWTs = await getPuppetJWTs();
+	if (opponentJWTs == null) {
+		navigateTo("/");
+		return ;
+	}
+        let pongGame = new PongGameTournament(opponentJWTs);
+        await pongGame.initialize();
+	console.log("pong init finished");
+};
 
-class PongGameMatchMaker {
-	constructor() {
+class PongGameTournament {
+	constructor(opponentJWTs) {
 		// Initialize container and canvas
 		this.pongContainer = document.getElementById('pong-wrapper');
 		this.pongContainer = document.getElementById('pong-wrapper');
@@ -31,6 +41,16 @@ class PongGameMatchMaker {
 		this.running = this.over = false;
 		this.timer = this.round = 0;
 		this.color = '#2c3e50';
+
+		this.opponentJWTs = opponentJWTs;
+		console.log("this.opponentJWTs", this.opponentJWTs);
+		
+		this.keyDownHandler = null;
+		this.keyUpHandler = null;
+		this.animationFrameId = null;
+
+		// Store the game instance globally
+		window.currentPongGame = this;
 	}
 
 	createBall(incrementedSpeed) {
@@ -81,7 +101,6 @@ class PongGameMatchMaker {
 		this.context.lineWidth = 10;
 		this.context.strokeStyle = '#ffffff';
 		this.context.stroke();
-
 		// Set the default canvas font and align it to the center
 		this.context.font = '100px Courier New';
 		this.context.textAlign = 'center';
@@ -97,7 +116,7 @@ class PongGameMatchMaker {
 		// Draw rounds and text
 		this.context.font = '30px Courier New';
 		this.context.fillText(
-			'First one who scores 5 wins!' , this.pongCanvas.width / 2, 35
+			this.myUser.first_name + ' VS ' + this.theirUser.first_name, this.pongCanvas.width / 2, 35
 		);  //change message to play till 5 or something
 		this.context.font = '40px Courier';
 		this.context.fillText(
@@ -191,12 +210,29 @@ class PongGameMatchMaker {
 
 		if (this.player.score === this.rounds[this.round]) {
 			this.over = true;
-			setTimeout(() => { this.endGameMenu('Player 1 wins! Press any key to play again'); }, 1000);
+			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+			setTimeout(() => { this.endGameMenu(this.myUser.first_name + ' wins! Press any key to play again'); }, 1000);
 		//	this.player.score = this.paddle.score = 0;
 		}
 		else if (this.opponent.score === this.rounds[this.round]) {
 			this.over = true;
-			setTimeout(() => { this.endGameMenu('Player 2 wins! Press any key to play again'); }, 1000);
+			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+			setTimeout(() => { this.endGameMenu(this.theirUser.first_name + ' wins! Press any key to play again'); }, 1000);
+		}
+	}
+
+	async publishScore(token, their_username, my_score, their_score) {
+		let body = {};
+		body["their_username"] = their_username;
+		body["my_score"] = my_score;
+		body["their_score"] = their_score;
+		let response = await apiRequest('/pong/score', 'POST', token, body);
+		if (response) {
+			console.log("Score published successfully", response);
+		} else {
+			console.log("Failed to publish score");
 		}
 	}
 
@@ -204,11 +240,13 @@ class PongGameMatchMaker {
 		this.update();
 		this.draw();
 
-		if (!this.over) requestAnimationFrame(() => this.loop());
+		if (!this.over) {
+			this.animationFrameId = requestAnimationFrame(() => this.loop());
+		}
 	}
 
 	listen() {
-		document.addEventListener('keydown', (event) => {
+		this.keyDownHandler = (event) => {
 			if (!this.running) {
 				this.running = true;
 				window.requestAnimationFrame(() => this.loop());
@@ -217,15 +255,31 @@ class PongGameMatchMaker {
 			if (event.keyCode === 83) this.player.move = this.DIRECTION.DOWN;
 			if (event.keyCode === 38) this.opponent.move = this.DIRECTION.UP;
 			if (event.keyCode === 40) this.opponent.move = this.DIRECTION.DOWN;
-		});
+		};
 
-		document.addEventListener('keyup', (event) => {
+		this.keyUpHandler = (event) => {
 			this.player.move = this.DIRECTION.IDLE;
 			this.opponent.move = this.DIRECTION.IDLE;
-		});
+		};
+
+		document.addEventListener('keydown', this.keyDownHandler);
+		document.addEventListener('keyup', this.keyUpHandler);
 	}
 
-	initialize() {
+	async initialize() {
+		console.log("starting init of pong");
+		this.myUser = await apiRequest("/me", "GET", JWTs, undefined);
+		if (!this.myUser) {
+			console.log("Failed to get my user");
+			return;
+		}
+		console.log("this.myUser", this.myUser);
+		this.theirUser = await apiRequest("/me", "GET", this.opponentJWTs.value, undefined);
+		if (!this.theirUser) {
+			console.log("Failed to get their user");
+			return;
+		}
+		console.log("this.theirUser", this.theirUser);
 		this.player = this.createPaddle('left');
 		this.opponent = this.createPaddle('right');
 		this.ball = this.createBall();
@@ -251,5 +305,36 @@ class PongGameMatchMaker {
 		let newColor = this.colors[Math.floor(Math.random() * this.colors.length)];
 		if (newColor === this.color) return this._generateRoundColor();
 		return newColor;
+	}
+
+	cleanup() {
+		// Cancel any pending animation frame
+		if (this.animationFrameId) {
+			cancelAnimationFrame(this.animationFrameId);
+		}
+
+		// Remove event listeners
+		if (this.keyDownHandler) {
+			document.removeEventListener('keydown', this.keyDownHandler);
+		}
+		if (this.keyUpHandler) {
+			document.removeEventListener('keyup', this.keyUpHandler);
+		}
+
+		// Clear the canvas
+		if (this.context) {
+			this.context.clearRect(0, 0, this.pongCanvas.width, this.pongCanvas.height);
+		}
+
+		// Reset game state
+		this.running = false;
+		this.over = true;
+		this.player = null;
+		this.opponent = null;
+		this.ball = null;
+		this.turn = null;
+
+		// Clear the global reference
+		window.currentPongGame = null;
 	}
 };

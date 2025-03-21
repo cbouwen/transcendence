@@ -77,10 +77,10 @@ async function router() {
       }
     },
     {
-      path: "/pong_match",
+      path: "/pong_tournament",
       view: async () => {
         await viewHTML("/static/pong/wrapper.html");
-        searching_for_game_match("pong");
+        await pongTournamentStart();
       }
     },
     {

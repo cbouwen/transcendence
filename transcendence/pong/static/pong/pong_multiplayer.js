@@ -44,6 +44,13 @@ class PongGameMultiPlayer {
 
 		this.opponentJWTs = opponentJWTs;
 		console.log("this.opponentJWTs", this.opponentJWTs);
+		
+		this.keyDownHandler = null;
+		this.keyUpHandler = null;
+		this.animationFrameId = null;
+
+		// Store the game instance globally
+		window.currentPongGame = this;
 	}
 
 	createBall(incrementedSpeed) {
@@ -233,11 +240,13 @@ class PongGameMultiPlayer {
 		this.update();
 		this.draw();
 
-		if (!this.over) requestAnimationFrame(() => this.loop());
+		if (!this.over) {
+			this.animationFrameId = requestAnimationFrame(() => this.loop());
+		}
 	}
 
 	listen() {
-		document.addEventListener('keydown', (event) => {
+		this.keyDownHandler = (event) => {
 			if (!this.running) {
 				this.running = true;
 				window.requestAnimationFrame(() => this.loop());
@@ -246,12 +255,15 @@ class PongGameMultiPlayer {
 			if (event.keyCode === 83) this.player.move = this.DIRECTION.DOWN;
 			if (event.keyCode === 38) this.opponent.move = this.DIRECTION.UP;
 			if (event.keyCode === 40) this.opponent.move = this.DIRECTION.DOWN;
-		});
+		};
 
-		document.addEventListener('keyup', (event) => {
+		this.keyUpHandler = (event) => {
 			this.player.move = this.DIRECTION.IDLE;
 			this.opponent.move = this.DIRECTION.IDLE;
-		});
+		};
+
+		document.addEventListener('keydown', this.keyDownHandler);
+		document.addEventListener('keyup', this.keyUpHandler);
 	}
 
 	async initialize() {
@@ -293,5 +305,36 @@ class PongGameMultiPlayer {
 		let newColor = this.colors[Math.floor(Math.random() * this.colors.length)];
 		if (newColor === this.color) return this._generateRoundColor();
 		return newColor;
+	}
+
+	cleanup() {
+		// Cancel any pending animation frame
+		if (this.animationFrameId) {
+			cancelAnimationFrame(this.animationFrameId);
+		}
+
+		// Remove event listeners
+		if (this.keyDownHandler) {
+			document.removeEventListener('keydown', this.keyDownHandler);
+		}
+		if (this.keyUpHandler) {
+			document.removeEventListener('keyup', this.keyUpHandler);
+		}
+
+		// Clear the canvas
+		if (this.context) {
+			this.context.clearRect(0, 0, this.pongCanvas.width, this.pongCanvas.height);
+		}
+
+		// Reset game state
+		this.running = false;
+		this.over = true;
+		this.player = null;
+		this.opponent = null;
+		this.ball = null;
+		this.turn = null;
+
+		// Clear the global reference
+		window.currentPongGame = null;
 	}
 };
