@@ -100,7 +100,7 @@ async function router() {
       }
     },
     {
-      path: "/tournament",
+      path: "/tetris_tournament",
       view: async () => {
         ontournamentpage = true;
         viewHTML("/static/tournament/tournament.html").then(async () => {
@@ -134,10 +134,6 @@ async function router() {
         await viewHTML("/static/accounts/profile.html");
         profilePageStart();
       }
-    },
-    {
-      path: "/tetris_tournament",
-      view: async () => {}
     },
     {
       path: "/personalStats",
