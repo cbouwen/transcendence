@@ -67,7 +67,7 @@ async function getPuppetJWTs() {
 	};
 	const response = await apiRequest("/token/puppet", "POST", JWTs, payload);
 	if (!response) {
-		alert("You don't have the permission to log in" + username);
+		alert("You don't have the permission to log in as " + username);
 		console.warning("Unexpected error when doing apiRequest to /token/puppet");
 		return null;
 	}

@@ -65,8 +65,8 @@ async function router() {
       path: "/pong_single",
       view: async () => {
         await viewHTML("/static/pong/wrapper.html");
-        const pongGame = new PongGame();
-        pongGame.initialize();
+        window.currentPongGame = new PongGame('single');
+        window.currentPongGame.initialize();
       }
     },
     {
