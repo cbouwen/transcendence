@@ -6,8 +6,8 @@ function statsLoad() {
 
 function setActiveNav(oldNav, newNav) {
 	if (oldNav && newNav) {
-		oldNav.className = "";
-		newNav.className = "active";
+		oldNav.className = "nav-link inactiveNav";
+		newNav.className = "nav-link active activeNav";
 	}
 }
 
@@ -34,7 +34,7 @@ async function generateTable(navTab, tableHeaders, game) {
 
 	let table = document.createElement("table");
 	table.id = "statsTable";
-	table.classList.add("table", "table-striped", "mt-3");
+	table.classList.add("mt-3", "tableItem");
 
 	let thead = document.createElement("thead");
 	let theadRow = document.createElement("tr");
