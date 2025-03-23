@@ -102,8 +102,12 @@ async function router() {
     {
       path: "/tetris_tournament",
       view: async () => {
-        ontournamentpage = true;
-        viewHTML("/static/tournament/tournament.html").then(async () => {
+          viewHTML("/static/tournament/tournament.html").then(async () => {
+		  ontournamentpage = true;
+		  const game_name = "tetris";
+		  const payload = { game_name };
+		  response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+		  if (!response) return;
           response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
           if (!response) return;
           if (response === "tetris" || response === "pong") {
