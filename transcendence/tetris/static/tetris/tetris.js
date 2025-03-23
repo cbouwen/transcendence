@@ -19,6 +19,7 @@ async function updateActivePlayers() {
     activePlayersList.innerHTML = '';
     activePlayers.forEach(username => {
       const li = document.createElement('li');
+	  li.id = 'listItemTetris';
       li.className = 'list-group-item';
       li.textContent = username;
       activePlayersList.appendChild(li);
@@ -253,7 +254,7 @@ async function launchTetrisGame(playerConfigs, matchConfig, g_id = 0) {
   // Create the main container for games
   const mainContainer = document.createElement('div');
   mainContainer.id = 'tetris-main-container';
-  const contentElement = document.getElementById("content");
+  const contentElement = document.getElementById("tetris-wrapper");
   contentElement.appendChild(mainContainer);
 
   // Define onGameOver callback function

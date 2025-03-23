@@ -1,32 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Live Chat SPA</title>
-</head>
-<body>
-  <div class="container mt-4">
-    <div class="card mb-4">
-      <div class="card-body">
-        <div class="btn-group d-flex flex-wrap gap-2" role="group" aria-label="Game Controls">
-          <button type="button" id="start-tetris-button" data-tetris-start-button class="btn btn-primary">
-            Start Tetris
-          </button>
-          <button type="button" id="find-match" find-match class="btn btn-secondary">
-            Find Match
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="card mb-4">
-      <div class="card-header">
-        Active Players
-      </div>
-      <div class="card-body">
-        <ul class="list-group mt-3" id="infoList">
-        </ul>
-      </div>
-    </div>
-  </div>
-  <script src="main.js"></script>
-</body>
+<div id="intro" class="bg-image" style="
+	background-image: url('/media/pongBackdrop.jpg');
+	height: 100vh;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;">
+	<div class="custom-jumbotron-container">
+		<div class="custom-jumbotronTetris jumbotron">
+			<h1 class="display-4">Tetris</h1>
+			<div class="container-sm">
+				<div class="row">
+					<div class="col">
+						<div class="card mb-4" id="tetrisCard">
+							<div class="card-header">
+								Active Players
+							</div>
+							<div class="card-body">
+								<ul class="list-group mt-3" id="infoList">
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm">
+						<button type="button" id="start-tetris-button" data-tetris-start-button class="btn tetrisButton">
+							Start Tetris
+						</button>
+					</div>
+					<div class="col-sm">
+						<button type="button" id="find-match" find-match class="btn tetrisButton">
+							Find Match
+						</button>
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
