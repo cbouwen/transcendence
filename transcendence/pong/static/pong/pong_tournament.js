@@ -394,7 +394,7 @@ function endTournament() {
 
 async function sendPongInvite(recipient) {
 	try {
-		const message = "Let's play pong!";
+		const message = "A tournament is starting! Join me in a game of pong!";
 		const pongInvite = true;
 		
 		const response = await apiRequest('/chat/message', 'POST', JWTs, {
