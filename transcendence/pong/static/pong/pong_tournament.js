@@ -142,6 +142,9 @@ function setupTournamentUI() {
 
 		// Clear input
 		usernameInput.value = '';
+		// Hide start tournament button until all invites are sent
+		startTournamentBtn.style.display = 'none';
+
 	});
 
 	// Event delegation for invite and remove buttons
@@ -152,6 +155,16 @@ function setupTournamentUI() {
 		if (target.classList.contains('invite-btn')) {
 			const username = target.getAttribute('data-username');
 			await sendPongInvite(username);
+			target.style.display = 'none'; // Hide the invite button after sending invite
+			
+			// Check if all invite buttons are hidden
+			const inviteButtons = document.querySelectorAll('.invite-btn');
+			const allHidden = Array.from(inviteButtons).every(btn => btn.style.display === 'none');
+			
+			if (allHidden) {
+				// Show the start tournament button
+				document.getElementById('start-tournament-btn').style.display = '';
+			}
 		}
 		
 		// Remove button
