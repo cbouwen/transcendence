@@ -102,8 +102,12 @@ async function router() {
     {
       path: "/tetris_tournament",
       view: async () => {
-        ontournamentpage = true;
-        viewHTML("/static/tournament/tournament.html").then(async () => {
+          viewHTML("/static/tournament/tournament.html").then(async () => {
+		  ontournamentpage = true;
+		  const game_name = "tetris";
+		  const payload = { game_name };
+		  response = await apiRequest('/tournament/declare_game', 'POST', JWTs, payload);
+		  if (!response) return;
           response = await apiRequest('/tournament/get_game', 'GET', JWTs, null);
           if (!response) return;
           if (response === "tetris" || response === "pong") {
@@ -143,16 +147,31 @@ async function router() {
       }
     },
     {
-      path: "/leaderboard",
-      view: async () => {
-        await viewHTML("/static/accounts/leaderboard.html");
-      }
-    },
-    {
       path: "/register",
       view: async () => {
         await viewHTML("/static/accounts/register.html");
         registerPageStart();
+      }
+    },
+    {
+      path: "/matchHistory",
+      view: async () => {
+        await viewHTML("/static/accounts/matchHistory.html");
+        accountsPageStart();
+      }
+    },
+    {
+      path: "/social",
+      view: async () => {
+        await viewHTML("/static/accounts/social.html");
+        accountsPageStart();
+      }
+    },
+    {
+      path: "/puppetGrant",
+      view: async () => {
+        await viewHTML("/static/accounts/puppetGrant.html");
+        accountsPageStart();
       }
     }
   ];

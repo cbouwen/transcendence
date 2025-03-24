@@ -1,78 +1,53 @@
-<div class="container">
-	<h1>User Settings</h1>
-
-	<!-- Display Name -->
-	<div class="form-group">
-		<label class="col-sm-2 control-label" for="displayNameInput">Display Name:</label>
-		<div class="col-sm-10">
-			<input id="displayNameInput" class="form-control" type="text" placeholder="***Your name here***">
-		</div>
-	</div>
-
-	<!-- Avatar Upload -->
-	<div class="form-group">
-		<label class="col-sm-2 control-label" for="avatarInput">Upload Avatar:</label>
-		<div class="col-sm-10">
-			<input id="avatarInput" class="form-control" type="file" accept="image/*">
-		</div>
-	</div>
-	<img id="avatarImg" src="/media/avatar_default.png" alt="Your user avatar" width="500" height="500"> 
-
-	<!-- Add Friend -->
-	<div class="form-group">
-		<label class="col-sm-2 control-label" for="friendUsername">Friend Username:</label>
-		<div class="col-sm-10">
-			<input id="friendUsername" class="form-control" type="text" placeholder="Enter friend's username">
-		</div>
-	</div>
-	<div class="form-group">
-		<div class="col-sm-offset-2 col-sm-10">
-			<button type="button" class="btn btn-success" id="addFriendButton">Add Friend</button>
-			<button type="button" class="btn btn-danger" id="removeFriendButton">Remove Friend</button>
-		</div>
-	</div>
-
-	<!-- Online Friends List -->
-	<div class="form-group">
-		<label class="col-sm-2 control-label">Online Friends:</label>
-		<div class="col-sm-10">
-			<div id="onlineFriendsList" class="list-group">
-				<!-- Online friends will be displayed here -->
+<div id="intro" class="bg-image" style="
+	background-image: url('/media/pongBackdrop.jpg');
+	height: 100vh;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;">
+	<div class="custom-jumbotron-container">
+		<div class="custom-jumbotron-settings jumbotron">
+			<div class="row">
+				<div class="col">
+					<ul class="nav nav-tabs">
+						<li class="nav-item"><a data-link id="userSettings" class="nav-link active activeNav" aria-current="page" href="/account">User Settings</a></li>
+						<li class="nav-item"><a data-link id="social" class="nav-link inactiveNav" href="/social">Social</a></li>
+						<li class="nav-item"><a data-link id="matchHistory" class="nav-link inactiveNav" href="/matchHistory">Match History</a></li>
+						<li class="nav-item"><a data-link id="puppetGrant" class="nav-link inactiveNav" href="/puppetGrant">Create Puppet Grant</a></li>
+					</ul>
+					<div class="tab-content" id="tab">
+						<div class="card">
+							<div class="card-header">
+								User Settings
+							</div>
+							<div class="card-body">
+								<div class="form-group">
+									<label class="col-sm-2 control-label" for="displayNameInput">Display Name:</label>
+									<div class="col-sm-10">
+										<input id="displayNameInput" class="form-control" type="text"
+											placeholder="***Your name here***">
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-2 control-label" for="avatarInput">Upload Avatar:</label>
+									<div class="col-sm-10">
+										<input id="avatarInput" class="form-control" type="file" accept="image/*">
+									</div>
+								</div>
+								<img id="avatarImg" src="/media/avatar_default.png" alt="Your user avatar" width="500"
+									height="500">
+								<button type="submit" class="btn" id="saveUserInfo">Save</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
-
-	<!-- Save Button -->
-	<button type="submit" class="btn btn-primary" id="saveUserInfo">Save</button>
 </div>
-
-<!-- Match Stats Section -->
-<div class="container match-stats">
-	<h2>Match Stats</h2>
-	<div class="stats-box">
-		<p><strong>Wins:</strong> <span id="winsCount">0</span></p>
-		<p><strong>Losses:</strong> <span id="lossesCount">0</span></p>
-	</div>
-</div>
-
-<!-- Puppet Grant Section -->
-<div class="container puppet-grant">
-	<h2>Create Puppet Grant</h2>
-	<div class="form-group">
-		<label class="col-sm-2 control-label" for="puppetGrantInput">Puppeteer Username:</label>
-		<div class="col-sm-10">
-			<input id="puppetGrantInput" class="form-control" type="text" placeholder="Enter puppeteer username">
-		</div>
-	</div>
-	<button type="submit" class="btn btn-default" id="puppetGrantSubmitButton">Create Grant</button>
-</div>
-
-<!-- Logout Button -->
-<div class="container">
-	<div class="form-group">
-		<div class="col-sm-offset-2 col-sm-10">
-			<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
-		</div>
-	</div>
-</div>
-

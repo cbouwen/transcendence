@@ -13,3 +13,17 @@ let tournamentActive = false;
 let tetrisPageLoaded = false;
 let ontournamentpage = false;
 let chatIntervalTimer;
+
+document.addEventListener("DOMContentLoaded", function () {
+    function adjustContentMargin() {
+        const navbar = document.querySelector(".navbar");
+        const content = document.querySelector(".main-content");
+        if (navbar && content) {
+            const navbarHeight = navbar.offsetHeight;
+            content.style.marginTop = navbarHeight + "px";
+        }
+    }
+
+    adjustContentMargin();
+    window.addEventListener("resize", adjustContentMargin);
+});
