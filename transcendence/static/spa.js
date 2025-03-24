@@ -147,16 +147,31 @@ async function router() {
       }
     },
     {
-      path: "/leaderboard",
-      view: async () => {
-        await viewHTML("/static/accounts/leaderboard.html");
-      }
-    },
-    {
       path: "/register",
       view: async () => {
         await viewHTML("/static/accounts/register.html");
         registerPageStart();
+      }
+    },
+    {
+      path: "/matchHistory",
+      view: async () => {
+        await viewHTML("/static/accounts/matchHistory.html");
+        accountsPageStart();
+      }
+    },
+    {
+      path: "/social",
+      view: async () => {
+        await viewHTML("/static/accounts/social.html");
+        accountsPageStart();
+      }
+    },
+    {
+      path: "/puppetGrant",
+      view: async () => {
+        await viewHTML("/static/accounts/puppetGrant.html");
+        accountsPageStart();
       }
     }
   ];

@@ -1,0 +1,50 @@
+<div id="intro" class="bg-image" style="
+	background-image: url('/media/pongBackdrop.jpg');
+	height: 100vh;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;">
+	<div class="custom-jumbotron-container">
+		<div class="custom-jumbotron-settings jumbotron">
+			<div class="row">
+				<div class="col">
+					<ul class="nav nav-tabs">
+						<li class="nav-item"><a data-link id="userSettings" class="nav-link inactiveNav" href="/account">User Settings</a></li>
+						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link inactiveNav" href="/social">Social</a></li>
+						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link inactiveNav" href="/matchHistory">Match History</a></li>
+						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link active activeNav" aria-current="page" href="/puppetGrant">Create Puppet Grant</a></li>
+					</ul>
+					<div class="tab-content" id="tab">
+						<div class="card">
+							<div class="card-header">
+								Create Pupper Grant
+							</div>
+							<div class="card-body">
+								<div class="container puppet-grant">
+									<h2>Create Puppet Grant</h2>
+									<div class="form-group">
+										<label class="col-sm-2 control-label" for="puppetGrantInput">Puppeteer
+											Username:</label>
+										<div class="col-sm-10">
+											<input id="puppetGrantInput" class="form-control" type="text"
+												placeholder="Enter puppeteer username">
+										</div>
+									</div>
+									<button type="submit" class="btn" id="puppetGrantSubmitButton">Create
+										Grant</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

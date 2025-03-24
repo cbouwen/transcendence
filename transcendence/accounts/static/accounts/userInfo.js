@@ -141,6 +141,7 @@ async function removeFriend() {
 }
 
 async function logout() {
+	console.log("F U C K");
     try {
         // Remove player from active players
         const response = await apiRequest("/tetris/remove-player", "DELETE", JWTs);
@@ -155,10 +156,18 @@ async function logout() {
 
 function accountsPageStart() {
     fillInCurrentUserInfo();
-    document.getElementById("puppetGrantSubmitButton").addEventListener("click", puppetGrantSubmitButtonHandler);
-    document.getElementById("addFriendButton").addEventListener("click", addFriend);
-    document.getElementById("removeFriendButton").addEventListener("click", removeFriend);
-    document.getElementById("logoutButton").addEventListener("click", logout);
+    const puppet = document.getElementById("puppetGrantSubmitButton");
+	if (puppet)
+		puppet.addEventListener("click", puppetGrantSubmitButtonHandler);
+	const addFriend = document.getElementById("addFriendButton");
+	if (addFriend)
+		addFriend.addEventListener("click", addFriend);
+	const removeFriend = document.getElementById("removeFriendButton");
+	if (removeFriend)
+		removeFriend.addEventListener("click", removeFriend);
+	const logoutButton = document.getElementById("logoutButton");
+	if (logoutButton)
+		logoutButton.addEventListener("click", logout);
     
     updateOnlineFriends();
     
@@ -186,8 +195,6 @@ async function updateUserAvatar() {
                     console.error('Failed to load avatar image');
                     this.src = '/media/avatar_default.png';
                 };
-            } else {
-                console.error('Avatar image element not found');
             }
         } else {
             console.log('No avatar URL in response, using default');
