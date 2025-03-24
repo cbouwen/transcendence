@@ -1,11 +1,7 @@
 // Add this at the top of the file, after the variable declarations
 // Function that can be called from the router to ensure cleanup when navigating away
 function cleanupPongTournament() {
-    console.log("Cleaning up pong tournament data");
     clearTournamentData();
-    
-    // Reset the game instance lock
-    gameInstanceLock = false;
     
     const pongWrapper = document.getElementById('pong-wrapper');
     if (pongWrapper) {
