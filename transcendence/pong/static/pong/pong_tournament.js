@@ -30,6 +30,10 @@ let tournamentPlayers = [];
 let currentMatchup = [];
 let bracketRound = 0;
 let primaryPlayerAdded = false;
+let winners = []; // Track winners of each match
+
+// Add global lock to prevent multiple game instances
+let gameInstanceLock = false;
 
 // Function to clear tournament data when navigating away
 function clearTournamentData() {
@@ -37,6 +41,7 @@ function clearTournamentData() {
     currentMatchup = [];
     bracketRound = 0;
     primaryPlayerAdded = false;
+    winners = [];
     
     // Clear the player list UI if it exists
     const playerList = document.getElementById('player-list');
@@ -229,24 +234,102 @@ function createPongCanvas() {
 }
 
 function setupNextRound() {
+    // Prevent multiple setups running simultaneously
+    if (gameInstanceLock) {
+        console.log("Game setup locked, skipping duplicate setup");
+        return;
+    }
+    
     // Count active players
     const activePlayers = tournamentPlayers.filter(p => !p.eliminated);
+    console.log('Setting up next round with active players:', activePlayers.map(p => p.username));
     
     // If only one player remains, they're the champion
     if (activePlayers.length === 1) {
-        alert(`Tournament completed! ${activePlayers[0].username} is the champion!`);
+        const champion = activePlayers[0];
+        console.log(`Tournament champion determined: ${champion.username}`);
+        alert(`Tournament completed! ${champion.username} is the champion!`);
         endTournament();
         return;
     }
     
     // Start a new round if needed
     if (currentMatchup.length === 0) {
-        bracketRound++;
-        console.log(`Starting bracket round ${bracketRound}`);
+        console.log(`Setting up matches. Current bracket round: ${bracketRound}`);
         
-        // Get the first two non-eliminated players for the next match
-        const nextPlayers = activePlayers.slice(0, 2);
-        currentMatchup = nextPlayers;
+        // If this is the first round, pair players randomly
+        if (bracketRound === 0) {
+            bracketRound = 1;
+            console.log(`Starting bracket round ${bracketRound}`);
+            
+            // Shuffle active players for random first round matchups
+            const shuffledPlayers = shuffleArray([...activePlayers]);
+            
+            // Pair players up
+            for (let i = 0; i < shuffledPlayers.length; i += 2) {
+                if (i + 1 < shuffledPlayers.length) {
+                    winners.push({
+                        player1: shuffledPlayers[i],
+                        player2: shuffledPlayers[i + 1],
+                        winner: null
+                    });
+                }
+            }
+            
+            // Get the first matchup
+            if (winners.length > 0) {
+                currentMatchup = [winners[0].player1, winners[0].player2];
+                console.log(`First round matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
+            }
+        } else {
+            // Check if we have first-round matches that haven't been played yet
+            const unplayedFirstRoundMatches = winners.filter(match => match.winner === null);
+            
+            if (unplayedFirstRoundMatches.length > 0) {
+                // Play the next unplayed match from the first round
+                const nextMatch = unplayedFirstRoundMatches[0];
+                currentMatchup = [nextMatch.player1, nextMatch.player2];
+                console.log(`Next first round matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
+            } else {
+                // All first-round matches are completed, start the next round
+                bracketRound++;
+                console.log(`Starting bracket round ${bracketRound}`);
+                
+                // Get winners from previous round
+                const completedMatches = winners.filter(match => match.winner !== null);
+                
+                // Pair winners for the next round
+                for (let i = 0; i < completedMatches.length; i += 2) {
+                    if (i + 1 < completedMatches.length) {
+                        winners.push({
+                            player1: completedMatches[i].winner,
+                            player2: completedMatches[i + 1].winner,
+                            winner: null
+                        });
+                    }
+                }
+                
+                // Get the first matchup of the new round
+                const newRoundMatches = winners.filter(match => match.winner === null);
+                if (newRoundMatches.length > 0) {
+                    const nextMatch = newRoundMatches[0];
+                    currentMatchup = [nextMatch.player1, nextMatch.player2];
+                    console.log(`Next round matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
+                }
+            }
+        }
+    }
+    
+    // If we have a valid matchup, start the game
+    if (currentMatchup.length === 2) {
+        console.log(`Starting match between ${currentMatchup[0].username} and ${currentMatchup[1].username}`);
+        // Set game instance lock to prevent multiple instances
+        gameInstanceLock = true;
+        let pongGame = new PongGameTournament(currentMatchup);
+        pongGame.initialize();
+    } else {
+        console.error('No valid matchup was created, ending tournament');
+        endTournament();
     }
 }
 
@@ -287,8 +370,40 @@ async function sendPongInvite(recipient) {
 	}
 }
 
+async function publishScore(token, my_username, their_username, my_score, their_score) {
+    // Ensure we have a valid token string
+    if (!token || typeof token !== 'string') {
+        console.error('Invalid token provided:', token);
+        return;
+    }
+
+    let body = {
+        "their_username": their_username,
+        "my_score": my_score,
+        "their_score": their_score
+    };
+    
+    // Create the proper token object format expected by apiRequest
+    const tokenObj = {
+        access: token
+    };
+    
+    let response = await apiRequest('/pong/score', 'POST', tokenObj, body);
+    if (response) {
+        console.log("Score published successfully", response);
+    } else {
+        console.log("Failed to publish score");
+    }
+}
+
 class PongGameTournament {
 	constructor(matchupPlayers) {
+		// Check if there's already a game instance
+        if (window.currentPongGame) {
+            console.log("Game already exists, cleaning up old instance");
+            window.currentPongGame.cleanup();
+        }
+        
 		// Create canvas if it doesn't exist
         if (!document.getElementById('pong-canvas')) {
             createPongCanvas();
@@ -320,6 +435,8 @@ class PongGameTournament {
 		this.running = this.over = false;
 		this.timer = this.round = 0;
 		this.color = '#2c3e50';
+        this.scorePublished = false; // Flag to prevent multiple score publications
+        this.gameEndInProgress = false; // Flag to prevent multiple game over events
 
 		// Store matchup players
 		this.players = matchupPlayers;
@@ -414,80 +531,110 @@ class PongGameTournament {
 		this.context.fillText('Press any key to begin', this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
 	}
 
-	endGameMenu(text) {
-		this.context.font = '50px Courier New';
-		this.context.fillStyle = this.color;
-		this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
-		this.context.fillStyle = '#ffffff';
-		this.context.fillText(text, this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
-		this.leftPaddle.score = this.rightPaddle.score = 0;
-		this.running = this.over = false;
-		this.leftPaddle.y = (this.pongCanvas.height / 2) - 35;
-		this.rightPaddle.y = (this.pongCanvas.height / 2) - 35;
-
-		// Determine winner and loser based on scores
-        let winnerIndex, loserIndex;
-        if (this.leftPaddle.score > this.rightPaddle.score) {
-            winnerIndex = 0; // Left player (players[0]) won
-            loserIndex = 1;  // Right player (players[1]) lost
-        } else {
-            winnerIndex = 1; // Right player (players[1]) won
-            loserIndex = 0;  // Left player (players[0]) lost
+	endGameMenu() {
+        // If scores already published, don't do it again
+        if (this.scorePublished) {
+            console.log("Scores already published, skipping publication");
+            return;
         }
         
-        console.log(`Winner: ${this.players[winnerIndex].username}, Loser: ${this.players[loserIndex].username}`);
+        console.log("Showing end game menu");
         
-        // Mark loser as eliminated
-        const loserPlayerIndex = tournamentPlayers.findIndex(p => p.username === this.players[loserIndex].username);
-        if (loserPlayerIndex !== -1) {
-            tournamentPlayers[loserPlayerIndex].eliminated = true;
+        // Set the scores published flag immediately to prevent multiple calls
+        this.scorePublished = true;
+        
+        // Use the captured final scores from when the game ended
+        const finalLeftScore = this.finalLeftScore;
+        const finalRightScore = this.finalRightScore;
+        
+        if (finalLeftScore === undefined || finalRightScore === undefined) {
+            console.error("Final scores are undefined, cannot publish scores");
+            return;
         }
         
-		// Use promises to handle score publishing
-		const publishLeftScore = new Promise((resolve) => {
-			this.publishScore(this.players[0].JWT, this.players[1].username, this.leftPaddle.score, this.rightPaddle.score);
-			resolve();
-		});
-
-		const publishRightScore = new Promise((resolve) => {
-			this.publishScore(this.players[1].JWT, this.players[0].username, this.rightPaddle.score, this.leftPaddle.score);
-			resolve();
-		});
-
-		Promise.all([publishLeftScore, publishRightScore]).then(() => {
-			// Add event listener for key press to continue tournament
-			const keyPressGameEnd = () => {
-				document.removeEventListener('keydown', keyPressGameEnd);
-				
-				// Clear current matchup to setup next match
-                currentMatchup = [];
-                
-                // Setup next matchup
-                setupNextRound();
-                
-                // Clean up current game
-                this.cleanup();
-                
-                // Start next match if there are players left
-                if (currentMatchup.length === 2) {
-                    setTimeout(() => {
-                        let pongGame = new PongGameTournament(currentMatchup);
-                        pongGame.initialize();
-                    }, 500);
-                } else {
-                    // End tournament if no more matches
-                    endTournament();
+        // Determine winner and loser based on actual paddle scores
+        const winner = finalLeftScore > finalRightScore ? this.players[0] : this.players[1];
+        const loser = finalLeftScore > finalRightScore ? this.players[1] : this.players[0];
+        
+        console.log(`Match ended: ${winner.username} (${finalLeftScore > finalRightScore ? finalLeftScore : finalRightScore}) vs ${loser.username} (${finalLeftScore > finalRightScore ? finalRightScore : finalLeftScore})`);
+        
+        // Mark the loser as eliminated in the tournament players array
+        const loserIndex = tournamentPlayers.findIndex(p => p.username === loser.username);
+        if (loserIndex !== -1) {
+            tournamentPlayers[loserIndex].eliminated = true;
+        }
+        
+        // Record the winner in the current match in the winners array
+        const currentMatchIndex = winners.findIndex(match => 
+            (match.player1.username === this.players[0].username && match.player2.username === this.players[1].username) ||
+            (match.player1.username === this.players[1].username && match.player2.username === this.players[0].username)
+        );
+        
+        if (currentMatchIndex !== -1) {
+            winners[currentMatchIndex].winner = winner;
+            console.log(`Recorded winner for match ${currentMatchIndex}: ${winner.username}`);
+        }
+        
+        // Get JWT tokens from the stored player objects
+        const winnerToken = winner.JWT?.access || winner.JWT?.value?.access;
+        const loserToken = loser.JWT?.access || loser.JWT?.value?.access;
+        
+        if (!winnerToken || !loserToken) {
+            console.error('Invalid JWT tokens:', { winnerToken, loserToken });
+            // Release lock even on error
+            gameInstanceLock = false;
+            return;
+        }
+        
+        console.log("Publishing scores:", finalLeftScore, finalRightScore);
+        
+        // Publish scores with the correct winner/loser
+        Promise.all([
+            publishScore(winnerToken, winner.username, loser.username, finalLeftScore > finalRightScore ? finalLeftScore : finalRightScore, finalLeftScore > finalRightScore ? finalRightScore : finalLeftScore),
+            publishScore(loserToken, loser.username, winner.username, finalLeftScore > finalRightScore ? finalRightScore : finalLeftScore, finalLeftScore > finalRightScore ? finalLeftScore : finalRightScore)
+        ]).then(() => {
+            // Reset paddle scores after publishing
+            this.leftPaddle.score = 0;
+            this.rightPaddle.score = 0;
+            
+            // Clear current matchup
+            currentMatchup = [];
+            
+            // Display end game message
+            this.context.font = '50px Courier New';
+            this.context.fillStyle = this.color;
+            this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
+            this.context.fillStyle = '#ffffff';
+            this.context.fillText('Press SPACE to continue', this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
+            
+            // Add key press handler for continuing
+            const keyPressHandler = (event) => {
+                if (event.code === 'Space') {
+                    document.removeEventListener('keydown', keyPressHandler);
+                    
+                    // Clean up current game
+                    this.cleanup();
+                    
+                    // Release game instance lock
+                    gameInstanceLock = false;
+                    
+                    // Setup next matchup
+                    setupNextRound();
+                    
+                    // Start next match if there are players left - this is now handled in setupNextRound
                 }
-			};
-			
-			document.addEventListener('keydown', keyPressGameEnd);
-			document.removeEventListener('keyup', this.keyUpHandler);
-			document.removeEventListener('keydown', this.keyDownHandler);
-		});
-	}
+            };
+            
+            document.addEventListener('keydown', keyPressHandler);
+        }).catch(error => {
+            console.error('Error publishing scores:', error);
+            // Release lock even on error
+            gameInstanceLock = false;
+        });
+    }
 
 	update() {
-		// Update game state
+		// Don't update gameplay if the game is over
 		if (!this.over) {
 			// Update the ball's position and check for collisions
 			if (this.ball.x <= 0) this._resetTurn(this.rightPaddle, this.leftPaddle);
@@ -535,35 +682,51 @@ class PongGameTournament {
 					this.ball.speed += 0.2;
 				}
 			}
-		}
-
-		if (this.leftPaddle.score === this.rounds[this.round]) {
-			this.over = true;
-			setTimeout(() => { 
-				this.endGameMenu(this.players[0].username + ' wins! Press any key to continue'); 
-			}, 1000);
-		}
-		else if (this.rightPaddle.score === this.rounds[this.round]) {
-			this.over = true;
-			setTimeout(() => { 
-				this.endGameMenu(this.players[1].username + ' wins! Press any key to continue'); 
-			}, 1000);
+			
+			// Check if either player has reached the target score - only do this if the game is not already over
+			const targetScore = this.rounds[this.round];
+			if (this.leftPaddle.score >= targetScore || this.rightPaddle.score >= targetScore) {
+				this.gameOver();
+			}
 		}
 	}
 
-	async publishScore(token, their_username, my_score, their_score) {
-		let body = {};
-		body["their_username"] = their_username;
-		body["my_score"] = my_score;
-		body["their_score"] = their_score;
-		
-		let response = await apiRequest('/pong/score', 'POST', token, body);
-		if (response) {
-			console.log("Score published successfully", response);
-		} else {
-			console.log("Failed to publish score");
-		}
-	}
+	// New dedicated method to handle game over state
+	gameOver() {
+        // If game over already in progress, don't run again
+        if (this.over || this.gameEndInProgress) return;
+        
+        console.log("Game over triggered");
+        
+        // Set flag to prevent multiple calls
+        this.gameEndInProgress = true;
+        
+        // Freeze the game state
+        this.over = true;
+        
+        // Stop ball movement
+        this.ball.moveX = this.DIRECTION.IDLE;
+        this.ball.moveY = this.DIRECTION.IDLE;
+        
+        // Stop paddle movement
+        this.leftPaddle.move = this.DIRECTION.IDLE;
+        this.rightPaddle.move = this.DIRECTION.IDLE;
+        
+        // Cancel any animation frames
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        
+        // Capture final scores immediately
+        this.finalLeftScore = this.leftPaddle.score;
+        this.finalRightScore = this.rightPaddle.score;
+        
+        // Show end game menu after a short delay
+        setTimeout(() => {
+            this.endGameMenu();
+        }, 1000);
+    }
 
 	loop() {
 		this.update();
@@ -609,11 +772,17 @@ class PongGameTournament {
 	}
 
 	_resetTurn(victor, loser) {
-		this.ball = this.createBall();
-		this.turn = loser;
-		this.timer = (new Date()).getTime();
-
-		victor.score++;
+        // Increment the score first before any other changes
+        victor.score++;
+        
+        // Create a completely new ball with default state
+        this.ball = this.createBall();
+        
+        // Set the turn but don't change the ball's movement yet
+        this.turn = loser;
+        
+        // Reset the timer to ensure proper delay before the ball moves
+        this.timer = (new Date()).getTime();
 	}
 
 	_turnDelayIsOver() {
