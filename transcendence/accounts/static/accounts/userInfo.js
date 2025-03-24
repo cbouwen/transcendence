@@ -73,13 +73,16 @@ async function updateOnlineFriends() {
         onlineFriendsList.innerHTML = ''; // Clear current list
         
         if (friends.length === 0) {
-            onlineFriendsList.innerHTML = '<div class="list-group-item">No friends added yet</div>';
+            const friendElement = document.createElement('div');
+            friendElement.classList.add('list-group-item', 'formTextInputSettingsInner');
+            friendElement.innerHTML = `No friends online`;
+			onlineFriendsList.appendChild(friendElement);
             return;
         }
         
         friends.forEach(friend => {
             const friendElement = document.createElement('div');
-            friendElement.className = 'list-group-item';
+            friendElement.classList.add('list-group-item', 'formTextInputSettingsInner');
             const isOnline = onlinePlayers.includes(friend.username);
             const statusBadge = isOnline ? 
                 '<span class="badge badge-success">Online</span>' : 

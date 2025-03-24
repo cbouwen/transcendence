@@ -5,7 +5,7 @@
 	background-position: center;
 	background-repeat: no-repeat;">
 	<div class="custom-jumbotron-container">
-		<div class="custom-jumbotron-settings jumbotron">
+		<div class="custom-jumbotron-settings jumbotron h-auto w-auto">
 			<div class="row">
 				<div class="col">
 					<ul class="nav nav-tabs">
@@ -14,8 +14,8 @@
 						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link inactiveNav" href="/matchHistory">Match History</a></li>
 						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link active activeNav" aria-current="page" href="/puppetGrant">Create Puppet Grant</a></li>
 					</ul>
-					<div class="tab-content" id="tab">
-						<div class="card">
+					<div class="tab-content" id="tab" style="margin: 5px;">
+						<div class="card h-auto w-auto" id="userSettingsCard">
 							<div class="card-header">
 								Create Pupper Grant
 							</div>
@@ -23,15 +23,18 @@
 								<div class="container puppet-grant">
 									<h2>Create Puppet Grant</h2>
 									<div class="form-group">
-										<label class="col-sm-2 control-label" for="puppetGrantInput">Puppeteer
+										<label class="col control-label" for="puppetGrantInput">Puppeteer
 											Username:</label>
-										<div class="col-sm-10">
-											<input id="puppetGrantInput" class="form-control" type="text"
+										<div class="col">
+											<input id="puppetGrantInput" class="form-control formTextInputSettings" type="text"
 												placeholder="Enter puppeteer username">
 										</div>
 									</div>
-									<button type="submit" class="btn" id="puppetGrantSubmitButton">Create
-										Grant</button>
+									<div class="row">
+										<div class="col">
+											<button type="submit" class="btn inputField" id="puppetGrantSubmitButton">Create Grant</button>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -39,9 +42,9 @@
 				</div>
 			</div>
 			<div class="row">
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
+				<div class="col">
+					<div class="form-group">
+						<button type="button" class="btn inputField" id="logoutButton">Logout</button>
 					</div>
 				</div>
 			</div>

@@ -5,7 +5,7 @@
 	background-position: center;
 	background-repeat: no-repeat;">
 	<div class="custom-jumbotron-container">
-		<div class="custom-jumbotron-settings jumbotron">
+		<div class="custom-jumbotron-settings jumbotron h-auto w-auto">
 			<div class="row">
 				<div class="col">
 					<ul class="nav nav-tabs">
@@ -18,27 +18,27 @@
 						<li class="nav-item"><a data-link id="puppetGrant" class="nav-link inactiveNav"
 								href="/puppetGrant">Create Puppet Grant</a></li>
 					</ul>
-					<div class="tab-content" id="tab">
-						<div class="card">
+					<div class="tab-content" id="tab" style="margin: 5px;">
+						<div class="card h-auto w-auto" id="userSettingsCard">
 							<div class="card-header">
 								User Settings
 							</div>
 							<div class="card-body">
-								<div class="row">
+								<div class="row" style="margin: 5px;">
 									<div class="form-group">
-										<label class="col-sm-2 control-label" for="displayNameInput">Display
+										<label class="control-label" for="displayNameInput">Display
 											Name:</label>
-										<div class="col-sm-10">
-											<input id="displayNameInput" class="form-control" type="text"
+										<div class="col">
+											<input id="displayNameInput" class="form-control formTextInputSettings" type="text"
 												placeholder="***Your name here***">
 										</div>
 									</div>
 								</div>
 								<div class="row">
 									<div class="col"></div>
-									<div class="col-8">
+									<div class="col">
 										<img id="avatarImg" src="/media/avatar_default.png" alt="Your user avatar"
-											width="350" height="350">
+											width="300" height="300">
 									</div>
 									<div class="col"></div>
 								</div>
@@ -47,13 +47,15 @@
 										<div class="form-group">
 											<label class="control-label" for="avatarInput">Upload Avatar:</label>
 											<div>
-												<input id="avatarInput" class="form-control" type="file" accept="image/*">
+												<input id="avatarInput" class="form-control formTextInputSettings" type="file" accept="image/*">
 											</div>
 										</div>
 									</div>
 								</div>
 								<div class="row">
-									<button type="submit" class="btn" id="saveUserInfo">Save</button>
+									<div class="col">
+										<button type="submit" class="btn inputField" id="saveUserInfo">Save</button>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -63,7 +65,7 @@
 			<div class="row">
 				<div class="col">
 					<div class="form-group">
-						<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
+						<button type="button" class="btn inputField" id="logoutButton">Logout</button>
 					</div>
 				</div>
 			</div>

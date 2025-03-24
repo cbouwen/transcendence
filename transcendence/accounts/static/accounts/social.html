@@ -5,7 +5,7 @@
 	background-position: center;
 	background-repeat: no-repeat;">
 	<div class="custom-jumbotron-container">
-		<div class="custom-jumbotron-settings jumbotron">
+		<div class="custom-jumbotron-settings jumbotron h-auto w-auto">
 			<div class="row">
 				<div class="col">
 					<ul class="nav nav-tabs">
@@ -14,31 +14,31 @@
 						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link inactiveNav" aria-current="page" href="/matchHistory">Match History</a></li>
 						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link inactiveNav" href="/puppetGrant">Create Puppet Grant</a></li>
 					</ul>
-					<div class="tab-content" id="tab">
-						<div class="card">
+					<div class="tab-content" id="tab" style="margin: 5px;">
+						<div class="card h-auto w-auto" id="userSettingsCard">
 							<div class="card-header">
 								Social
 							</div>
 							<div class="card-body">
 								<div class="form-group">
-									<label class="col-sm-2 control-label" for="friendUsername">Friend Username:</label>
-									<div class="col-sm-10">
-										<input id="friendUsername" class="form-control" type="text"
+									<label class="control-label" for="friendUsername">Friend Username:</label>
+									<div class="col">
+										<input id="friendUsername" class="form-control formTextInputSettings" type="text"
 											placeholder="Enter friend's username">
 									</div>
 								</div>
 								<div class="form-group">
-									<div class="col-sm-offset-2 col-sm-10">
-										<button type="button" class="btn" id="addFriendButton">Add
+									<div class="col">
+										<button type="button" class="btn inputField" id="addFriendButton">Add
 											Friend</button>
-										<button type="button" class="btn" id="removeFriendButton">Remove
+										<button type="button" class="btn inputField" id="removeFriendButton">Remove
 											Friend</button>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="col-sm-2 control-label">Online Friends:</label>
-									<div class="col-sm-10">
-										<div id="onlineFriendsList" class="list-group">
+								<div class="form-group" style="margin-top: 5px;">
+									<label class="col control-label">Online Friends:</label>
+									<div class="col">
+										<div id="onlineFriendsList" class="list-group formTextInputSettings">
 										</div>
 									</div>
 								</div>
@@ -48,9 +48,9 @@
 				</div>
 			</div>
 			<div class="row">
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
+				<div class="col">
+					<div class="form-group">
+						<button type="button" class="btn inputField" id="logoutButton">Logout</button>
 					</div>
 				</div>
 			</div>
