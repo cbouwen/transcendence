@@ -61,10 +61,23 @@ async function addPrimaryPlayer() {
         return;
     }
     
+    // Make sure we have a proper JWT structure for the primary player
+    let primaryJWT = {};
+    if (typeof JWTs === 'object') {
+        // Copy JWTs to ensure we don't lose it
+        if (JWTs.access) {
+            primaryJWT.access = JWTs.access;
+        } else if (JWTs.value && JWTs.value.access) {
+            primaryJWT.access = JWTs.value.access;
+        }
+    }
+    
+    console.log("Primary player JWT set:", primaryJWT);
+    
     // Add current user to tournament players list
     tournamentPlayers.push({
         username: myUser.username,
-        JWT: JWTs,
+        JWT: primaryJWT,
         eliminated: false,
         isPrimary: true // Mark as primary player
     });
@@ -273,17 +286,27 @@ function setupNextRound() {
                         player2: shuffledPlayers[i + 1],
                         winner: null
                     });
+                } else {
+                    // This player gets a "bye" in the first round and goes straight to round 2
+                    console.log(`Player ${shuffledPlayers[i].username} gets a bye in round 1`);
+                    // Store this player as a "bye" for the next round
+                    winners.push({
+                        player1: shuffledPlayers[i],
+                        player2: null, // No opponent in this round (bye)
+                        winner: shuffledPlayers[i] // Auto-advance this player
+                    });
                 }
             }
             
-            // Get the first matchup
-            if (winners.length > 0) {
-                currentMatchup = [winners[0].player1, winners[0].player2];
+            // Get the first matchup (only for non-bye matches)
+            const firstMatch = winners.find(match => match.player2 !== null);
+            if (firstMatch) {
+                currentMatchup = [firstMatch.player1, firstMatch.player2];
                 console.log(`First round matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
             }
         } else {
             // Check if we have first-round matches that haven't been played yet
-            const unplayedFirstRoundMatches = winners.filter(match => match.winner === null);
+            const unplayedFirstRoundMatches = winners.filter(match => match.winner === null && match.player2 !== null);
             
             if (unplayedFirstRoundMatches.length > 0) {
                 // Play the next unplayed match from the first round
@@ -291,30 +314,51 @@ function setupNextRound() {
                 currentMatchup = [nextMatch.player1, nextMatch.player2];
                 console.log(`Next first round matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
             } else {
-                // All first-round matches are completed, start the next round
+                // All first-round matches are completed
                 bracketRound++;
                 console.log(`Starting bracket round ${bracketRound}`);
                 
-                // Get winners from previous round
-                const completedMatches = winners.filter(match => match.winner !== null);
+                // Get all winners so far (including "bye" players)
+                const roundWinners = winners.filter(match => match.winner !== null).map(match => match.winner);
+                console.log(`Round winners: ${roundWinners.map(w => w.username).join(', ')}`);
                 
-                // Pair winners for the next round
-                for (let i = 0; i < completedMatches.length; i += 2) {
-                    if (i + 1 < completedMatches.length) {
-                        winners.push({
-                            player1: completedMatches[i].winner,
-                            player2: completedMatches[i + 1].winner,
-                            winner: null
-                        });
+                // If we have exactly 2 winners (common in 3-player tournaments), create the final match
+                if (roundWinners.length === 2) {
+                    winners.push({
+                        player1: roundWinners[0],
+                        player2: roundWinners[1],
+                        winner: null
+                    });
+                    
+                    currentMatchup = [roundWinners[0], roundWinners[1]];
+                    console.log(`Final matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
+                } else {
+                    // Pair winners for the next round
+                    for (let i = 0; i < roundWinners.length; i += 2) {
+                        if (i + 1 < roundWinners.length) {
+                            winners.push({
+                                player1: roundWinners[i],
+                                player2: roundWinners[i + 1],
+                                winner: null
+                            });
+                        } else if (roundWinners.length % 2 === 1) {
+                            // Handle odd number of winners - give last player a bye
+                            console.log(`Player ${roundWinners[i].username} gets a bye in round ${bracketRound}`);
+                            winners.push({
+                                player1: roundWinners[i],
+                                player2: null,
+                                winner: roundWinners[i]
+                            });
+                        }
                     }
-                }
-                
-                // Get the first matchup of the new round
-                const newRoundMatches = winners.filter(match => match.winner === null);
-                if (newRoundMatches.length > 0) {
-                    const nextMatch = newRoundMatches[0];
-                    currentMatchup = [nextMatch.player1, nextMatch.player2];
-                    console.log(`Next round matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
+                    
+                    // Get the first matchup of the new round (only for non-bye matches)
+                    const newRoundMatches = winners.filter(match => match.winner === null && match.player2 !== null);
+                    if (newRoundMatches.length > 0) {
+                        const nextMatch = newRoundMatches[0];
+                        currentMatchup = [nextMatch.player1, nextMatch.player2];
+                        console.log(`Next round matchup: ${currentMatchup[0].username} vs ${currentMatchup[1].username}`);
+                    }
                 }
             }
         }
@@ -549,6 +593,7 @@ class PongGameTournament {
         
         if (finalLeftScore === undefined || finalRightScore === undefined) {
             console.error("Final scores are undefined, cannot publish scores");
+            gameInstanceLock = false; // Release lock
             return;
         }
         
@@ -565,35 +610,69 @@ class PongGameTournament {
         }
         
         // Record the winner in the current match in the winners array
-        const currentMatchIndex = winners.findIndex(match => 
-            (match.player1.username === this.players[0].username && match.player2.username === this.players[1].username) ||
-            (match.player1.username === this.players[1].username && match.player2.username === this.players[0].username)
-        );
+        // Handle both regular matches and final-round matches with possible null player2
+        let currentMatchIndex = -1;
+        
+        // First try to find a match with both player1 and player2 matching our players
+        for (let i = 0; i < winners.length; i++) {
+            const match = winners[i];
+            if (match.player2 === null) continue; // Skip matches with null player2
+            
+            if ((match.player1.username === this.players[0].username && match.player2.username === this.players[1].username) ||
+                (match.player1.username === this.players[1].username && match.player2.username === this.players[0].username)) {
+                currentMatchIndex = i;
+                break;
+            }
+        }
+        
+        // If no match found, look for a match in the final round format
+        if (currentMatchIndex === -1) {
+            for (let i = 0; i < winners.length; i++) {
+                const match = winners[i];
+                if (match.winner !== null) continue; // Skip matches that already have a winner
+                
+                // Check if this is a final round match by checking if either player1 or player2 matches our players
+                if (match.player1 && match.player2 && 
+                    ((match.player1.username === this.players[0].username || match.player1.username === this.players[1].username) &&
+                     (match.player2.username === this.players[0].username || match.player2.username === this.players[1].username))) {
+                    currentMatchIndex = i;
+                    break;
+                }
+            }
+        }
         
         if (currentMatchIndex !== -1) {
             winners[currentMatchIndex].winner = winner;
             console.log(`Recorded winner for match ${currentMatchIndex}: ${winner.username}`);
+        } else {
+            console.warn("Could not find a matching match in the winners array");
         }
         
-        // Get JWT tokens from the stored player objects
-        const winnerToken = winner.JWT?.access || winner.JWT?.value?.access;
-        const loserToken = loser.JWT?.access || loser.JWT?.value?.access;
+        // Get JWT tokens from the stored player objects with better checks
+        let publishScores = true;
+        let winnerToken, loserToken;
+        
+        // Check winner token
+        if (winner.JWT && typeof winner.JWT === 'object') {
+            winnerToken = winner.JWT.access || (winner.JWT.value && winner.JWT.value.access);
+        }
+        
+        // Check loser token
+        if (loser.JWT && typeof loser.JWT === 'object') {
+            loserToken = loser.JWT.access || (loser.JWT.value && loser.JWT.value.access);
+        }
+        
+        // Log token status
+        console.log(`Winner token status: ${winnerToken ? 'valid' : 'invalid'}, Loser token status: ${loserToken ? 'valid' : 'invalid'}`);
         
         if (!winnerToken || !loserToken) {
             console.error('Invalid JWT tokens:', { winnerToken, loserToken });
-            // Release lock even on error
-            gameInstanceLock = false;
-            return;
+            publishScores = false;
         }
         
-        console.log("Publishing scores:", finalLeftScore, finalRightScore);
-        
-        // Publish scores with the correct winner/loser
-        Promise.all([
-            publishScore(winnerToken, winner.username, loser.username, finalLeftScore > finalRightScore ? finalLeftScore : finalRightScore, finalLeftScore > finalRightScore ? finalRightScore : finalLeftScore),
-            publishScore(loserToken, loser.username, winner.username, finalLeftScore > finalRightScore ? finalRightScore : finalLeftScore, finalLeftScore > finalRightScore ? finalLeftScore : finalRightScore)
-        ]).then(() => {
-            // Reset paddle scores after publishing
+        // Continue with the tournament even if we can't publish scores
+        const continueToNextMatch = () => {
+            // Reset paddle scores
             this.leftPaddle.score = 0;
             this.rightPaddle.score = 0;
             
@@ -611,218 +690,230 @@ class PongGameTournament {
             const keyPressHandler = (event) => {
                 if (event.code === 'Space') {
                     document.removeEventListener('keydown', keyPressHandler);
-                    
-                    // Clean up current game
-                    this.cleanup();
-                    
-                    // Release game instance lock
-                    gameInstanceLock = false;
-                    
-                    // Setup next matchup
-                    setupNextRound();
-                    
-                    // Start next match if there are players left - this is now handled in setupNextRound
-                }
-            };
-            
-            document.addEventListener('keydown', keyPressHandler);
+                
+                // Clean up current game
+                this.cleanup();
+                
+                // Release game instance lock
+                gameInstanceLock = false;
+                
+                // Setup next matchup
+                setupNextRound();
+            }
+        };
+        
+        document.addEventListener('keydown', keyPressHandler);
+    };
+    
+    // Publish scores if tokens are valid, otherwise just continue
+    if (publishScores) {
+        console.log("Publishing scores:", finalLeftScore, finalRightScore);
+        
+        Promise.all([
+            publishScore(winnerToken, winner.username, loser.username, finalLeftScore > finalRightScore ? finalLeftScore : finalRightScore, finalLeftScore > finalRightScore ? finalRightScore : finalLeftScore),
+            publishScore(loserToken, loser.username, winner.username, finalLeftScore > finalRightScore ? finalRightScore : finalLeftScore, finalLeftScore > finalRightScore ? finalLeftScore : finalRightScore)
+        ]).then(() => {
+            continueToNextMatch();
         }).catch(error => {
             console.error('Error publishing scores:', error);
-            // Release lock even on error
-            gameInstanceLock = false;
+            continueToNextMatch(); // Continue anyway
         });
+    } else {
+        console.log("Skipping score publication due to invalid tokens");
+        continueToNextMatch();
     }
+}
 
-	update() {
-		// Don't update gameplay if the game is over
-		if (!this.over) {
-			// Update the ball's position and check for collisions
-			if (this.ball.x <= 0) this._resetTurn(this.rightPaddle, this.leftPaddle);
-			if (this.ball.x >= this.pongCanvas.width - this.ball.width) this._resetTurn(this.leftPaddle, this.rightPaddle);
+update() {
+	// Don't update gameplay if the game is over
+	if (!this.over) {
+		// Update the ball's position and check for collisions
+		if (this.ball.x <= 0) this._resetTurn(this.rightPaddle, this.leftPaddle);
+		if (this.ball.x >= this.pongCanvas.width - this.ball.width) this._resetTurn(this.leftPaddle, this.rightPaddle);
 
-			if (this.ball.y <= 0) this.ball.moveY = this.DIRECTION.DOWN;
-			if (this.ball.y >= this.pongCanvas.height - this.ball.height) this.ball.moveY = this.DIRECTION.UP;
+		if (this.ball.y <= 0) this.ball.moveY = this.DIRECTION.DOWN;
+		if (this.ball.y >= this.pongCanvas.height - this.ball.height) this.ball.moveY = this.DIRECTION.UP;
 
-			if (this.leftPaddle.move === this.DIRECTION.UP) this.leftPaddle.y -= this.leftPaddle.speed;
-			else if (this.leftPaddle.move === this.DIRECTION.DOWN) this.leftPaddle.y += this.leftPaddle.speed;
+		if (this.leftPaddle.move === this.DIRECTION.UP) this.leftPaddle.y -= this.leftPaddle.speed;
+		else if (this.leftPaddle.move === this.DIRECTION.DOWN) this.leftPaddle.y += this.leftPaddle.speed;
 
-			if (this.rightPaddle.move === this.DIRECTION.UP) this.rightPaddle.y -= this.rightPaddle.speed;
-			else if (this.rightPaddle.move === this.DIRECTION.DOWN) this.rightPaddle.y += this.rightPaddle.speed;
+		if (this.rightPaddle.move === this.DIRECTION.UP) this.rightPaddle.y -= this.rightPaddle.speed;
+		else if (this.rightPaddle.move === this.DIRECTION.DOWN) this.rightPaddle.y += this.rightPaddle.speed;
 
-			if (this._turnDelayIsOver() && this.turn) {
-				this.ball.moveX = this.turn === this.leftPaddle ? this.DIRECTION.LEFT : this.DIRECTION.RIGHT;
-				this.ball.moveY = [this.DIRECTION.UP, this.DIRECTION.DOWN][Math.round(Math.random())];
-				this.ball.y = Math.floor(Math.random() * this.pongCanvas.height - 200) + 200;
-				this.turn = null;
-			}
+		if (this._turnDelayIsOver() && this.turn) {
+			this.ball.moveX = this.turn === this.leftPaddle ? this.DIRECTION.LEFT : this.DIRECTION.RIGHT;
+			this.ball.moveY = [this.DIRECTION.UP, this.DIRECTION.DOWN][Math.round(Math.random())];
+			this.ball.y = Math.floor(Math.random() * this.pongCanvas.height - 200) + 200;
+			this.turn = null;
+		}
 
-			if (this.leftPaddle.y <= 0) this.leftPaddle.y = 0;
-			else if (this.leftPaddle.y >= (this.pongCanvas.height - this.leftPaddle.height)) this.leftPaddle.y = (this.pongCanvas.height - this.leftPaddle.height);
+		if (this.leftPaddle.y <= 0) this.leftPaddle.y = 0;
+		else if (this.leftPaddle.y >= (this.pongCanvas.height - this.leftPaddle.height)) this.leftPaddle.y = (this.pongCanvas.height - this.leftPaddle.height);
 
-			if (this.ball.moveY === this.DIRECTION.UP) this.ball.y -= (this.ball.speed / 1.5);
-			else if (this.ball.moveY === this.DIRECTION.DOWN) this.ball.y += (this.ball.speed / 1.5);
-			if (this.ball.moveX === this.DIRECTION.LEFT) this.ball.x -= this.ball.speed;
-			else if (this.ball.moveX === this.DIRECTION.RIGHT) this.ball.x += this.ball.speed;
+		if (this.ball.moveY === this.DIRECTION.UP) this.ball.y -= (this.ball.speed / 1.5);
+		else if (this.ball.moveY === this.DIRECTION.DOWN) this.ball.y += (this.ball.speed / 1.5);
+		if (this.ball.moveX === this.DIRECTION.LEFT) this.ball.x -= this.ball.speed;
+		else if (this.ball.moveX === this.DIRECTION.RIGHT) this.ball.x += this.ball.speed;
 
-			if (this.rightPaddle.y >= this.pongCanvas.height - this.rightPaddle.height) this.rightPaddle.y = this.pongCanvas.height - this.rightPaddle.height;
-			else if (this.rightPaddle.y <= 0) this.rightPaddle.y = 0;
+		if (this.rightPaddle.y >= this.pongCanvas.height - this.rightPaddle.height) this.rightPaddle.y = this.pongCanvas.height - this.rightPaddle.height;
+		else if (this.rightPaddle.y <= 0) this.rightPaddle.y = 0;
 
-			if (this.ball.x - this.ball.width <= this.leftPaddle.x && this.ball.x >= this.leftPaddle.x - this.leftPaddle.width) {
-				if (this.ball.y <= this.leftPaddle.y + this.leftPaddle.height && this.ball.y + this.ball.height >= this.leftPaddle.y) {
-					this.ball.x = (this.leftPaddle.x + this.ball.width);
-					this.ball.moveX = this.DIRECTION.RIGHT;
-					this.ball.speed += 0.2;
-				}
-			}
-
-			if (this.ball.x - this.ball.width <= this.rightPaddle.x && this.ball.x >= this.rightPaddle.x - this.rightPaddle.width) {
-				if (this.ball.y <= this.rightPaddle.y + this.rightPaddle.height && this.ball.y + this.ball.height >= this.rightPaddle.y) {
-					this.ball.x = (this.rightPaddle.x - this.ball.width);
-					this.ball.moveX = this.DIRECTION.LEFT;
-					this.ball.speed += 0.2;
-				}
-			}
-			
-			// Check if either player has reached the target score - only do this if the game is not already over
-			const targetScore = this.rounds[this.round];
-			if (this.leftPaddle.score >= targetScore || this.rightPaddle.score >= targetScore) {
-				this.gameOver();
+		if (this.ball.x - this.ball.width <= this.leftPaddle.x && this.ball.x >= this.leftPaddle.x - this.leftPaddle.width) {
+			if (this.ball.y <= this.leftPaddle.y + this.leftPaddle.height && this.ball.y + this.ball.height >= this.leftPaddle.y) {
+				this.ball.x = (this.leftPaddle.x + this.ball.width);
+				this.ball.moveX = this.DIRECTION.RIGHT;
+				this.ball.speed += 0.2;
 			}
 		}
-	}
 
-	// New dedicated method to handle game over state
-	gameOver() {
-        // If game over already in progress, don't run again
-        if (this.over || this.gameEndInProgress) return;
-        
-        console.log("Game over triggered");
-        
-        // Set flag to prevent multiple calls
-        this.gameEndInProgress = true;
-        
-        // Freeze the game state
-        this.over = true;
-        
-        // Stop ball movement
-        this.ball.moveX = this.DIRECTION.IDLE;
-        this.ball.moveY = this.DIRECTION.IDLE;
-        
-        // Stop paddle movement
-        this.leftPaddle.move = this.DIRECTION.IDLE;
-        this.rightPaddle.move = this.DIRECTION.IDLE;
-        
-        // Cancel any animation frames
-        if (this.animationFrameId) {
-            cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = null;
-        }
-        
-        // Capture final scores immediately
-        this.finalLeftScore = this.leftPaddle.score;
-        this.finalRightScore = this.rightPaddle.score;
-        
-        // Show end game menu after a short delay
-        setTimeout(() => {
-            this.endGameMenu();
-        }, 1000);
-    }
-
-	loop() {
-		this.update();
-		this.draw();
-
-		if (!this.over) {
-			this.animationFrameId = requestAnimationFrame(() => this.loop());
-		}
-	}
-
-	listen() {
-		this.keyDownHandler = (event) => {
-			if (!this.running) {
-				this.running = true;
-				window.requestAnimationFrame(() => this.loop());
+		if (this.ball.x - this.ball.width <= this.rightPaddle.x && this.ball.x >= this.rightPaddle.x - this.rightPaddle.width) {
+			if (this.ball.y <= this.rightPaddle.y + this.rightPaddle.height && this.ball.y + this.ball.height >= this.rightPaddle.y) {
+				this.ball.x = (this.rightPaddle.x - this.ball.width);
+				this.ball.moveX = this.DIRECTION.LEFT;
+				this.ball.speed += 0.2;
 			}
-			if (event.keyCode === 87) this.leftPaddle.move = this.DIRECTION.UP;
-			if (event.keyCode === 83) this.leftPaddle.move = this.DIRECTION.DOWN;
-			if (event.keyCode === 38) this.rightPaddle.move = this.DIRECTION.UP;
-			if (event.keyCode === 40) this.rightPaddle.move = this.DIRECTION.DOWN;
-		};
-
-		this.keyUpHandler = (event) => {
-			this.leftPaddle.move = this.DIRECTION.IDLE;
-			this.rightPaddle.move = this.DIRECTION.IDLE;
-		};
-
-		document.addEventListener('keydown', this.keyDownHandler);
-		document.addEventListener('keyup', this.keyUpHandler);
-	}
-
-	async initialize() {
-		console.log("Starting match initialization");
+		}
 		
-		// Create paddles and ball
-		this.leftPaddle = this.createPaddle('left');
-		this.rightPaddle = this.createPaddle('right');
-		this.ball = this.createBall();
-		this.turn = this.rightPaddle;
-
-		this.menu();
-		this.listen();
-	}
-
-	_resetTurn(victor, loser) {
-        // Increment the score first before any other changes
-        victor.score++;
-        
-        // Create a completely new ball with default state
-        this.ball = this.createBall();
-        
-        // Set the turn but don't change the ball's movement yet
-        this.turn = loser;
-        
-        // Reset the timer to ensure proper delay before the ball moves
-        this.timer = (new Date()).getTime();
-	}
-
-	_turnDelayIsOver() {
-		return ((new Date()).getTime() - this.timer >= 1000);
-	}
-
-	_generateRoundColor() {
-		let newColor = this.colors[Math.floor(Math.random() * this.colors.length)];
-		if (newColor === this.color) return this._generateRoundColor();
-		return newColor;
-	}
-
-	cleanup() {
-		// Cancel any pending animation frame
-		if (this.animationFrameId) {
-			cancelAnimationFrame(this.animationFrameId);
+		// Check if either player has reached the target score - only do this if the game is not already over
+		const targetScore = this.rounds[this.round];
+		if (this.leftPaddle.score >= targetScore || this.rightPaddle.score >= targetScore) {
+			this.gameOver();
 		}
-
-		// Remove event listeners
-		if (this.keyDownHandler) {
-			document.removeEventListener('keydown', this.keyDownHandler);
-		}
-		if (this.keyUpHandler) {
-			document.removeEventListener('keyup', this.keyUpHandler);
-		}
-
-		// Clear the canvas
-		if (this.context) {
-			this.context.clearRect(0, 0, this.pongCanvas.width, this.pongCanvas.height);
-		}
-
-		// Reset game state
-		this.running = false;
-		this.over = true;
-		this.leftPaddle = null;
-		this.rightPaddle = null;
-		this.ball = null;
-		this.turn = null;
-
-		// Clear the global reference
-		window.currentPongGame = null;
 	}
+}
+
+// New dedicated method to handle game over state
+gameOver() {
+    // If game over already in progress, don't run again
+    if (this.over || this.gameEndInProgress) return;
+    
+    console.log("Game over triggered");
+    
+    // Set flag to prevent multiple calls
+    this.gameEndInProgress = true;
+    
+    // Freeze the game state
+    this.over = true;
+    
+    // Stop ball movement
+    this.ball.moveX = this.DIRECTION.IDLE;
+    this.ball.moveY = this.DIRECTION.IDLE;
+    
+    // Stop paddle movement
+    this.leftPaddle.move = this.DIRECTION.IDLE;
+    this.rightPaddle.move = this.DIRECTION.IDLE;
+    
+    // Cancel any animation frames
+    if (this.animationFrameId) {
+        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
+    }
+    
+    // Capture final scores immediately
+    this.finalLeftScore = this.leftPaddle.score;
+    this.finalRightScore = this.rightPaddle.score;
+    
+    // Show end game menu after a short delay
+    setTimeout(() => {
+        this.endGameMenu();
+    }, 1000);
+}
+
+loop() {
+	this.update();
+	this.draw();
+
+	if (!this.over) {
+		this.animationFrameId = requestAnimationFrame(() => this.loop());
+	}
+}
+
+listen() {
+	this.keyDownHandler = (event) => {
+		if (!this.running) {
+			this.running = true;
+			window.requestAnimationFrame(() => this.loop());
+		}
+		if (event.keyCode === 87) this.leftPaddle.move = this.DIRECTION.UP;
+		if (event.keyCode === 83) this.leftPaddle.move = this.DIRECTION.DOWN;
+		if (event.keyCode === 38) this.rightPaddle.move = this.DIRECTION.UP;
+		if (event.keyCode === 40) this.rightPaddle.move = this.DIRECTION.DOWN;
+	};
+
+	this.keyUpHandler = (event) => {
+		this.leftPaddle.move = this.DIRECTION.IDLE;
+		this.rightPaddle.move = this.DIRECTION.IDLE;
+	};
+
+	document.addEventListener('keydown', this.keyDownHandler);
+	document.addEventListener('keyup', this.keyUpHandler);
+}
+
+async initialize() {
+	console.log("Starting match initialization");
+	
+	// Create paddles and ball
+	this.leftPaddle = this.createPaddle('left');
+	this.rightPaddle = this.createPaddle('right');
+	this.ball = this.createBall();
+	this.turn = this.rightPaddle;
+
+	this.menu();
+	this.listen();
+}
+
+_resetTurn(victor, loser) {
+    // Increment the score first before any other changes
+    victor.score++;
+    
+    // Create a completely new ball with default state
+    this.ball = this.createBall();
+    
+    // Set the turn but don't change the ball's movement yet
+    this.turn = loser;
+    
+    // Reset the timer to ensure proper delay before the ball moves
+    this.timer = (new Date()).getTime();
+}
+
+_turnDelayIsOver() {
+	return ((new Date()).getTime() - this.timer >= 1000);
+}
+
+_generateRoundColor() {
+	let newColor = this.colors[Math.floor(Math.random() * this.colors.length)];
+	if (newColor === this.color) return this._generateRoundColor();
+	return newColor;
+}
+
+cleanup() {
+	// Cancel any pending animation frame
+	if (this.animationFrameId) {
+		cancelAnimationFrame(this.animationFrameId);
+	}
+
+	// Remove event listeners
+	if (this.keyDownHandler) {
+		document.removeEventListener('keydown', this.keyDownHandler);
+	}
+	if (this.keyUpHandler) {
+		document.removeEventListener('keyup', this.keyUpHandler);
+	}
+
+	// Clear the canvas
+	if (this.context) {
+		this.context.clearRect(0, 0, this.pongCanvas.width, this.pongCanvas.height);
+	}
+
+	// Reset game state
+	this.running = false;
+	this.over = true;
+	this.leftPaddle = null;
+	this.rightPaddle = null;
+	this.ball = null;
+	this.turn = null;
+
+	// Clear the global reference
+	window.currentPongGame = null;
+}
 };
