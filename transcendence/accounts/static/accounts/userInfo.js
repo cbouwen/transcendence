@@ -159,12 +159,12 @@ function accountsPageStart() {
     const puppet = document.getElementById("puppetGrantSubmitButton");
 	if (puppet)
 		puppet.addEventListener("click", puppetGrantSubmitButtonHandler);
-	const addFriend = document.getElementById("addFriendButton");
-	if (addFriend)
-		addFriend.addEventListener("click", addFriend);
-	const removeFriend = document.getElementById("removeFriendButton");
-	if (removeFriend)
-		removeFriend.addEventListener("click", removeFriend);
+	const addFriendButton = document.getElementById("addFriendButton");
+	if (addFriendButton)
+		addFriendButton.addEventListener("click", addFriend);
+	const removeFriendButton = document.getElementById("removeFriendButton");
+	if (removeFriendButton)
+		removeFriendButton.addEventListener("click", removeFriend);
 	const logoutButton = document.getElementById("logoutButton");
 	if (logoutButton)
 		logoutButton.addEventListener("click", logout);
