@@ -303,6 +303,34 @@
 	text-align: center;
 	max-width: 1000px;
 	box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+	max-height: 900px;
+	overflow-y: auto;
+	color: #FDFFFE !important;
+	text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3) !important;
+}
+
+.formTextInput {
+	color: #FDFFFE !important;
+	text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3) !important;
+	background: rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border-radius: 0.375rem;
+	padding: 5px;
+	border-color: transparent;
+	height: 100%;
+}
+
+.formTextInput:focus  {
+	color: #FDFFFE !important;
+	text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3) !important;
+	background: rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border-radius: 0.375rem;
+	padding: 5px;
+	border-color: transparent;
+	height: 100%;
 }
 
 .activeNav {
