@@ -26,7 +26,7 @@ async function apiRequest(endpoint, method, jwtTokens, body) {
 		};
 	}
 
-	console.log("Sending the following request:");
+	console.log("Sending the following request to " + url + " with the following body:" + JSON.stringify(body) + " and the following headers:" + JSON.stringify(headers) + " and the following request:" + JSON.stringify(request) + " and the following jwtTokens:" + JSON.stringify(jwtTokens));
 	console.log(request);
 	const response = await fetch(url, request);
 	const responseData = await response.json();
