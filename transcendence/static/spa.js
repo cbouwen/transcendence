@@ -22,6 +22,9 @@ async function navigateTo(url) {
 	await router();
 };
 
+// Flag to track if pong tournament is active
+let pongTournamentActive = false;
+
 async function router() {
   console.log("router called");
   GlobalTetrisGames.forEach(game => {
@@ -33,6 +36,14 @@ async function router() {
   if (window.currentPongGame && window.currentPongGame.cleanup) {
     window.currentPongGame.cleanup();
   }
+  
+  // Clean up pong tournament if we're navigating away from it
+  if (pongTournamentActive && typeof cleanupPongTournament === 'function') {
+    console.log("Cleaning up pong tournament");
+    cleanupPongTournament();
+    pongTournamentActive = false;
+  }
+  
   if (JWTs) {
     const response = await apiRequest('/tetris/add-player', 'POST', JWTs, undefined);
     if (response) {
@@ -47,6 +58,8 @@ async function router() {
   tournamentActive = false;
   tetrisPageLoaded = false;
   ontournamentpage = false;
+  // We already reset this above if it was active, but reset it again just to be sure
+  pongTournamentActive = false;
   clearInterval(chatIntervalTimer);
   const routes = [
     {
@@ -80,6 +93,7 @@ async function router() {
       path: "/pong_tournament",
       view: async () => {
         await viewHTML("/static/pong/tournament.html");
+        pongTournamentActive = true;
         await pongTournamentStart();
       }
     },
