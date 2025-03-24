@@ -1,18 +1,27 @@
-<div id="tournament-setup">
-    <h2>Pong Tournament Setup</h2>
-    <div class="tournament-controls">
-        <div class="user-search">
-            <input type="text" id="username-input" placeholder="Enter username" />
-            <button id="add-user-btn">Add User</button>
-        </div>
-        <div class="tournament-players">
-            <h3>Tournament Players</h3>
-            <ul id="player-list">
-                <!-- Player items will be added here -->
-            </ul>
-        </div>
-        <button id="start-tournament-btn">Start Tournament</button>
-    </div>
+<div id="intro" class="bg-image" style="
+	background-image: url('/media/pongBackdrop.jpg');
+	height: 100vh;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;">
+	<div class="custom-jumbotron-container">
+		<div class="custom-jumbotron jumbotron w-auto h-auto">
+			<div id="tournament-setup">
+				<h2>Pong Tournament Setup</h2>
+				<div class="tournament-controls">
+					<div class="user-search">
+						<input type="text" id="username-input" placeholder="Enter username" />
+						<button id="add-user-btn">Add User</button>
+					</div>
+					<div class="tournament-players">
+						<h3>Tournament Players</h3>
+						<ul id="player-list">
+						</ul>
+					</div>
+					<button id="start-tournament-btn">Start Tournament</button>
+				</div>
+			</div>
+			<div id="pong-wrapper"></div>
+		</div>
+	</div>
 </div>
-
-<div id="pong-wrapper"></div>
