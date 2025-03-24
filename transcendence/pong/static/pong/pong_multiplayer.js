@@ -251,17 +251,26 @@ class PongGameMultiPlayer {
 				this.running = true;
 				window.requestAnimationFrame(() => this.loop());
 			}
+	
+			// Player 1 (left paddle) controls: W (up), S (down)
 			if (event.keyCode === 87) this.player.move = this.DIRECTION.UP;
 			if (event.keyCode === 83) this.player.move = this.DIRECTION.DOWN;
+	
+			// Player 2 (right paddle) controls: Up Arrow (up), Down Arrow (down)
 			if (event.keyCode === 38) this.opponent.move = this.DIRECTION.UP;
 			if (event.keyCode === 40) this.opponent.move = this.DIRECTION.DOWN;
 		};
-
+	
 		this.keyUpHandler = (event) => {
-			this.player.move = this.DIRECTION.IDLE;
-			this.opponent.move = this.DIRECTION.IDLE;
+			// Player 1 (left paddle) controls: W (up), S (down)
+			if (event.keyCode === 87 && this.player.move === this.DIRECTION.UP) this.player.move = this.DIRECTION.IDLE; // W key
+			if (event.keyCode === 83 && this.player.move === this.DIRECTION.DOWN) this.player.move = this.DIRECTION.IDLE; // S key
+	
+			// Player 2 (right paddle) controls: Up Arrow (up), Down Arrow (down)
+			if (event.keyCode === 38 && this.opponent.move === this.DIRECTION.UP) this.opponent.move = this.DIRECTION.IDLE; // Up Arrow key
+			if (event.keyCode === 40 && this.opponent.move === this.DIRECTION.DOWN) this.opponent.move = this.DIRECTION.IDLE; // Down Arrow key
 		};
-
+	
 		document.addEventListener('keydown', this.keyDownHandler);
 		document.addEventListener('keyup', this.keyUpHandler);
 	}
