@@ -1,0 +1,43 @@
+<div id="intro" class="bg-image" style="
+	background-image: url('/media/pongBackdrop.jpg');
+	height: 100vh;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;">
+	<div class="custom-jumbotron-container">
+		<div class="custom-jumbotron-settings jumbotron">
+			<div class="row">
+				<div class="col">
+					<ul class="nav nav-tabs">
+						<li class="nav-item"><a data-link id="userSettings" class="nav-link inactiveNav"href="/account">User Settings</a></li>
+						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link inactiveNav" href="/social">Social</a></li>
+						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link active activeNav" aria-current="page" href="/matchHistory">Match History</a></li>
+						<li class="nav-item"><a data-link id="tetrisStats" class="nav-link inactiveNav" href="/puppetGrant">Create Puppet Grant</a></li>
+					</ul>
+					<div class="tab-content" id="tab">
+						<div class="card">
+							<div class="card-header">
+								Match history
+							</div>
+							<div class="card-body">
+								<div class="container match-stats">
+									<div class="stats-box">
+										<p><strong>Wins:</strong> <span id="winsCount">0</span></p>
+										<p><strong>Losses:</strong> <span id="lossesCount">0</span></p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						<button type="button" class="btn btn-warning" id="logoutButton">Logout</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

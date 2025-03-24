@@ -40,7 +40,7 @@ async function loadMessages() {
                 `<button class="btn btn-success btn-sm ms-2" onclick="createPuppetGrant(JWTs, '${msg.sender}')">Accept invite</button>` : '';
             
             messageDiv.innerHTML = `
-                <div class="card ${isMyMessage ? 'bg-primary text-white float-end' : 'bg-light float-start'}" style="max-width: 70%;">
+                <div class="card ${isMyMessage ? 'myMessage float-end' : 'theirMessage float-start'}" style="max-width: 70%;">
                     <div class="card-body p-2">
                         <div class="d-flex align-items-center">
                             <span class="card-text">${msg.message}</span>

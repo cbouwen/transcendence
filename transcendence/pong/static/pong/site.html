@@ -1,24 +1,15 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Pong Game (yay!)</title>
-    <style>
-        canvas {
-            display: block;
-            margin: auto;
-            background: black;
-        }
-    </style>
-</head>
-<body>
-    <canvas></canvas>
-    <script src="/static/pong/Pong.js"></script>
-</body>
-</html> -->
-
-
-<a data-link href="/pong_single">Singleplayer</a>
-<a data-link href="/pong_multi">Multiplayer</a>
-<a data-link href="/pong_tournament">Tournament</a>
+<div id="intro" class="bg-image" style="
+	background-image: url('/media/pongBackdrop.jpg');
+	height: 100vh;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;">
+	<div class="custom-jumbotron-container">
+		<div class="custom-jumbotron jumbotron">
+			<h1 class="display-4">Pong</h1>
+			<a class="btn btn-lg btn-primary pongButton" role="button" style="background-color: #0b204D !important;" data-link href="/pong_single">Singleplayer</a>
+			<a class="btn btn-lg btn-primary pongButton" role="button" style="background-color: #0b204D !important;" data-link href="/pong_multi">Multiplayer</a>
+			<a class="btn btn-lg btn-primary pongButton" role="button" style="background-color: #0b204D !important;" data-link href="/pong_tournament">Tournament</a>
+		</div>
+	</div>
+</div>
