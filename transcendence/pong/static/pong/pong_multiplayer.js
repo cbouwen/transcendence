@@ -1,57 +1,59 @@
 async function pongMultiStart() {
-	const opponentJWTs = await getPuppetJWTs();
-	if (opponentJWTs == null) {
-		navigateTo("/");
-		return ;
-	}
-        let pongGame = new PongGameMultiPlayer(opponentJWTs);
-        await pongGame.initialize();
-	console.log("pong init finished");
-};
+    const opponentJWTs = await getPuppetJWTs();
+    if (opponentJWTs == null) {
+        navigateTo("/");
+        return;
+    }
+    let pongGame = new PongGameMultiPlayer(opponentJWTs);
+    await pongGame.initialize();
+    console.log("pong init finished");
+}
 
 class PongGameMultiPlayer {
-	constructor(opponentJWTs) {
-		// Initialize container and canvas
-		this.pongContainer = document.getElementById('pong-wrapper');
-		this.pongContainer = document.getElementById('pong-wrapper');
-		this.pongCanvas = document.createElement('canvas');
-		this.pongCanvas.id = 'pong-canvas';
-		this.pongCanvas.style.cssText = "display: block; margin: auto; background: black;";
-		this.pongContainer.appendChild(this.pongCanvas);
-		this.context = this.pongCanvas.getContext('2d');
+    constructor(opponentJWTs) {
+        // Initialize container and canvas
+        this.pongContainer = document.getElementById('pong-wrapper');
+        this.pongCanvas = document.createElement('canvas');
+        this.pongCanvas.id = 'pong-canvas';
+        this.pongCanvas.style.cssText = "display: block; margin: auto; background: black;";
+        this.pongContainer.appendChild(this.pongCanvas);
+        this.context = this.pongCanvas.getContext('2d');
 
-		this.pongCanvas.width = 1400;
-		this.pongCanvas.height = 1000;
+        this.pongCanvas.width = 1400;
+        this.pongCanvas.height = 1000;
 
-		this.pongCanvas.style.width = (this.pongCanvas.width / 2) + 'px';
-		this.pongCanvas.style.height = (this.pongCanvas.height / 2) + 'px';
+        this.pongCanvas.style.width = (this.pongCanvas.width / 2) + 'px';
+        this.pongCanvas.style.height = (this.pongCanvas.height / 2) + 'px';
 
-		this.DIRECTION = {
-			IDLE: 0,
-			UP: 1,
-			DOWN: 2,
-			LEFT: 3,
-			RIGHT: 4
-		};
+        this.DIRECTION = {
+            IDLE: 0,
+            UP: 1,
+            DOWN: 2,
+            LEFT: 3,
+            RIGHT: 4
+        };
 
-		this.rounds = [5];
-		this.colors = ['#2c3e50'];
+        this.rounds = [5];
+        this.colors = ['#2c3e50'];
 
-		// Default game properties
-		this.running = this.over = false;
-		this.timer = this.round = 0;
-		this.color = '#2c3e50';
+        // Default game properties
+        this.running = this.over = false;
+        this.timer = this.round = 0;
+        this.color = '#2c3e50';
 
-		this.opponentJWTs = opponentJWTs;
-		console.log("this.opponentJWTs", this.opponentJWTs);
-		
-		this.keyDownHandler = null;
-		this.keyUpHandler = null;
-		this.animationFrameId = null;
+        this.opponentJWTs = opponentJWTs;
+        console.log("this.opponentJWTs", this.opponentJWTs);
 
-		// Store the game instance globally
-		window.currentPongGame = this;
-	}
+        this.keyDownHandler = null;
+        this.keyUpHandler = null;
+        this.animationFrameId = null;
+
+        // Multiplayer-specific properties
+        this.opponent = null;
+
+        // Store the game instance globally
+        window.currentPongGame = this;
+    }
 
 	createBall(incrementedSpeed) {
 		return {
@@ -251,17 +253,26 @@ class PongGameMultiPlayer {
 				this.running = true;
 				window.requestAnimationFrame(() => this.loop());
 			}
+	
+			// Player 1 (left paddle) controls: W (up), S (down)
 			if (event.keyCode === 87) this.player.move = this.DIRECTION.UP;
 			if (event.keyCode === 83) this.player.move = this.DIRECTION.DOWN;
+	
+			// Player 2 (right paddle) controls: Up Arrow (up), Down Arrow (down)
 			if (event.keyCode === 38) this.opponent.move = this.DIRECTION.UP;
 			if (event.keyCode === 40) this.opponent.move = this.DIRECTION.DOWN;
 		};
-
+	
 		this.keyUpHandler = (event) => {
-			this.player.move = this.DIRECTION.IDLE;
-			this.opponent.move = this.DIRECTION.IDLE;
+			// Player 1 (left paddle) controls: W (up), S (down)
+			if (event.keyCode === 87 && this.player.move === this.DIRECTION.UP) this.player.move = this.DIRECTION.IDLE; // W key
+			if (event.keyCode === 83 && this.player.move === this.DIRECTION.DOWN) this.player.move = this.DIRECTION.IDLE; // S key
+	
+			// Player 2 (right paddle) controls: Up Arrow (up), Down Arrow (down)
+			if (event.keyCode === 38 && this.opponent.move === this.DIRECTION.UP) this.opponent.move = this.DIRECTION.IDLE; // Up Arrow key
+			if (event.keyCode === 40 && this.opponent.move === this.DIRECTION.DOWN) this.opponent.move = this.DIRECTION.IDLE; // Down Arrow key
 		};
-
+	
 		document.addEventListener('keydown', this.keyDownHandler);
 		document.addEventListener('keyup', this.keyUpHandler);
 	}

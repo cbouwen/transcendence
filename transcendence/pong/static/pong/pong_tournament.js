@@ -1,28 +1,307 @@
+// Add this at the top of the file, after the variable declarations
+// Function that can be called from the router to ensure cleanup when navigating away
+function cleanupPongTournament() {
+    clearTournamentData();
+    
+    const pongWrapper = document.getElementById('pong-wrapper');
+    if (pongWrapper) {
+        pongWrapper.innerHTML = '';
+    }
+    
+    // Clean up any running game
+    if (window.currentPongGame) {
+        window.currentPongGame.cleanup();
+    }
+}
+
 async function pongTournamentStart() {
-	const opponentJWTs = await getPuppetJWTs();
-	if (opponentJWTs == null) {
-		navigateTo("/");
-		return ;
-	}
-        let pongGame = new PongGameTournament(opponentJWTs);
-        await pongGame.initialize();
-	console.log("pong init finished");
+	// Clear any existing tournament data
+    clearTournamentData();
+    
+	// Initialize tournament setup interface
+	setupTournamentUI();
+    
+    // Add the primary (logged in) player automatically
+    addPrimaryPlayer();
 };
 
+// Tournament players list and bracket
+let tournamentPlayers = [];
+let currentMatchup = [];
+let bracketRound = 0;
+let primaryPlayerAdded = false;
+
+// Function to clear tournament data when navigating away
+function clearTournamentData() {
+    tournamentPlayers = [];
+    currentMatchup = [];
+    bracketRound = 0;
+    primaryPlayerAdded = false;
+    
+    // Clear the player list UI if it exists
+    const playerList = document.getElementById('player-list');
+    if (playerList) {
+        playerList.innerHTML = '';
+    }
+}
+
+// Function to add the primary player (current logged in user)
+async function addPrimaryPlayer() {
+    if (primaryPlayerAdded) return;
+    
+    // Get current user info
+    const myUser = await apiRequest("/me", "GET", JWTs, undefined);
+    if (!myUser) {
+        console.log("Failed to get current user info");
+        return;
+    }
+    
+    // Add current user to tournament players list
+    tournamentPlayers.push({
+        username: myUser.username,
+        JWT: JWTs,
+        eliminated: false,
+        isPrimary: true // Mark as primary player
+    });
+    
+    // Add to UI
+    const playerList = document.getElementById('player-list');
+    if (playerList) {
+        const playerItem = document.createElement('li');
+        playerItem.classList.add('primary-player');
+        playerItem.innerHTML = `
+            <span>${myUser.username} (You)</span>
+            <span class="primary-badge">Primary Player</span>
+        `;
+        playerList.appendChild(playerItem);
+    }
+    
+    primaryPlayerAdded = true;
+}
+
+function setupTournamentUI() {
+	const pongWrapper = document.getElementById('pong-wrapper');
+	const tournamentSetup = document.getElementById('tournament-setup');
+	const addUserBtn = document.getElementById('add-user-btn');
+	const usernameInput = document.getElementById('username-input');
+	const playerList = document.getElementById('player-list');
+	const startTournamentBtn = document.getElementById('start-tournament-btn');
+
+	// Add user button functionality
+	addUserBtn.addEventListener('click', () => {
+		const username = usernameInput.value.trim();
+		if (!username) return;
+
+		// Check if user already exists in the tournament
+		if (tournamentPlayers.some(player => player.username === username)) {
+			alert('This user is already in the tournament!');
+			return;
+		}
+        
+        // Check if this is the primary user trying to be added again
+        const primaryPlayer = tournamentPlayers.find(p => p.isPrimary);
+        if (primaryPlayer && primaryPlayer.username === username) {
+            alert('You are already in the tournament as the primary player!');
+            return;
+        }
+
+		// Add user to tournament players list (no API calls)
+		tournamentPlayers.push({
+			username: username,
+			JWT: null, // Will be populated when tournament starts
+            eliminated: false,
+            isPrimary: false
+		});
+
+		// Create list item for player
+		const playerItem = document.createElement('li');
+		playerItem.innerHTML = `
+			<span>${username}</span>
+			<button class="invite-btn" data-username="${username}">Invite</button>
+			<button class="remove-btn" data-username="${username}">Remove</button>
+		`;
+		playerList.appendChild(playerItem);
+
+		// Clear input
+		usernameInput.value = '';
+	});
+
+	// Event delegation for invite and remove buttons
+	playerList.addEventListener('click', async (event) => {
+		const target = event.target;
+		
+		// Invite button
+		if (target.classList.contains('invite-btn')) {
+			const username = target.getAttribute('data-username');
+			await sendPongInvite(username);
+		}
+		
+		// Remove button
+		if (target.classList.contains('remove-btn')) {
+			const username = target.getAttribute('data-username');
+            
+            // Prevent removing the primary player
+            const playerToRemove = tournamentPlayers.find(p => p.username === username);
+            if (playerToRemove && playerToRemove.isPrimary) {
+                alert('You cannot remove yourself from the tournament!');
+                return;
+            }
+            
+			tournamentPlayers = tournamentPlayers.filter(player => player.username !== username);
+			const listItem = target.closest('li');
+			listItem.remove();
+		}
+	});
+
+	// Start tournament button
+	startTournamentBtn.addEventListener('click', async () => {
+		if (tournamentPlayers.length < 2) {
+			alert('Please add at least 2 players to start a tournament');
+			return;
+		}
+
+		// Get JWT tokens for all other players
+		const tokenPromises = tournamentPlayers
+            .filter(player => !player.isPrimary) // Skip primary player as they already have JWTs
+            .map(async (player) => {
+			    const jwt = await getPuppetJWTs(player.username);
+			    if (jwt) {
+				    player.JWT = jwt;
+				    return true;
+			    }
+			    return false;
+		    });
+
+		const results = await Promise.all(tokenPromises);
+		
+		// Check if all tokens were retrieved successfully
+		if (results.includes(false)) {
+			alert('Failed to get authentication tokens for all players. Please try again.');
+			return;
+		}
+
+        // Shuffle the players array for random matchups
+        tournamentPlayers = shuffleArray([...tournamentPlayers]);
+        
+        // Create pong canvas
+        createPongCanvas();
+        
+        // Set up the first round of matches
+        setupNextRound();
+        
+		// Start the tournament
+		tournamentSetup.style.display = 'none';
+		pongWrapper.style.display = 'block';
+		
+		// Initialize the game with current matchup
+        if (currentMatchup.length === 2) {
+		    let pongGame = new PongGameTournament(currentMatchup);
+		    await pongGame.initialize();
+		    console.log("pong init finished");
+        }
+	});
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function createPongCanvas() {
+    // Clear pong wrapper
+    const pongWrapper = document.getElementById('pong-wrapper');
+    pongWrapper.innerHTML = '';
+    
+    // Create game container
+    const pongGame = document.createElement('div');
+    pongGame.id = 'pong-game';
+    
+    // Create canvas
+    const pongCanvas = document.createElement('canvas');
+    pongCanvas.id = 'pong-canvas';
+    
+    // Add to DOM
+    pongGame.appendChild(pongCanvas);
+    pongWrapper.appendChild(pongGame);
+}
+
+function setupNextRound() {
+    // Count active players
+    const activePlayers = tournamentPlayers.filter(p => !p.eliminated);
+    
+    // If only one player remains, they're the champion
+    if (activePlayers.length === 1) {
+        alert(`Tournament completed! ${activePlayers[0].username} is the champion!`);
+        endTournament();
+        return;
+    }
+    
+    // Start a new round if needed
+    if (currentMatchup.length === 0) {
+        bracketRound++;
+        console.log(`Starting bracket round ${bracketRound}`);
+        
+        // Get the first two non-eliminated players for the next match
+        const nextPlayers = activePlayers.slice(0, 2);
+        currentMatchup = nextPlayers;
+    }
+}
+
+function endTournament() {
+    // Reset tournament display
+    document.getElementById('pong-wrapper').style.display = 'none';
+    document.getElementById('tournament-setup').style.display = 'block';
+    
+    // Clear tournament data completely
+    clearTournamentData();
+    
+    // Clear the canvas and state
+    const pongWrapper = document.getElementById('pong-wrapper');
+    if (pongWrapper) {
+        pongWrapper.innerHTML = '';
+    }
+}
+
+async function sendPongInvite(recipient) {
+	try {
+		const message = "Let's play pong!";
+		const pongInvite = true;
+		
+		const response = await apiRequest('/chat/message', 'POST', JWTs, {
+			recipient: recipient,
+			message: message,
+			pongInvite: pongInvite
+		});
+		
+		if (response) {
+			alert(`Invitation sent to ${recipient}!`);
+		} else {
+			alert('Failed to send invitation. Please try again.');
+		}
+	} catch (error) {
+		console.error('Error sending invitation:', error);
+		alert('Error sending invitation. Please try again.');
+	}
+}
+
 class PongGameTournament {
-	constructor(opponentJWTs) {
-		// Initialize container and canvas
-		this.pongContainer = document.getElementById('pong-wrapper');
-		this.pongContainer = document.getElementById('pong-wrapper');
-		this.pongCanvas = document.createElement('canvas');
-		this.pongCanvas.id = 'pong-canvas';
-		this.pongCanvas.style.cssText = "display: block; margin: auto; background: black;";
-		this.pongContainer.appendChild(this.pongCanvas);
+	constructor(matchupPlayers) {
+		// Create canvas if it doesn't exist
+        if (!document.getElementById('pong-canvas')) {
+            createPongCanvas();
+        }
+        
+        // Get references to DOM elements
+		this.pongCanvas = document.getElementById('pong-canvas');
 		this.context = this.pongCanvas.getContext('2d');
 
+		// Set canvas dimensions
 		this.pongCanvas.width = 1400;
 		this.pongCanvas.height = 1000;
-
+		this.pongCanvas.style.cssText = "display: block; margin: auto; background: black;";
 		this.pongCanvas.style.width = (this.pongCanvas.width / 2) + 'px';
 		this.pongCanvas.style.height = (this.pongCanvas.height / 2) + 'px';
 
@@ -42,8 +321,9 @@ class PongGameTournament {
 		this.timer = this.round = 0;
 		this.color = '#2c3e50';
 
-		this.opponentJWTs = opponentJWTs;
-		console.log("this.opponentJWTs", this.opponentJWTs);
+		// Store matchup players
+		this.players = matchupPlayers;
+        console.log("Current matchup:", this.players[0].username, "vs", this.players[1].username);
 		
 		this.keyDownHandler = null;
 		this.keyUpHandler = null;
@@ -89,8 +369,8 @@ class PongGameTournament {
 		this.context.fillStyle = '#ffffff';
 
 		// Draw paddles and ball with checks
-		if (this.player) this.context.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-		if (this.opponent) this.context.fillRect(this.opponent.x, this.opponent.y, this.opponent.width, this.opponent.height);
+		if (this.leftPaddle) this.context.fillRect(this.leftPaddle.x, this.leftPaddle.y, this.leftPaddle.width, this.leftPaddle.height);
+		if (this.rightPaddle) this.context.fillRect(this.rightPaddle.x, this.rightPaddle.y, this.rightPaddle.width, this.rightPaddle.height);
 		if (this.ball && this._turnDelayIsOver()) this.context.fillRect(this.ball.x, this.ball.y, this.ball.width, this.ball.height);
 
 		// Draw the net (Line in the middle)
@@ -107,17 +387,17 @@ class PongGameTournament {
 
 		// Draw scores and text
 		this.context.fillText(
-			this.player.score.toString(), (this.pongCanvas.width / 2) - 300, 200
+			this.leftPaddle.score.toString(), (this.pongCanvas.width / 2) - 300, 200
 		);
 		this.context.fillText(
-			this.opponent.score.toString(), (this.pongCanvas.width / 2) + 300, 200
+			this.rightPaddle.score.toString(), (this.pongCanvas.width / 2) + 300, 200
 		);
 
 		// Draw rounds and text
 		this.context.font = '30px Courier New';
 		this.context.fillText(
-			this.myUser.first_name + ' VS ' + this.theirUser.first_name, this.pongCanvas.width / 2, 35
-		);  //change message to play till 5 or something
+			this.players[0].username + ' VS ' + this.players[1].username, this.pongCanvas.width / 2, 35
+		);
 		this.context.font = '40px Courier';
 		this.context.fillText(
 			this.rounds[this.round] ? this.rounds[this.round] : this.rounds[this.round - 1], this.pongCanvas.width / 2, 100
@@ -140,30 +420,68 @@ class PongGameTournament {
 		this.context.fillRect(this.pongCanvas.width / 2 - 350, this.pongCanvas.height / 2 - 48, 700, 100);
 		this.context.fillStyle = '#ffffff';
 		this.context.fillText(text, this.pongCanvas.width / 2, this.pongCanvas.height / 2 + 15);
-		this.player.score = this.opponent.score = 0;
+		this.leftPaddle.score = this.rightPaddle.score = 0;
 		this.running = this.over = false;
-		this.player.y = (this.pongCanvas.height / 2) - 35;
-		this.opponent.y = (this.pongCanvas.height / 2) - 35;
+		this.leftPaddle.y = (this.pongCanvas.height / 2) - 35;
+		this.rightPaddle.y = (this.pongCanvas.height / 2) - 35;
 
+		// Determine winner and loser based on scores
+        let winnerIndex, loserIndex;
+        if (this.leftPaddle.score > this.rightPaddle.score) {
+            winnerIndex = 0; // Left player (players[0]) won
+            loserIndex = 1;  // Right player (players[1]) lost
+        } else {
+            winnerIndex = 1; // Right player (players[1]) won
+            loserIndex = 0;  // Left player (players[0]) lost
+        }
+        
+        console.log(`Winner: ${this.players[winnerIndex].username}, Loser: ${this.players[loserIndex].username}`);
+        
+        // Mark loser as eliminated
+        const loserPlayerIndex = tournamentPlayers.findIndex(p => p.username === this.players[loserIndex].username);
+        if (loserPlayerIndex !== -1) {
+            tournamentPlayers[loserPlayerIndex].eliminated = true;
+        }
+        
 		// Use promises to handle score publishing
-		const publishPlayerScore = new Promise((resolve) => {
-			this.publishScore(JWTs, this.theirUser.username, this.player.score, this.opponent.score);
+		const publishLeftScore = new Promise((resolve) => {
+			this.publishScore(this.players[0].JWT, this.players[1].username, this.leftPaddle.score, this.rightPaddle.score);
 			resolve();
 		});
 
-		const publishOpponentScore = new Promise((resolve) => {
-			this.publishScore(this.opponentJWTs.value, this.myUser.username, this.opponent.score, this.player.score);
+		const publishRightScore = new Promise((resolve) => {
+			this.publishScore(this.players[1].JWT, this.players[0].username, this.rightPaddle.score, this.leftPaddle.score);
 			resolve();
 		});
 
-		Promise.all([publishPlayerScore, publishOpponentScore]).then(() => {
-			// Add event listener for key press to trigger cleanup
+		Promise.all([publishLeftScore, publishRightScore]).then(() => {
+			// Add event listener for key press to continue tournament
 			const keyPressGameEnd = () => {
-				this.cleanup();
 				document.removeEventListener('keydown', keyPressGameEnd);
+				
+				// Clear current matchup to setup next match
+                currentMatchup = [];
+                
+                // Setup next matchup
+                setupNextRound();
+                
+                // Clean up current game
+                this.cleanup();
+                
+                // Start next match if there are players left
+                if (currentMatchup.length === 2) {
+                    setTimeout(() => {
+                        let pongGame = new PongGameTournament(currentMatchup);
+                        pongGame.initialize();
+                    }, 500);
+                } else {
+                    // End tournament if no more matches
+                    endTournament();
+                }
 			};
+			
 			document.addEventListener('keydown', keyPressGameEnd);
-			document.removeEventListener('keydown', this.keyUpHandler);
+			document.removeEventListener('keyup', this.keyUpHandler);
 			document.removeEventListener('keydown', this.keyDownHandler);
 		});
 	}
@@ -172,72 +490,63 @@ class PongGameTournament {
 		// Update game state
 		if (!this.over) {
 			// Update the ball's position and check for collisions
-			if (this.ball.x <= 0) this._resetTurn(this.opponent, this.player);
-			if (this.ball.x >= this.pongCanvas.width - this.ball.width) this._resetTurn(this.player, this.opponent);
+			if (this.ball.x <= 0) this._resetTurn(this.rightPaddle, this.leftPaddle);
+			if (this.ball.x >= this.pongCanvas.width - this.ball.width) this._resetTurn(this.leftPaddle, this.rightPaddle);
 
 			if (this.ball.y <= 0) this.ball.moveY = this.DIRECTION.DOWN;
 			if (this.ball.y >= this.pongCanvas.height - this.ball.height) this.ball.moveY = this.DIRECTION.UP;
 
-			if (this.player.move === this.DIRECTION.UP) this.player.y -= this.player.speed;
-			else if (this.player.move === this.DIRECTION.DOWN) this.player.y += this.player.speed;
+			if (this.leftPaddle.move === this.DIRECTION.UP) this.leftPaddle.y -= this.leftPaddle.speed;
+			else if (this.leftPaddle.move === this.DIRECTION.DOWN) this.leftPaddle.y += this.leftPaddle.speed;
 
-			if (this.opponent.move === this.DIRECTION.UP) this.opponent.y -= this.opponent.speed;
-			else if (this.opponent.move === this.DIRECTION.DOWN) this.opponent.y += this.opponent.speed;
+			if (this.rightPaddle.move === this.DIRECTION.UP) this.rightPaddle.y -= this.rightPaddle.speed;
+			else if (this.rightPaddle.move === this.DIRECTION.DOWN) this.rightPaddle.y += this.rightPaddle.speed;
 
 			if (this._turnDelayIsOver() && this.turn) {
-				this.ball.moveX = this.turn === this.player ? this.DIRECTION.LEFT : this.DIRECTION.RIGHT;
+				this.ball.moveX = this.turn === this.leftPaddle ? this.DIRECTION.LEFT : this.DIRECTION.RIGHT;
 				this.ball.moveY = [this.DIRECTION.UP, this.DIRECTION.DOWN][Math.round(Math.random())];
 				this.ball.y = Math.floor(Math.random() * this.pongCanvas.height - 200) + 200;
 				this.turn = null;
 			}
 
-			if (this.player.y <= 0) this.player.y = 0;
-			else if (this.player.y >= (this.pongCanvas.height - this.player.height)) this.player.y = (this.pongCanvas.height - this.player.height);
+			if (this.leftPaddle.y <= 0) this.leftPaddle.y = 0;
+			else if (this.leftPaddle.y >= (this.pongCanvas.height - this.leftPaddle.height)) this.leftPaddle.y = (this.pongCanvas.height - this.leftPaddle.height);
 
 			if (this.ball.moveY === this.DIRECTION.UP) this.ball.y -= (this.ball.speed / 1.5);
 			else if (this.ball.moveY === this.DIRECTION.DOWN) this.ball.y += (this.ball.speed / 1.5);
 			if (this.ball.moveX === this.DIRECTION.LEFT) this.ball.x -= this.ball.speed;
 			else if (this.ball.moveX === this.DIRECTION.RIGHT) this.ball.x += this.ball.speed;
 
-		/*	if (this.opponent.y > this.ball.y - (this.opponent.height / 2)) {
-				if (this.ball.moveX === this.DIRECTION.RIGHT) this.opponent.y -= this.opponent.speed / 1.5;
-				else this.opponent.y -= this.opponent.speed / 4;
-			}
-			if (this.opponent.y < this.ball.y - (this.opponent.height / 2)) {
-				if (this.ball.moveX === this.DIRECTION.RIGHT) this.opponent.y += this.opponent.speed / 1.5;
-				else this.opponent.y += this.opponent.speed / 4;
-			}
-*/
-			if (this.opponent.y >= this.pongCanvas.height - this.opponent.height) this.opponent.y = this.pongCanvas.height - this.opponent.height;
-			else if (this.opponent.y <= 0) this.opponent.y = 0;
+			if (this.rightPaddle.y >= this.pongCanvas.height - this.rightPaddle.height) this.rightPaddle.y = this.pongCanvas.height - this.rightPaddle.height;
+			else if (this.rightPaddle.y <= 0) this.rightPaddle.y = 0;
 
-			if (this.ball.x - this.ball.width <= this.player.x && this.ball.x >= this.player.x - this.player.width) {
-				if (this.ball.y <= this.player.y + this.player.height && this.ball.y + this.ball.height >= this.player.y) {
-					this.ball.x = (this.player.x + this.ball.width);
+			if (this.ball.x - this.ball.width <= this.leftPaddle.x && this.ball.x >= this.leftPaddle.x - this.leftPaddle.width) {
+				if (this.ball.y <= this.leftPaddle.y + this.leftPaddle.height && this.ball.y + this.ball.height >= this.leftPaddle.y) {
+					this.ball.x = (this.leftPaddle.x + this.ball.width);
 					this.ball.moveX = this.DIRECTION.RIGHT;
 					this.ball.speed += 0.2;
 				}
 			}
 
-			if (this.ball.x - this.ball.width <= this.opponent.x && this.ball.x >= this.opponent.x - this.opponent.width) {
-				if (this.ball.y <= this.opponent.y + this.opponent.height && this.ball.y + this.ball.height >= this.opponent.y) {
-					this.ball.x = (this.opponent.x - this.ball.width);
+			if (this.ball.x - this.ball.width <= this.rightPaddle.x && this.ball.x >= this.rightPaddle.x - this.rightPaddle.width) {
+				if (this.ball.y <= this.rightPaddle.y + this.rightPaddle.height && this.ball.y + this.ball.height >= this.rightPaddle.y) {
+					this.ball.x = (this.rightPaddle.x - this.ball.width);
 					this.ball.moveX = this.DIRECTION.LEFT;
 					this.ball.speed += 0.2;
 				}
 			}
 		}
 
-		if (this.player.score === this.rounds[this.round]) {
+		if (this.leftPaddle.score === this.rounds[this.round]) {
 			this.over = true;
 			setTimeout(() => { 
-				this.endGameMenu(this.myUser.first_name + ' wins! Press any key to continue'); 
+				this.endGameMenu(this.players[0].username + ' wins! Press any key to continue'); 
 			}, 1000);
 		}
-		else if (this.opponent.score === this.rounds[this.round]) {
+		else if (this.rightPaddle.score === this.rounds[this.round]) {
 			this.over = true;
 			setTimeout(() => { 
-				this.endGameMenu(this.theirUser.first_name + ' wins! Press any key to continue'); 
+				this.endGameMenu(this.players[1].username + ' wins! Press any key to continue'); 
 			}, 1000);
 		}
 	}
@@ -247,6 +556,7 @@ class PongGameTournament {
 		body["their_username"] = their_username;
 		body["my_score"] = my_score;
 		body["their_score"] = their_score;
+		
 		let response = await apiRequest('/pong/score', 'POST', token, body);
 		if (response) {
 			console.log("Score published successfully", response);
@@ -270,15 +580,15 @@ class PongGameTournament {
 				this.running = true;
 				window.requestAnimationFrame(() => this.loop());
 			}
-			if (event.keyCode === 87) this.player.move = this.DIRECTION.UP;
-			if (event.keyCode === 83) this.player.move = this.DIRECTION.DOWN;
-			if (event.keyCode === 38) this.opponent.move = this.DIRECTION.UP;
-			if (event.keyCode === 40) this.opponent.move = this.DIRECTION.DOWN;
+			if (event.keyCode === 87) this.leftPaddle.move = this.DIRECTION.UP;
+			if (event.keyCode === 83) this.leftPaddle.move = this.DIRECTION.DOWN;
+			if (event.keyCode === 38) this.rightPaddle.move = this.DIRECTION.UP;
+			if (event.keyCode === 40) this.rightPaddle.move = this.DIRECTION.DOWN;
 		};
 
 		this.keyUpHandler = (event) => {
-			this.player.move = this.DIRECTION.IDLE;
-			this.opponent.move = this.DIRECTION.IDLE;
+			this.leftPaddle.move = this.DIRECTION.IDLE;
+			this.rightPaddle.move = this.DIRECTION.IDLE;
 		};
 
 		document.addEventListener('keydown', this.keyDownHandler);
@@ -286,23 +596,13 @@ class PongGameTournament {
 	}
 
 	async initialize() {
-		console.log("starting init of pong");
-		this.myUser = await apiRequest("/me", "GET", JWTs, undefined);
-		if (!this.myUser) {
-			console.log("Failed to get my user");
-			return;
-		}
-		console.log("this.myUser", this.myUser);
-		this.theirUser = await apiRequest("/me", "GET", this.opponentJWTs.value, undefined);
-		if (!this.theirUser) {
-			console.log("Failed to get their user");
-			return;
-		}
-		console.log("this.theirUser", this.theirUser);
-		this.player = this.createPaddle('left');
-		this.opponent = this.createPaddle('right');
+		console.log("Starting match initialization");
+		
+		// Create paddles and ball
+		this.leftPaddle = this.createPaddle('left');
+		this.rightPaddle = this.createPaddle('right');
 		this.ball = this.createBall();
-		this.turn = this.opponent;
+		this.turn = this.rightPaddle;
 
 		this.menu();
 		this.listen();
@@ -348,8 +648,8 @@ class PongGameTournament {
 		// Reset game state
 		this.running = false;
 		this.over = true;
-		this.player = null;
-		this.opponent = null;
+		this.leftPaddle = null;
+		this.rightPaddle = null;
 		this.ball = null;
 		this.turn = null;
 
