@@ -163,14 +163,12 @@ class PongGame {
 			if (this.ball.moveX === this.DIRECTION.LEFT) this.ball.x -= this.ball.speed;
 			else if (this.ball.moveX === this.DIRECTION.RIGHT) this.ball.x += this.ball.speed;
 
-			if (this.paddle.y > this.ball.y - (this.paddle.height / 2)) {
-				if (this.ball.moveX === this.DIRECTION.RIGHT) this.paddle.y -= this.paddle.speed / 1.5;
-				else this.paddle.y -= this.paddle.speed / 4;
-			}
-			if (this.paddle.y < this.ball.y - (this.paddle.height / 2)) {
-				if (this.ball.moveX === this.DIRECTION.RIGHT) this.paddle.y += this.paddle.speed / 1.5;
-				else this.paddle.y += this.paddle.speed / 4;
-			}
+        	if (this.paddle.y > this.ball.y - (this.paddle.height / 2)) {
+            	this.paddle.y -= this.paddle.speed;
+        	}
+        	if (this.paddle.y < this.ball.y - (this.paddle.height / 2)) {
+            	this.paddle.y += this.paddle.speed;
+        	}
 
 			if (this.paddle.y >= this.pongCanvas.height - this.paddle.height) this.paddle.y = this.pongCanvas.height - this.paddle.height;
 			else if (this.paddle.y <= 0) this.paddle.y = 0;

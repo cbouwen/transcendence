@@ -21,8 +21,8 @@ async function loadMessages() {
         // Clear existing messages
         chatMessages.innerHTML = '';
         
-        // Sort messages by timestamp (newest first)
-        messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // Sort messages by timestamp (oldest first)
+        messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         
         messages.forEach(msg => {
             const messageDiv = document.createElement('div');
