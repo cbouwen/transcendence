@@ -69,13 +69,13 @@ async function getPuppetJWTs(username = null) {
 	};
 	const response = await apiRequest("/token/puppet", "POST", JWTs, payload);
 	if (!response) {
-		alert("You don't have the permission to log in" + username);
+		alert("You don't have the permission to log in " + username + ". Do they have an account?");
 		console.warning("Unexpected error when doing apiRequest to /token/puppet");
 		return null;
 	}
 	else {
 		if (response.status == "failed") {
-			alert("You don't have the permission to log in" + username);
+			alert("You don't have the permission to log in " + username + ". Did you send them an invite yet and did they accept?");
 			console.warning("Unexpected error when doing apiRequest to /token/puppet");
 			return null;
 		}
