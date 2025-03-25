@@ -74,6 +74,11 @@ async function getPuppetJWTs(username = null) {
 		return null;
 	}
 	else {
+		if (response.status == "failed") {
+			alert("You don't have the permission to log in" + username);
+			console.warning("Unexpected error when doing apiRequest to /token/puppet");
+			return null;
+		}
 		return (response);
 	}
 };

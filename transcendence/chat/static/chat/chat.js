@@ -39,18 +39,12 @@ async function loadMessages() {
             const acceptButton = msg.pongInvite && !isMyMessage ? 
                 `<button class="btn btn-success btn-sm ms-2" onclick="acceptInvite('${msg.sender}')">Accept invite</button>` : '';
 
-	      // Create play button if message has pong invite and was sent by current user
-            const playButton = msg.pongInvite && isMyMessage ? 
-                `<button class="btn btn-primary btn-sm ms-2" onclick="navigateTo('/pong_multi')">Play pong</button>` : '';
-            
-            
             messageDiv.innerHTML = `
                 <div class="card ${isMyMessage ? 'myMessage float-end' : 'theirMessage float-start'}" style="max-width: 70%;">
                     <div class="card-body p-2">
                         <div class="d-flex align-items-center">
                             <span class="card-text">${msg.message}</span>
                             ${acceptButton}
-                            ${playButton}
                         </div>
                         <small class="${isMyMessage ? 'text-white' : 'text-muted'}">
                             ${isMyMessage ? 'You' : `<a href="/profile?username=${msg.sender}" class="${isMyMessage ? 'text-white' : 'text-muted'}" data-link>${msg.sender}</a>`} to ${isMyMessage ? `<a href="/profile?username=${msg.recipient}" class="text-white" data-link>${msg.recipient}</a>` : 'you'} - ${timestamp}
