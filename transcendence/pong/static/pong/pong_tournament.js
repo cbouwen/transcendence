@@ -107,7 +107,7 @@ function setupTournamentUI() {
 
 	// Add user button functionality
 	addUserBtn.addEventListener('click', () => {
-		const username = usernameInput.value.trim();
+		const username = stripInvalidCharacters(usernameInput.value.trim());
 		if (!username) return;
 
 		// Check if user already exists in the tournament

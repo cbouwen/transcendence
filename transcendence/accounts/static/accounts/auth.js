@@ -124,7 +124,7 @@ async function createPuppetGrant(jwtTokens, puppeteerUsername) {
 };
 
 function puppetGrantSubmitButtonHandler() {
-      const puppeteerUsername = document.getElementById("puppetGrantInput").value.trim();
+      const puppeteerUsername = stripInvalidCharacters(document.getElementById("puppetGrantInput").value.trim());
       if (!puppeteerUsername) {
         alert("Please enter the user whom you allow to login on your behalf.");
         return;
@@ -155,7 +155,7 @@ async function promptTOTPSetUp() {
 };
 
 function inputTokenIsValid() {
-	let token = document.getElementById("TOTPTokenInput").value;
+	let token = stripInvalidCharacters(document.getElementById("TOTPTokenInput").value);
 	let delta = TOTPSetup.validate({ token, window: 1 }); 
 	if (delta != null) {
 		return (true);

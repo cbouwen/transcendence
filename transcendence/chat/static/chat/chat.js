@@ -72,8 +72,8 @@ async function sendMessage(event) {
     const messageInput = document.getElementById('message');
     const pongInviteCheckbox = document.getElementById('pongInvite');
     
-    const recipient = recipientInput.value.trim();
-    const message = messageInput.value.trim();
+    const recipient = stripInvalidCharacters(recipientInput.value.trim());
+    const message = stripInvalidCharacters(messageInput.value.trim());
     const pongInvite = pongInviteCheckbox.checked;
     
     if (!recipient || !message) {
