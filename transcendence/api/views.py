@@ -60,7 +60,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         if token_response.status_code != 200:
             error_data = token_response.json()
             error_data |= { 'type': "intra error" }
-            error_data |= request_data
             raise AuthenticationFailed(error_data)
 
         token_data = token_response.json()
