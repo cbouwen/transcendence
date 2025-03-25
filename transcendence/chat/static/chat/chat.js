@@ -50,6 +50,7 @@ async function loadMessages() {
                         <div class="d-flex align-items-center">
                             <span class="card-text">${msg.message}</span>
                             ${acceptButton}
+                            ${playButton}
                         </div>
                         <small class="${isMyMessage ? 'text-white' : 'text-muted'}">
                             ${isMyMessage ? 'You' : `<a href="/profile?username=${msg.sender}" class="${isMyMessage ? 'text-white' : 'text-muted'}" data-link>${msg.sender}</a>`} to ${isMyMessage ? `<a href="/profile?username=${msg.recipient}" class="text-white" data-link>${msg.recipient}</a>` : 'you'} - ${timestamp}
@@ -129,7 +130,7 @@ function stopChat() {
 async function acceptInvite(sender) {
 	createPuppetGrant(JWTs, sender);
         const response = await apiRequest('/chat/message', 'POST', JWTs, {
-            recipient: recipient,
+            recipient: sender,
             message: "Hereby I humbly accept your request to play pong. I'll be right there!",
             pongInvite: false
         });
