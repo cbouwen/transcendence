@@ -172,6 +172,7 @@ function accountsPageStart() {
 	if (logoutButton)
 		logoutButton.addEventListener("click", logout);
     
+    updateMatchHistory();
     updateOnlineFriends();
     
     setInterval(updateOnlineFriends, 30000);
@@ -182,6 +183,18 @@ async function fillInCurrentUserInfo() {
     if (!userdata) return;
     queryAndReplacePlaceholder("#displayNameInput", userdata.first_name);
     updateUserAvatar();
+}
+
+async function updateMatchHistory() {
+    const pongScores = await apiRequest('/pong/score', 'GET', JWTs);
+    
+    // Calculate Pong wins and losses
+    let pongWins = pongScores.filter(game => game.my_score > game.their_score).length;
+    let pongLosses = pongScores.filter(game => game.my_score < game.their_score).length;
+    
+    // Update the existing HTML elements
+    document.getElementById("winsCount").textContent = pongWins;
+    document.getElementById("lossesCount").textContent = pongLosses;
 }
 
 async function updateUserAvatar() {
