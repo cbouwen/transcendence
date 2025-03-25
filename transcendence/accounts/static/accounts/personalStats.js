@@ -72,7 +72,7 @@ async function parsePongScores(tableBody)
 
 	scoreObject.forEach(scoreData => {
 		let game = formatTimestamp(scoreData.timestamp);
-		let opponent = scoreData.them.username ?? "AI opponent";
+		let opponent = scoreData.them ? scoreData.them.username : "AI opponent";
 		let myScore = scoreData.my_score;
 		let theirScore = scoreData.their_score;
 
