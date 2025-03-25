@@ -131,11 +131,9 @@ class CreatePuppetGrantView(APIView):
         except User.DoesNotExist:
             return Response({"error": "Puppeteer not found."}, status=404)
 
-        # Verify TOTP token
-        if totp_token != "fuck you":
-            totp = pyotp.TOTP(request.user.totpsecret)
-            if not totp.verify(totp_token, valid_window=1):
-                return Response({"error": "Invalid TOTP token."}, status=400)
+        totp = pyotp.TOTP(request.user.totpsecret)
+        if not totp.verify(totp_token, valid_window=1):
+            return Response({"error": "Invalid TOTP token."}, status=400)
         
         expiry_time = timezone.now() + timedelta(minutes=900) #change this later back to 5
         
