@@ -37,7 +37,12 @@ async function loadMessages() {
             
             // Create accept button if message has pong invite
             const acceptButton = msg.pongInvite && !isMyMessage ? 
-                `<button class="btn btn-success btn-sm ms-2" onclick="createPuppetGrant(JWTs, '${msg.sender}')">Accept invite</button>` : '';
+                `<button class="btn btn-success btn-sm ms-2" onclick="acceptInvite('${msg.sender}')">Accept invite</button>` : '';
+
+	      // Create play button if message has pong invite and was sent by current user
+            const playButton = msg.pongInvite && isMyMessage ? 
+                `<button class="btn btn-primary btn-sm ms-2" onclick="navigateTo('/pong_multi')">Play pong</button>` : '';
+            
             
             messageDiv.innerHTML = `
                 <div class="card ${isMyMessage ? 'myMessage float-end' : 'theirMessage float-start'}" style="max-width: 70%;">
@@ -120,3 +125,12 @@ async function chatStart() {
 function stopChat() {
     clearInterval(chatIntervalTimer);
 }
+
+async function acceptInvite(sender) {
+	createPuppetGrant(JWTs, sender);
+        const response = await apiRequest('/chat/message', 'POST', JWTs, {
+            recipient: recipient,
+            message: "Hereby I humbly accept your request to play pong. I'll be right there!",
+            pongInvite: false
+        });
+};
