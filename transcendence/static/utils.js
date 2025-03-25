@@ -22,3 +22,7 @@ async function fillInFirstNamePlaceholders() {
 	console.log(userdata);
 	queryAndReplace("#firstName", userdata.first_name);
 };
+
+function stripInvalidCharacters(inputString) {
+  return inputString.replace(/[^a-zA-Z0-9_@-]/g, '');
+}
