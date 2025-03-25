@@ -58,7 +58,7 @@ async function login() {
 
 async function getPuppetJWTs(username = null) {
 	if (!username) {
-		username = prompt("Give the username of your opponent");
+		username = stripInvalidCharacters(prompt("Give the username of your opponent"));
 		if (username == null || username == "") {
 			console.warning("No username given by user");
 			return null;
@@ -103,7 +103,7 @@ function extractLoginCodeFromURL() {
 };
 
 async function createPuppetGrant(jwtTokens, puppeteerUsername) {
-    const totpCode = prompt(`Please enter your TOTP code to authorize ${puppeteerUsername} access to your account`);
+    const totpCode = stripInvalidCharacters(prompt(`Please enter your TOTP code to authorize ${puppeteerUsername} access to your account`));
     if (!totpCode) {
         console.log("Operation canceled by user.");
         return;
@@ -206,7 +206,7 @@ function verifyOTPCode(OTPCode, OTPSecret) {
 function getTOTPToken(promptext) {
 	let token = "";
 	while (token === "") {
-		token = prompt(promptext); 
+		token = stripInvalidCharacters(prompt(promptext)); 
 	}
 	if (token != "SETUP") {
 		return (token);

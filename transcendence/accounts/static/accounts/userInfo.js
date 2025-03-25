@@ -1,7 +1,7 @@
 async function updateUserInfo() {
     let body = {};
 
-    const displayName = document.getElementById("displayNameInput").value.trim();
+    const displayName = stripInvalidCharacters(document.getElementById("displayNameInput").value.trim());
     if (displayName) {
         body.first_name = displayName;
     }
@@ -96,7 +96,7 @@ async function updateOnlineFriends() {
 }
 
 async function addFriend() {
-    const friendUsername = document.getElementById("friendUsername").value.trim();
+    const friendUsername = stripInvalidCharacters(document.getElementById("friendUsername").value.trim());
     if (!friendUsername) {
         alert("Please enter a username");
         return;
@@ -120,7 +120,7 @@ async function addFriend() {
 }
 
 async function removeFriend() {
-    const friendUsername = document.getElementById("friendUsername").value.trim();
+    const friendUsername = stripInvalidCharacters(document.getElementById("friendUsername").value.trim());
     if (!friendUsername) {
         alert("Please enter a username");
         return;
